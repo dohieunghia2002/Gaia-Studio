@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Google OAuth client secret tải từ Google Cloud — không đưa lên git
+client_secret_*.json
