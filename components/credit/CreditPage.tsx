@@ -54,7 +54,7 @@ function TopupPanel({ enabled, resume, onPaid }: { enabled: boolean; resume: Top
     let stopped = false;
     const check = async () => {
       try {
-        const view = await api<TopupView>(`/api/topup/${order.orderCode}`);
+        const view = await api<TopupView>(`/api/topups/${order.orderCode}`);
         if (stopped) return;
         if (view.status === 'paid') {
           setOrder(view);
@@ -77,7 +77,7 @@ function TopupPanel({ enabled, resume, onPaid }: { enabled: boolean; resume: Top
     if (invalid || creating) return;
     setCreating(true);
     try {
-      const view = await api<TopupView>('/api/topup', { method: 'POST', json: { amountVnd: amount } });
+      const view = await api<TopupView>('/api/topups', { method: 'POST', json: { amountVnd: amount } });
       setOrder(view);
       setStep('wait');
     } catch (err) {
@@ -90,7 +90,7 @@ function TopupPanel({ enabled, resume, onPaid }: { enabled: boolean; resume: Top
   const cancel = async () => {
     if (!order) return;
     try {
-      await api(`/api/topup/${order.orderCode}`, { method: 'DELETE' });
+      await api(`/api/topups/${order.orderCode}`, { method: 'DELETE' });
     } catch {}
     setStep('choose');
   };
@@ -326,7 +326,7 @@ function Ledger({ initial }: { initial: { entries: LedgerEntry[]; hasMore: boole
   }, []);
 
   return (
-    <section className="panel" id="lich-su" aria-label="Lịch sử giao dịch" style={{ padding: '8px 24px 16px' }}>
+    <section className="panel" id="history" aria-label="Lịch sử giao dịch" style={{ padding: '8px 24px 16px' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px 24px', borderBottom: '1px solid #262622' }}>
         <h2 style={{ margin: 0, padding: '12px 0', fontSize: 18, fontWeight: 600 }}>Lịch sử giao dịch</h2>
         <nav aria-label="Lọc giao dịch" style={{ display: 'flex', gap: 20 }}>

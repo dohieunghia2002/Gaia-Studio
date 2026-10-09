@@ -129,7 +129,7 @@ function CreditButton() {
             <Link href="/credit" className="primary" style={{ flex: 1, height: 40, fontSize: 13 }} onClick={close}>
               Nạp credit
             </Link>
-            <Link href="/credit#lich-su" className="ghost" style={{ flex: 1, height: 40, fontSize: 13 }} onClick={close}>
+            <Link href="/credit#history" className="ghost" style={{ flex: 1, height: 40, fontSize: 13 }} onClick={close}>
               Xem tất cả
             </Link>
           </div>

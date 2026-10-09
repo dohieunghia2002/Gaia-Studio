@@ -28,7 +28,7 @@ export const GET = handle(async (_req: NextRequest, ctx: Ctx) => {
   if (!upstream.ok || !upstream.body) throw new ApiError(502, 'upstream', 'Không tải được file. Bạn thử lại sau.');
   const type = upstream.headers.get('content-type')?.split(';')[0] || (row.kind === 'video' ? 'video/mp4' : 'image/png');
   const ext = EXT[type] ?? (row.kind === 'video' ? 'mp4' : 'png');
-  const name = `gaia-${row.kind === 'video' ? 'video' : 'anh'}-${row.id.slice(0, 8)}.${ext}`;
+  const name = `gaia-${row.kind === 'video' ? 'video' : 'image'}-${row.id.slice(0, 8)}.${ext}`;
   const headers = new Headers({
     'Content-Type': type,
     'Content-Disposition': `attachment; filename="${name}"`,

@@ -403,21 +403,21 @@ alter table public.credit_lots enable row level security;
 alter table public.credit_allocations enable row level security;
 alter table public.credit_ledger enable row level security;
 
-drop policy if exists "Đọc hồ sơ của mình" on public.profiles;
-create policy "Đọc hồ sơ của mình" on public.profiles for select using (auth.uid() = id);
+drop policy if exists "Users can read own profile" on public.profiles;
+create policy "Users can read own profile" on public.profiles for select using (auth.uid() = id);
 
-drop policy if exists "Đọc giao dịch nạp của mình" on public.payments;
-create policy "Đọc giao dịch nạp của mình" on public.payments for select using (auth.uid() = user_id);
+drop policy if exists "Users can read own payments" on public.payments;
+create policy "Users can read own payments" on public.payments for select using (auth.uid() = user_id);
 
-drop policy if exists "Đọc thư viện của mình" on public.generations;
-create policy "Đọc thư viện của mình" on public.generations
+drop policy if exists "Users can read own generations" on public.generations;
+create policy "Users can read own generations" on public.generations
   for select using (auth.uid() = user_id and deleted_at is null);
 
-drop policy if exists "Đọc lô credit của mình" on public.credit_lots;
-create policy "Đọc lô credit của mình" on public.credit_lots for select using (auth.uid() = user_id);
+drop policy if exists "Users can read own credit lots" on public.credit_lots;
+create policy "Users can read own credit lots" on public.credit_lots for select using (auth.uid() = user_id);
 
-drop policy if exists "Đọc lịch sử credit của mình" on public.credit_ledger;
-create policy "Đọc lịch sử credit của mình" on public.credit_ledger for select using (auth.uid() = user_id);
+drop policy if exists "Users can read own credit ledger" on public.credit_ledger;
+create policy "Users can read own credit ledger" on public.credit_ledger for select using (auth.uid() = user_id);
 
 -- credit_allocations: không có policy → người dùng không đọc được, chỉ server dùng.
 

@@ -105,4 +105,4 @@ Phải chạy thử có phí mới xác nhận được. Đây chính là lượ
 - **Tỉ lệ lời / giá vốn**: `GAIA_MARKUP`, `GAIA_COST_PER_GOMMO_CREDIT` trong `.env`.
 - **Mốc nạp, thưởng, hạn dùng**: `lib/topup-rules.ts`. Nếu đổi số ngày hết hạn thì sửa cả `interval '90 days'` trong file SQL.
 - **Ý tưởng gợi ý ở Studio lần đầu**: `lib/suggestions.ts`.
-- **Điều khoản / Chính sách bảo mật**: `app/dieu-khoan/page.tsx`, `app/bao-mat/page.tsx`. Hiện đang là chỗ trống chờ nội dung.
+- **Điều khoản / Chính sách bảo mật**: `app/terms/page.tsx`, `app/privacy/page.tsx`. Hiện đang là chỗ trống chờ nội dung.

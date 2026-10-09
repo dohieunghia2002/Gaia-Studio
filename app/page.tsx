@@ -16,10 +16,10 @@ export default async function Home() {
           GAIA
         </Link>
         <nav aria-label="Điều hướng chính" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
-          <a href="#model" className="home-nav-link">
+          <a href="#models" className="home-nav-link">
             Model
           </a>
-          <a href="#cach-hoat-dong" className="home-nav-link">
+          <a href="#how-it-works" className="home-nav-link">
             Cách hoạt động
           </a>
           <Link href={startHref} className="home-login">
@@ -45,7 +45,7 @@ export default async function Home() {
               Bắt đầu tạo
               <Icon name="arrow-right" size={18} />
             </Link>
-            <a href="#cach-hoat-dong" className="cta-ghost">
+            <a href="#how-it-works" className="cta-ghost">
               Xem cách hoạt động
             </a>
           </div>
@@ -82,7 +82,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="model" style={{ borderTop: '1px solid #262622' }}>
+      <section id="models" style={{ borderTop: '1px solid #262622' }}>
         <div className="home-wrap" style={{ paddingTop: 88, paddingBottom: 88 }}>
           <h2 className="h2">Nhiều model, một chỗ chọn</h2>
           <p className="muted" style={{ margin: '12px 0 0', maxWidth: 560 }}>
@@ -118,7 +118,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="cach-hoat-dong" style={{ borderTop: '1px solid #262622' }}>
+      <section id="how-it-works" style={{ borderTop: '1px solid #262622' }}>
         <div className="home-wrap" style={{ paddingTop: 88, paddingBottom: 88 }}>
           <h2 className="h2">Cách hoạt động</h2>
           <ol style={{ margin: '40px 0 0', padding: 0, listStyle: 'none', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 32 }}>
@@ -155,10 +155,10 @@ export default async function Home() {
         <div className="home-wrap faint" style={{ paddingTop: 28, paddingBottom: 28, fontSize: 13, display: 'flex', flexWrap: 'wrap', gap: '8px 24px', justifyContent: 'space-between' }}>
           <span>© 2026 GAIA AI</span>
           <span style={{ display: 'flex', gap: 20 }}>
-            <Link href="/dieu-khoan" className="faint">
+            <Link href="/terms" className="faint">
               Điều khoản sử dụng
             </Link>
-            <Link href="/bao-mat" className="faint">
+            <Link href="/privacy" className="faint">
               Chính sách bảo mật
             </Link>
           </span>

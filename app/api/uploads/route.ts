@@ -16,7 +16,7 @@ export const POST = handle(async (req: NextRequest) => {
   }
   const size = Math.floor((match[2].length * 3) / 4);
   if (size > MAX_BYTES) throw new ApiError(400, 'too_large', 'Ảnh tối đa 10MB.');
-  const safeName = (fileName || 'anh').replace(/[^\w.-]+/g, '_').slice(0, 80) || 'anh';
+  const safeName = (fileName || 'image').replace(/[^\w.-]+/g, '_').slice(0, 80) || 'image';
   const uploaded = await gommoUploadImage(match[2], safeName, size);
   return json(uploaded, 201);
 });

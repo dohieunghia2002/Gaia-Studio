@@ -46,11 +46,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           )}
           <p className="faint" style={{ margin: 0, fontSize: 12 }}>
             Bằng việc tiếp tục, bạn đồng ý với{' '}
-            <Link href="/dieu-khoan" className="muted" style={{ textDecoration: 'underline' }}>
+            <Link href="/terms" className="muted" style={{ textDecoration: 'underline' }}>
               Điều khoản sử dụng
             </Link>{' '}
             và{' '}
-            <Link href="/bao-mat" className="muted" style={{ textDecoration: 'underline' }}>
+            <Link href="/privacy" className="muted" style={{ textDecoration: 'underline' }}>
               Chính sách bảo mật
             </Link>{' '}
             của GAIA.
