@@ -175,7 +175,7 @@ export function LibraryCard({
         <div className="frame">
           <Media item={item} />
           <span className="media-label">
-            {item.kind === 'video' ? 'VIDEO' : 'ẢNH'}
+            {item.kind === 'video' ? 'Video' : 'Ảnh'}
             {item.params.ratio ? ` · ${ratioLabel(item.params.ratio)}` : ''}
           </span>
           {item.kind === 'video' && Number.isFinite(durationSec) && durationSec > 0 && (

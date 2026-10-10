@@ -7,13 +7,20 @@ import { isUuid } from '@/lib/api.server';
 import { CreditProvider } from '@/components/CreditContext';
 import { ToastProvider } from '@/components/Toasts';
 import { StudioApp } from '@/components/studio/StudioApp';
-import type { GenerationItem } from '@/lib/types';
+import { promptHref } from '@/lib/suggestions';
+import type { GenerationItem, Kind } from '@/lib/types';
 
 export const metadata: Metadata = { title: 'Studio' };
 
-export default async function StudioPage({ searchParams }: { searchParams: Promise<{ reuse?: string }> }) {
-  const user = await requireUserPage('/studio');
-  const { reuse: reuseId } = await searchParams;
+export default async function StudioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reuse?: string; prompt?: string; kind?: string }>;
+}) {
+  const { reuse: reuseId, prompt, kind } = await searchParams;
+  const text = typeof prompt === 'string' ? prompt.trim().slice(0, 2000) : '';
+  const initialPrompt = text ? { kind: (kind === 'image' ? 'image' : 'video') as Kind, prompt: text } : null;
+  const user = await requireUserPage(initialPrompt ? promptHref(initialPrompt.kind, initialPrompt.prompt) : '/studio');
 
   const [profile, balance, library, catalog] = await Promise.all([
     getProfile(user),
@@ -38,6 +45,7 @@ export default async function StudioPage({ searchParams }: { searchParams: Promi
           initialCursor={library.nextCursor}
           initialCatalog={catalog}
           reuse={reuse}
+          initialPrompt={reuse ? null : initialPrompt}
         />
       </ToastProvider>
     </CreditProvider>

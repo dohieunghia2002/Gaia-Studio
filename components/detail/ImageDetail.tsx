@@ -282,7 +282,7 @@ export function ImageDetail({
                 <StatusBlock item={active} now={now} what="ảnh" />
               )}
               <span className="media-label">
-                ẢNH{active.params.ratio ? ` · ${ratioLabel(active.params.ratio)}` : ''} · {activeLabel}
+                Ảnh{active.params.ratio ? ` · ${ratioLabel(active.params.ratio)}` : ''} · {activeLabel}
               </span>
             </div>
           </div>

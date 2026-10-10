@@ -16,6 +16,15 @@ Nguồn: prompt tài liệu do Gommo cung cấp, được cô đọng lại (đ�
 - `/ai/video` trả về `{ videoInfo: {...} }`, có thêm `credit_fee`, `message`, `thumbnail_end_url`, `modelInfo`.
 - Tài liệu không nói phần tử của `images` (create-video) và `subjects` (generateImage) có dạng gì. Tài khoản hiện chưa có job nào dùng hai tham số này để đối chiếu.
 
+## Lượt tạo có phí đầu tiên (2026-10-10)
+
+9 job (5 × Nano Banana 2 `vip` 1k `16_9`, 4 × VEO 3.1 `fast` 720p 8s `16:9` với `translate_to_en=true`):
+
+- `imageInfo.credit` (400) và `videoInfo.credit_fee` (1.200) có ngay trong phản hồi lúc gửi, và bằng đúng số bị trừ: `/api/apps/go-mmo/ai/me` → `balancesInfo.credits_ai` giảm 6.800 = tổng giá niêm yết.
+- `videoInfo.prompt` lúc gửi và lúc xong đều là prompt tiếng Việt gốc, không phải bản đã dịch.
+- Nano Banana 2 1k `16_9` trả PNG 1376×768 (~2 MB). `url_thumb` của ảnh là JPEG nhỏ. Video MP4 720p 8s nặng 3–11 MB, có `thumbnail_url` (JPEG).
+- Ảnh xong sau khoảng 35–75 giây; video sau khoảng 2,5–3 phút (hỏi trạng thái mỗi 10 giây). Không job nào lỗi.
+
 ## Quan sát thêm khi gọi thử (2026-10-08, chỉ các lệnh đọc, không tốn credit)
 
 - `/ai/images`: `url` có đuôi `?full=1`; `url_preview` là ảnh gốc; `url_thumb` là ảnh CDN đã thu nhỏ còn 480px (`/cdn-cgi/image/width=480,…`), hợp để làm thẻ thư viện.

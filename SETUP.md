@@ -89,20 +89,27 @@ Lưu ý: upscale ảnh của Gommo trả kết quả trong cùng một request n
 
 ---
 
+## Đã kiểm chứng (10/10/2026)
+
+Lượt tạo 9 ảnh/video mẫu cho trang chủ (5 ảnh Nano Banana 2 1k, 4 video VEO 3.1 Fast 720p 8s, gọi thẳng Gommo, không qua ví GAIA):
+
+- **Giá thật Gommo trừ đúng bằng bảng giá** `/ai/models` và bằng `credit`/`credit_fee` Gommo trả về: số dư 191.600 → 184.800, trừ đúng 6.800 = 5 × 400 + 4 × 1.200. Vì vậy bật `GAIA_SETTLE_ACTUAL_COST=1` là an toàn (hiện chưa bật).
+- **Gommo không trả prompt đã dịch** khi gửi `translate_to_en`: cả lúc gửi lẫn lúc xong, `prompt` vẫn là câu tiếng Việt gốc. `prompt_sent` vì thế sẽ để trống.
+- Thời gian: ảnh xong sau khoảng 35–75 giây, video VEO 3.1 Fast sau khoảng 2,5–3 phút.
+
 ## Những điều chưa kiểm chứng
 
-Phải chạy thử có phí mới xác nhận được. Đây chính là lượt chạy thử bạn đã duyệt ngày 06/10.
+Phải chạy thử trong chính app mới xác nhận được:
 
 1. **Định dạng ảnh khung (`images`) và ảnh tham chiếu (`subjects`)** gửi sang Gommo. Tài liệu Gommo không ghi rõ. Code đang gửi `[{ id_base, url }]`; nếu sai thì chỉ cần sửa hàm `toGommoImageRefs` trong `lib/gommo.ts`.
-2. **Giá thật Gommo trừ** so với bảng giá `/ai/models`. Bảng giá có chỗ không khớp: VEO 3.1 ghi "từ 600" nhưng dòng rẻ nhất trong bảng là 800. GAIA tính theo dòng khớp nhất của bảng.
-3. **Upscale** (`image_resolution`) ứng với model nào (300 hay 500 credit Gommo). Hiện GAIA giữ trước 8 credit (theo mức 500).
-4. **Gommo có trả prompt đã dịch không** khi gửi `translate_to_en`. Nếu có, code tự lưu vào `prompt_sent`.
-5. Sau khi xác nhận (2) đúng, có thể bật `GAIA_SETTLE_ACTUAL_COST=1` để tự hoàn phần chênh khi giá thật thấp hơn giá đã trừ.
+2. **Upscale** (`image_resolution`) ứng với model nào (300 hay 500 credit Gommo). Hiện GAIA giữ trước 8 credit (theo mức 500).
+3. Job vẫn chạy tiếp ở server khi người dùng đóng tab.
 
 ## Tuỳ chỉnh nhanh
 
 - **Ẩn/sắp xếp model, model trên trang chủ**: `HIDDEN_MODELS`, `MODEL_ORDER`, `FEATURED_MODELS` trong `lib/models.server.ts`.
 - **Tỉ lệ lời / giá vốn**: `GAIA_MARKUP`, `GAIA_COST_PER_GOMMO_CREDIT` trong `.env`.
 - **Mốc nạp, thưởng, hạn dùng**: `lib/topup-rules.ts`. Nếu đổi số ngày hết hạn thì sửa cả `interval '90 days'` trong file SQL.
-- **Ý tưởng gợi ý ở Studio lần đầu**: `lib/suggestions.ts`.
+- **Ý tưởng gợi ý** (Studio lần đầu và cột "Thử một ý tưởng" ở trang chủ): `lib/suggestions.ts`.
+- **Ảnh/video mẫu**: đặt file vào `public/samples/` rồi điền `sample` cho đúng gợi ý trong `lib/suggestions.ts`. Chỉ dùng kết quả thật tạo bằng GAIA từ đúng prompt đó. Có mẫu thì thẻ gợi ý hiện ảnh, và trang chủ tự hiện mục "Tạo bằng GAIA".
 - **Điều khoản / Chính sách bảo mật**: `app/terms/page.tsx`, `app/privacy/page.tsx`. Hiện đang là chỗ trống chờ nội dung.

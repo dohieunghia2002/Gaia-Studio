@@ -82,10 +82,14 @@ Gommo's response shapes:
 | Cost field | `imageInfo.credit` | `videoInfo.credit_fee` |
 | Ratio format | whatever the model's option `type` is (`16_9` or `16:9`) | same |
 
-**Unverified until the first paid test run (see SETUP.md):**
+**Verified 2026-10-10** (9 sample generations sent straight to Gommo, see SETUP.md):
+
+- `credit`/`credit_fee` are the real charge and equal the `/ai/models` price row: the balance dropped by exactly the listed 6,800. `GAIA_SETTLE_ACTUAL_COST=1` is safe to enable (still off).
+- Gommo does not return the translated prompt for `translate_to_en`; `videoInfo.prompt` stays the Vietnamese original, so `prompt_sent` stays empty.
+
+**Still unverified (needs a run through the app itself):**
 
 - The element format of `images` (video start/end frames) and `subjects` (image references). The code sends `[{ id_base, url }]`. `toGommoImageRefs` in `lib/gommo.ts` is the single place to change it.
-- Whether `credit`/`credit_fee` are the real charge. Settling down to the actual cost stays off until `GAIA_SETTLE_ACTUAL_COST=1` is set.
 - The upscale model and its price. GAIA holds the higher estimate of 500 Gommo credits.
 
 Images are versioned. Edits (`op='edit'`, `editImage` + `base64Image` data URL) and upscales (`op='upscale'`, `ai_templates/tools` `image_resolution`, synchronous) are `generations` rows with `root_id`/`source_id`. The library lists roots only (`root_id is null`), with version count, total credits and the latest successful version as the thumbnail.
@@ -115,3 +119,8 @@ Prompt translation sits behind `preparePrompt()` (`lib/prompt.server.ts`). For n
 - The client calls the API through `lib/client/api.ts`, which turns `{ error, message }` responses into `ClientError` with the Vietnamese message. Upload images through `lib/client/upload.ts`; it downscales to 2048px before `/api/uploads`, which uploads to Gommo.
 - Elapsed timers and dates use the Asia/Ho_Chi_Minh time zone (`lib/format.ts`), and clocks only start after mount, to avoid hydration mismatches.
 - Gommo's suggestion feeds (`midjourney/kling/sora_feed_suggested`) returned nothing on 2026-10-08, so first-run ideas are GAIA's own (`lib/suggestions.ts`).
+- The landing page (`app/page.tsx`, reworked 2026-10-10 to look less templated) is product-led:
+  - Its prompt box (`components/home/HomePrompt.tsx`) is a GET form to `/studio?kind=&prompt=`. The proxy carries the query through `/login?next=…` (the login page shows the carried prompt), and `/studio` pre-fills the composer and then strips the query from the URL.
+  - Its "Model và giá" table lists the live catalog (available models, featured first) with each model's "from" price.
+- No placeholder art anywhere (no colour blocks standing in for images). `Suggestion.sample` in `lib/suggestions.ts` is only for real GAIA outputs stored in `public/samples/`; suggestion cards and the landing "Tạo bằng GAIA" section render media only when a sample exists.
+- Mono type is for numbers, params and credit only, not for labels or eyebrows. Media labels read "Ảnh · 3:4" / "Video · 16:9", not uppercase.

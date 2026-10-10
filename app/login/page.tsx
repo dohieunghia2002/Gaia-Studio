@@ -10,6 +10,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const { next, error } = await searchParams;
   const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/studio';
   const configured = isSupabaseConfigured();
+  // Đi từ khung prompt ở trang chủ: cho người dùng thấy prompt của họ không bị mất.
+  const carried = new URL(safeNext, 'http://gaia.local').searchParams.get('prompt')?.trim();
 
   return (
     <div className="page">
@@ -32,6 +34,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               Dùng tài khoản Google của bạn. Lần đầu đăng nhập, GAIA sẽ tự tạo tài khoản.
             </p>
           </div>
+          {carried && (
+            <div className="carried">
+              <span>Prompt của bạn sẽ được giữ lại sau khi đăng nhập</span>
+              <p>{carried}</p>
+            </div>
+          )}
           {error && (
             <p className="danger-text" style={{ margin: 0, fontSize: 13 }}>
               Đăng nhập chưa thành công. Bạn thử lại nhé.

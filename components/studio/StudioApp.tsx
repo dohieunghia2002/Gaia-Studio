@@ -1,17 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Icon } from '../Icon';
 import { TopBar } from '../TopBar';
 import { useCredit } from '../CreditContext';
 import { useToasts } from '../Toasts';
 import { Composer, currentModel, draftCost, emptyDraft, type Catalog, type Draft, type Upload } from './Composer';
 import { detailHref, LibraryCard } from './LibraryCard';
+import { SampleMedia } from '../SampleMedia';
 import { api, ClientError } from '@/lib/client/api';
 import { uploadImage } from '@/lib/client/upload';
 import { priceFor, resolveSelection, selectionFields } from '@/lib/catalog';
-import { dayKey, dayLabel, fmtNumber } from '@/lib/format';
-import { SUGGESTION_PAGE, SUGGESTIONS } from '@/lib/suggestions';
+import { dayKey, dayLabel, fmtClock, fmtNumber } from '@/lib/format';
+import { hasSample, ratioValue, SUGGESTION_PAGE, SUGGESTIONS } from '@/lib/suggestions';
 import type { GenerationItem, Kind, LibraryItem, Profile } from '@/lib/types';
 
 type Filter = 'all' | Kind;
@@ -63,15 +64,17 @@ function Welcome({ onPick }: { onPick: (kind: Kind, prompt: string) => void }) {
   const [page, setPage] = useState(0);
   const pages = Math.ceil(SUGGESTIONS.length / SUGGESTION_PAGE);
   const shown = SUGGESTIONS.slice(page * SUGGESTION_PAGE, page * SUGGESTION_PAGE + SUGGESTION_PAGE);
+  // Chỉ hiện ảnh khi cả trang đều có mẫu, để các thẻ trong lưới cao bằng nhau.
+  const withMedia = shown.every(hasSample);
   return (
     <main className="welcome">
-      <h1 style={{ margin: 0, fontSize: 32, lineHeight: 1.2, fontWeight: 700, letterSpacing: '-0.01em' }}>Chào mừng đến GAIA Studio</h1>
+      <h1>Ảnh và video bạn tạo sẽ hiện ở đây</h1>
       <p className="muted" style={{ margin: '10px 0 0', fontSize: 16 }}>
-        Chọn một ý tưởng để dùng ngay, hoặc tự viết prompt ở khung bên dưới.
+        Viết prompt ở khung bên dưới, hoặc lấy một ý tưởng rồi sửa lại theo ý bạn.
       </p>
       <div className="row-between" style={{ margin: '36px 0 14px', gap: 12 }}>
         <h2 className="muted" style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>
-          Ý tưởng gợi ý
+          Ý tưởng để bắt đầu
         </h2>
         <button
           type="button"
@@ -86,13 +89,24 @@ function Welcome({ onPick }: { onPick: (kind: Kind, prompt: string) => void }) {
       <div className="suggest-grid">
         {shown.map((s) => (
           <button type="button" className="suggest" key={s.prompt} onClick={() => onPick(s.kind, s.prompt)}>
-            <span className="img" style={{ background: s.tone }}>
-              <Icon name={s.kind === 'video' ? 'video' : 'image'} size={28} />
-              <span className="media-label">{s.kind === 'video' ? 'VIDEO' : 'ẢNH'}</span>
-            </span>
+            {withMedia && hasSample(s) && (
+              <span className="frame">
+                <span className="media" style={{ '--r': ratioValue(s.sample.ratio) } as CSSProperties}>
+                  <SampleMedia s={s} />
+                </span>
+                {s.sample.duration ? <span className="media-label right">{fmtClock(s.sample.duration)}</span> : null}
+              </span>
+            )}
             <span className="b">
+              <span className="k">
+                <Icon name={s.kind === 'video' ? 'video' : 'image'} size={14} />
+                {s.kind === 'video' ? 'Video' : 'Ảnh'}
+              </span>
               <span className="p">{s.prompt}</span>
-              <span className="s">{s.kind === 'video' ? 'Video' : 'Ảnh'} · Dùng prompt này →</span>
+              <span className="go">
+                <Icon name="pencil" size={14} />
+                Dùng prompt này
+              </span>
             </span>
           </button>
         ))}
@@ -107,12 +121,14 @@ export function StudioApp({
   initialCursor,
   initialCatalog,
   reuse,
+  initialPrompt,
 }: {
   profile: Profile;
   initialItems: LibraryItem[];
   initialCursor: string | null;
   initialCatalog: Catalog;
   reuse: GenerationItem | null;
+  initialPrompt: { kind: Kind; prompt: string } | null;
 }) {
   const { balance, setBalance } = useCredit();
   const { push } = useToasts();
@@ -125,7 +141,11 @@ export function StudioApp({
   const [fit, setFit] = useState<Fit>('contain');
   const [now, setNow] = useState<number | null>(null);
   const [draft, setDraft] = useState<Draft>(() =>
-    reuse ? draftFromItem(initialCatalog, emptyDraft(), reuse) : emptyDraft('video'),
+    reuse
+      ? draftFromItem(initialCatalog, emptyDraft(), reuse)
+      : initialPrompt
+        ? { ...emptyDraft(initialPrompt.kind), prompt: initialPrompt.prompt }
+        : emptyDraft('video'),
   );
   const [submitting, setSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -271,6 +291,18 @@ export function StudioApp({
       el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
     });
   };
+
+  // Prompt mang từ trang chủ sang: đặt con trỏ vào khung soạn, rồi bỏ khỏi URL để tải lại trang không điền lại.
+  useEffect(() => {
+    if (!initialPrompt) return;
+    window.history.replaceState(null, '', '/studio');
+    const el = textareaRef.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+  }, [initialPrompt]);
 
   const reusePrompt = (item: GenerationItem) => {
     const model = catalog[item.kind].find((m) => m.id === item.model);
