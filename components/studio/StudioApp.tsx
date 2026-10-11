@@ -6,17 +6,17 @@ import { TopBar } from '../TopBar';
 import { useCredit } from '../CreditContext';
 import { useToasts } from '../Toasts';
 import { Composer, currentModel, draftCost, emptyDraft, type Catalog, type Draft, type Upload } from './Composer';
-import { detailHref, LibraryCard } from './LibraryCard';
+import { detailHref, LibraryCard, TrashCard } from './LibraryCard';
 import { SampleMedia } from '../SampleMedia';
 import { api, ClientError } from '@/lib/client/api';
 import { uploadImage } from '@/lib/client/upload';
 import { priceFor, resolveSelection, selectionFields } from '@/lib/catalog';
 import { dayKey, dayLabel, fmtClock, fmtNumber } from '@/lib/format';
+import { TRASH_DAYS } from '@/lib/trash';
 import { hasSample, ratioValue, SUGGESTION_PAGE, SUGGESTIONS } from '@/lib/suggestions';
 import type { GenerationItem, Kind, LibraryItem, Profile } from '@/lib/types';
 
-type Filter = 'all' | Kind;
-type Fit = 'contain' | 'cover';
+type Filter = 'all' | Kind | 'trash';
 
 const isRunning = (s: GenerationItem['status']) => s === 'pending' || s === 'processing';
 
@@ -119,6 +119,7 @@ export function StudioApp({
   profile,
   initialItems,
   initialCursor,
+  initialTrashCount,
   initialCatalog,
   reuse,
   initialPrompt,
@@ -126,6 +127,7 @@ export function StudioApp({
   profile: Profile;
   initialItems: LibraryItem[];
   initialCursor: string | null;
+  initialTrashCount: number;
   initialCatalog: Catalog;
   reuse: GenerationItem | null;
   initialPrompt: { kind: Kind; prompt: string } | null;
@@ -138,7 +140,8 @@ export function StudioApp({
   const [filter, setFilter] = useState<Filter>('all');
   const [loadingList, setLoadingList] = useState(false);
   const [hasAny, setHasAny] = useState(initialItems.length > 0);
-  const [fit, setFit] = useState<Fit>('contain');
+  const [trashCount, setTrashCount] = useState(initialTrashCount);
+  const [confirmEmpty, setConfirmEmpty] = useState(false);
   const [now, setNow] = useState<number | null>(null);
   const [draft, setDraft] = useState<Draft>(() =>
     reuse
@@ -156,22 +159,6 @@ export function StudioApp({
 
   const running = items.filter((i) => isRunning(i.status));
   const runningCount = running.length;
-
-  // Ghi nhớ "Trọn khung / Lấp đầy" trên máy người dùng.
-  useEffect(() => {
-    const t = setTimeout(() => {
-      try {
-        if (localStorage.getItem('gaia-fit') === 'cover') setFit('cover');
-      } catch {}
-    }, 0);
-    return () => clearTimeout(t);
-  }, []);
-  const changeFit = (f: Fit) => {
-    setFit(f);
-    try {
-      localStorage.setItem('gaia-fit', f);
-    } catch {}
-  };
 
   // Đồng hồ cho thẻ đang chạy (chỉ chạy sau khi mount để server/client render giống nhau).
   useEffect(() => {
@@ -261,11 +248,13 @@ export function StudioApp({
       setLoadingList(true);
       try {
         const qs = new URLSearchParams();
-        if (f !== 'all') qs.set('kind', f);
+        if (f === 'trash') qs.set('trash', '1');
+        else if (f !== 'all') qs.set('kind', f);
         if (before) qs.set('before', before);
-        const res = await api<{ items: LibraryItem[]; nextCursor: string | null }>(`/api/generations?${qs}`);
+        const res = await api<{ items: LibraryItem[]; nextCursor: string | null; trashCount: number }>(`/api/generations?${qs}`);
         setItems((prev) => (before ? [...prev, ...res.items] : res.items));
         setCursor(res.nextCursor);
+        setTrashCount(res.trashCount);
       } catch (err) {
         push({ kind: 'error', title: err instanceof Error ? err.message : 'Không tải được thư viện' });
       } finally {
@@ -278,6 +267,7 @@ export function StudioApp({
   const changeFilter = (f: Filter) => {
     if (f === filter) return;
     setFilter(f);
+    setConfirmEmpty(false);
     loadList(f);
   };
 
@@ -323,13 +313,16 @@ export function StudioApp({
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     try {
       const res = await api<{ rootId: string; deletedAt: string }>(`/api/generations/${item.id}`, { method: 'DELETE' });
+      setTrashCount((n) => n + 1);
       push({
-        title: 'Đã xoá khỏi thư viện',
+        title: 'Đã chuyển vào thùng rác',
+        sub: `Tự xoá vĩnh viễn sau ${TRASH_DAYS} ngày`,
         action: {
           label: 'Hoàn tác',
           onClick: async () => {
             try {
               await api(`/api/generations/${res.rootId}/restore`, { method: 'POST', json: { deletedAt: res.deletedAt } });
+              setTrashCount((n) => Math.max(0, n - 1));
               setItems((prev) => {
                 if (prev.some((i) => i.id === item.id)) return prev;
                 const next = [...prev];
@@ -350,6 +343,41 @@ export function StudioApp({
       });
       push({ kind: 'error', title: err instanceof Error ? err.message : 'Không xoá được' });
     }
+  };
+
+  // ── Thùng rác ──
+  const restoreItem = async (item: LibraryItem) => {
+    try {
+      await api(`/api/generations/${item.id}/restore`, { method: 'POST', json: {} });
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
+      setTrashCount((n) => Math.max(0, n - 1));
+      setHasAny(true);
+      push({ title: 'Đã khôi phục vào thư viện' });
+    } catch (err) {
+      push({ kind: 'error', title: err instanceof Error ? err.message : 'Không khôi phục được' });
+    }
+  };
+
+  const purgeItem = async (item: LibraryItem) => {
+    try {
+      await api(`/api/generations/${item.id}?scope=permanent`, { method: 'DELETE' });
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
+      setTrashCount((n) => Math.max(0, n - 1));
+      push({ title: 'Đã xoá vĩnh viễn' });
+    } catch (err) {
+      push({ kind: 'error', title: err instanceof Error ? err.message : 'Không xoá được' });
+    }
+  };
+
+  const emptyTrash = async () => {
+    setConfirmEmpty(false);
+    try {
+      const res = await api<{ deleted: number }>('/api/generations/trash', { method: 'DELETE' });
+      push({ title: res.deleted ? `Đã xoá vĩnh viễn ${fmtNumber(res.deleted)} mục` : 'Thùng rác đã trống' });
+    } catch (err) {
+      push({ kind: 'error', title: err instanceof Error ? err.message : 'Không dọn được thùng rác' });
+    }
+    loadList('trash');
   };
 
   const retryCreditsFor = useCallback(
@@ -447,6 +475,38 @@ export function StudioApp({
       });
   };
 
+  // Dán ảnh (Ctrl+V) vào ô prompt: ảnh → Reference; video → Start frame rồi End frame.
+  const pasteImages = (files: File[]) => {
+    const m = currentModel(catalog, draft);
+    if (!m) return;
+    if (draft.kind === 'image') {
+      const free = m.maxReferences - draft.refs.length;
+      if (m.maxReferences === 0) {
+        push({ title: `${m.name} không dùng ảnh Reference. Bạn chọn model khác để dán ảnh.` });
+        return;
+      }
+      if (free <= 0) {
+        push({ title: `${m.name} nhận tối đa ${m.maxReferences} ảnh Reference. Xoá bớt một ảnh rồi dán lại.` });
+        return;
+      }
+      files.slice(0, free).forEach((f) => onPickFile('ref', f));
+      if (files.length > free) push({ title: `Chỉ thêm được ${free} ảnh. ${m.name} nhận tối đa ${m.maxReferences} ảnh Reference.` });
+      return;
+    }
+    if (!m.frames.start) {
+      push({ title: `${m.name} không dùng ảnh khung (frame). Bạn chọn model khác để dán ảnh.` });
+      return;
+    }
+    const slots: ('start' | 'end')[] = [];
+    if (!draft.start) slots.push('start');
+    if (m.frames.end && !draft.end) slots.push('end');
+    if (!slots.length) {
+      push({ title: m.frames.end ? 'Đã có Start frame và End frame. Xoá bớt một ảnh rồi dán lại.' : 'Đã có Start frame. Xoá ảnh cũ rồi dán lại.' });
+      return;
+    }
+    files.slice(0, slots.length).forEach((f, i) => onPickFile(slots[i], f));
+  };
+
   const pickSuggestion = (kind: Kind, prompt: string) => {
     setDraft((d) => ({ ...d, kind, prompt }));
     focusPrompt();
@@ -463,7 +523,8 @@ export function StudioApp({
     return out;
   }, [items]);
 
-  const firstRun = !hasAny && filter === 'all' && items.length === 0;
+  const firstRun = !hasAny && filter === 'all' && items.length === 0 && trashCount === 0;
+  const inTrash = filter === 'trash';
   const model = currentModel(catalog, draft);
 
   return (
@@ -475,48 +536,71 @@ export function StudioApp({
       ) : (
         <>
           <div className="lib-toolbar">
-            <nav aria-label="Lọc thư viện" style={{ display: 'flex', gap: 24 }}>
-              {(['all', 'image', 'video'] as Filter[]).map((f) => (
+            <nav aria-label="Lọc thư viện" style={{ display: 'flex', flexWrap: 'wrap', gap: '0 24px' }}>
+              {(['all', 'image', 'video', 'trash'] as Filter[]).map((f) => (
                 <button key={f} type="button" className="tab" aria-pressed={filter === f} onClick={() => changeFilter(f)}>
-                  {f === 'all' ? 'Tất cả' : f === 'image' ? 'Ảnh' : 'Video'}
+                  {f === 'all' ? 'Tất cả' : f === 'image' ? 'Ảnh' : f === 'video' ? 'Video' : 'Thùng rác'}
+                  {f === 'trash' && trashCount > 0 && <span className="tab-count">{fmtNumber(trashCount)}</span>}
                 </button>
               ))}
             </nav>
             <div className="row" style={{ gap: 12 }}>
-              {runningCount > 0 && (
+              {!inTrash && runningCount > 0 && (
                 <div className="running">
                   <span className="pulse-dot" />
                   {runningCount} đang chạy
                 </div>
               )}
-              <div className="fit-toggle" role="group" aria-label="Cách hiện ảnh trong ô">
-                <button
-                  type="button"
-                  aria-pressed={fit === 'contain'}
-                  title="Hiện trọn ảnh/video trong ô, không cắt"
-                  onClick={() => changeFit('contain')}
-                >
-                  Trọn khung
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={fit === 'cover'}
-                  title="Lấp đầy ô, phần thừa bị cắt bớt"
-                  onClick={() => changeFit('cover')}
-                >
-                  Lấp đầy
-                </button>
-              </div>
+              {inTrash && items.length > 0 && (
+                <div className="row trash-tools">
+                  {confirmEmpty ? (
+                    <>
+                      <span className="danger-text" style={{ fontSize: 13, fontWeight: 500 }}>
+                        Xoá vĩnh viễn mọi mục trong thùng rác?
+                      </span>
+                      <button type="button" className="mini-btn danger-fill" onClick={emptyTrash}>
+                        Xoá hết
+                      </button>
+                      <button type="button" className="mini-btn" onClick={() => setConfirmEmpty(false)}>
+                        Huỷ
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className="mini-btn danger-ghost" onClick={() => setConfirmEmpty(true)}>
+                      <Icon name="trash" size={14} />
+                      Dọn thùng rác
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
-          <main className={`lib-main${fit === 'cover' ? ' lib-fill' : ''}`} aria-busy={loadingList}>
+          <main className="lib-main" aria-busy={loadingList}>
+            {inTrash && (
+              <p className="trash-note">
+                Ảnh và video trong thùng rác tự xoá vĩnh viễn sau {TRASH_DAYS} ngày. Khôi phục để đưa lại vào thư viện.
+              </p>
+            )}
             {items.length === 0 && !loadingList && (
               <div className="empty-note" style={{ padding: '64px 0' }}>
-                {filter === 'image' ? 'Chưa có ảnh nào.' : filter === 'video' ? 'Chưa có video nào.' : 'Thư viện đang trống.'}
+                {inTrash
+                  ? 'Thùng rác trống.'
+                  : filter === 'image'
+                    ? 'Chưa có ảnh nào.'
+                    : filter === 'video'
+                      ? 'Chưa có video nào.'
+                      : 'Thư viện đang trống.'}
               </div>
             )}
-            {groups.map((g) => (
+            {inTrash && items.length > 0 && (
+              <div className="lib-grid" style={{ marginTop: 16 }}>
+                {items.map((it) => (
+                  <TrashCard key={it.id} item={it} now={now} onRestore={restoreItem} onPurge={purgeItem} />
+                ))}
+              </div>
+            )}
+            {!inTrash && groups.map((g) => (
               <section key={g.key} aria-label={g.label}>
                 <h2 className="group-title">{g.label}</h2>
                 <div className="lib-grid">
@@ -553,6 +637,7 @@ export function StudioApp({
           submitting={submitting}
           onSubmit={submit}
           onPickFile={onPickFile}
+          onPasteImages={pasteImages}
           textareaRef={textareaRef}
         />
       ) : (

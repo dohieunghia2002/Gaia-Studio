@@ -85,8 +85,6 @@ Gợi ý Vercel (hợp với Next.js):
 2. Import vào Vercel, khai báo các biến môi trường giống `.env`, đặt `NEXT_PUBLIC_SITE_URL` = tên miền thật.
 3. Thêm tên miền thật vào **Redirect URLs** của Supabase (bước 4) và **Webhook URL** của PayOS (bước 6).
 
-Lưu ý: upscale ảnh của Gommo trả kết quả trong cùng một request nên có thể chạy lâu. Route này đặt giới hạn 300 giây. Gói Vercel miễn phí có thể giới hạn thời gian chạy ngắn hơn; cần kiểm tra lại khi deploy.
-
 ---
 
 ## Đã kiểm chứng (10/10/2026)
@@ -97,13 +95,17 @@ Lượt tạo 9 ảnh/video mẫu cho trang chủ (5 ảnh Nano Banana 2 1k, 4 v
 - **Gommo không trả prompt đã dịch** khi gửi `translate_to_en`: cả lúc gửi lẫn lúc xong, `prompt` vẫn là câu tiếng Việt gốc. `prompt_sent` vì thế sẽ để trống.
 - Thời gian: ảnh xong sau khoảng 35–75 giây, video VEO 3.1 Fast sau khoảng 2,5–3 phút.
 
+Lượt bạn kiểm thử trong app (11/10/2026) xác nhận thêm:
+
+- Ảnh tham chiếu (`subjects`) gửi đúng định dạng: model dùng đúng người/đồ vật trong ảnh.
+- Đóng tab trong lúc đang tạo thì ảnh vẫn tạo xong.
+- Sửa ảnh tốn bằng tạo ảnh (Nano Banana 2 1K = 400 credit Gommo).
+
+**Upscale đã gỡ khỏi GAIA (11/10/2026).** Công cụ upscale của Gommo báo lỗi "Upload ảnh thất bại (HTTP 401)" và một lần còn trừ 200 credit mà không trả ảnh. Sau này GAIA sẽ tự làm tính năng này.
+
 ## Những điều chưa kiểm chứng
 
-Phải chạy thử trong chính app mới xác nhận được:
-
-1. **Định dạng ảnh khung (`images`) và ảnh tham chiếu (`subjects`)** gửi sang Gommo. Tài liệu Gommo không ghi rõ. Code đang gửi `[{ id_base, url }]`; nếu sai thì chỉ cần sửa hàm `toGommoImageRefs` trong `lib/gommo.ts`.
-2. **Upscale** (`image_resolution`) ứng với model nào (300 hay 500 credit Gommo). Hiện GAIA giữ trước 8 credit (theo mức 500).
-3. Job vẫn chạy tiếp ở server khi người dùng đóng tab.
+1. **Ảnh khung (Start/End frame) của video** gửi sang Gommo. Code dùng chung định dạng với ảnh tham chiếu (đã chạy đúng), nhưng chưa thử với video. Nếu sai thì sửa hàm `toGommoImageRefs` trong `lib/gommo.ts`.
 
 ## Tuỳ chỉnh nhanh
 

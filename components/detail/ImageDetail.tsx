@@ -8,21 +8,18 @@ import { useDismiss } from '../useDismiss';
 import { useCredit } from '../CreditContext';
 import { useToasts } from '../Toasts';
 import { CopyPromptButton, isRunning, MoreMenu, StatusBlock, useNow, useSyncRunning } from './shared';
+import { OptionChip } from '../studio/Composer';
 import { api, ClientError } from '@/lib/client/api';
 import { formatOptionValue, priceFor, ratioLabel, ratioNumber, resolveSelection } from '@/lib/catalog';
 import { clampText, fmtDayMonthTime, fmtNumber, fmtTime } from '@/lib/format';
 import type { CatalogModel, GenerationItem } from '@/lib/types';
 
+const EDIT_QUANTITIES = ['1', '2', '3', '4'];
+
 function versionLabels(versions: GenerationItem[]): Map<string, string> {
   const labels = new Map<string, string>();
   let edits = 0;
-  let upscales = 0;
-  const upscaleTotal = versions.filter((v) => v.op === 'upscale').length;
-  for (const v of versions) {
-    if (!v.rootId) labels.set(v.id, 'Bản gốc');
-    else if (v.op === 'upscale') labels.set(v.id, upscaleTotal > 1 ? `Upscale ${++upscales}` : 'Upscale');
-    else labels.set(v.id, `Chỉnh sửa ${++edits}`);
-  }
+  for (const v of versions) labels.set(v.id, v.rootId ? `Chỉnh sửa ${++edits}` : 'Bản gốc');
   return labels;
 }
 
@@ -72,12 +69,10 @@ export function ImageDetail({
   initialRoot,
   initialVersions,
   imageModels,
-  upscale,
 }: {
   initialRoot: GenerationItem;
   initialVersions: GenerationItem[];
   imageModels: CatalogModel[];
-  upscale: { credits: number; label: string };
 }) {
   const router = useRouter();
   const { push } = useToasts();
@@ -88,7 +83,8 @@ export function ImageDetail({
   );
   const [editPrompt, setEditPrompt] = useState('');
   const [editModelId, setEditModelId] = useState<string | undefined>(undefined);
-  const [busy, setBusy] = useState<'edit' | 'upscale' | null>(null);
+  const [editQty, setEditQty] = useState(1);
+  const [busy, setBusy] = useState(false);
   const [natural, setNatural] = useState<number | null>(null);
 
   const root = versions.find((v) => !v.rootId) ?? initialRoot;
@@ -116,10 +112,10 @@ export function ImageDetail({
     imageModels.find((m) => m.available);
   const editSel = editModel ? resolveSelection(editModel, active.params) : {};
   const editCredits = editModel ? priceFor(editModel, editSel) : null;
-  const lackingEdit = editCredits != null && editCredits > balance;
+  const editTotal = editCredits == null ? null : editCredits * editQty;
+  const lackingEdit = editTotal != null && editTotal > balance;
   const canEdit =
-    active.status === 'success' && Boolean(editPrompt.trim()) && editCredits != null && Boolean(editModel?.available) && !lackingEdit && busy === null;
-  const canUpscale = active.status === 'success' && busy === null && upscale.credits <= balance;
+    active.status === 'success' && Boolean(editPrompt.trim()) && editCredits != null && Boolean(editModel?.available) && !lackingEdit && !busy;
 
   const fail = (err: unknown) => {
     if (err instanceof ClientError && err.code === 'insufficient_credits') {
@@ -129,45 +125,30 @@ export function ImageDetail({
     }
   };
 
-  const addVersion = (item: GenerationItem, bal: number) => {
-    setBalance(bal);
-    setVersions((prev) => [...prev, item]);
-    setActiveId(item.id);
-  };
-
   const submitEdit = async () => {
     if (!canEdit || !editModel) return;
-    setBusy('edit');
+    setBusy(true);
     try {
-      const res = await api<{ item: GenerationItem; balance: number }>(`/api/generations/${active.id}/edit`, {
+      const res = await api<{ items: GenerationItem[]; balance: number }>(`/api/generations/${active.id}/edit`, {
         method: 'POST',
-        json: { prompt: editPrompt, model: editModel.id, expectedCredits: editCredits },
+        json: { prompt: editPrompt, model: editModel.id, expectedCredits: editCredits, quantity: editQty },
       });
-      addVersion(res.item, res.balance);
+      setBalance(res.balance);
+      setVersions((prev) => [...prev, ...res.items]);
+      if (res.items[0]) setActiveId(res.items[0].id);
       setEditPrompt('');
-      if (res.item.status === 'error') push({ kind: 'error', title: 'Không gửi được yêu cầu sửa ảnh', sub: 'Credit đã được hoàn' });
+      const failed = res.items.filter((i) => i.status === 'error');
+      if (failed.length) {
+        push({
+          kind: 'error',
+          title: failed.length === res.items.length ? 'Không gửi được yêu cầu sửa ảnh' : `${failed.length} bản sửa không gửi được`,
+          sub: 'Credit đã được hoàn',
+        });
+      }
     } catch (err) {
       fail(err);
     } finally {
-      setBusy(null);
-    }
-  };
-
-  const runUpscale = async () => {
-    if (!canUpscale) return;
-    setBusy('upscale');
-    try {
-      const res = await api<{ item: GenerationItem; balance: number }>(`/api/generations/${active.id}/upscale`, {
-        method: 'POST',
-        json: { expectedCredits: upscale.credits },
-      });
-      addVersion(res.item, res.balance);
-      if (res.item.status === 'success') push({ kind: 'done', title: 'Đã upscale xong' });
-      if (res.item.status === 'error') push({ kind: 'error', title: 'Upscale không thành công', sub: 'Credit đã được hoàn' });
-    } catch (err) {
-      fail(err);
-    } finally {
-      setBusy(null);
+      setBusy(false);
     }
   };
 
@@ -215,10 +196,6 @@ export function ImageDetail({
           <h1 className="detail-title">{clampText(root.prompt, 80)}</h1>
         </div>
         <div className="actions">
-          <button type="button" className="btn" disabled={!canUpscale} onClick={runUpscale} title={upscale.credits > balance ? 'Không đủ credit' : undefined}>
-            {busy === 'upscale' ? <span className="spinner" /> : <Icon name="expand" />}
-            {busy === 'upscale' ? 'Đang upscale…' : 'Upscale'} <span className="c">· {upscale.label}</span>
-          </button>
           {active.status === 'success' ? (
             <a className="btn" href={`/api/generations/${active.id}/download`} title="Tải phiên bản đang xem">
               <Icon name="download" />
@@ -259,7 +236,7 @@ export function ImageDetail({
                   }}
                 >
                   <Icon name="trash" />
-                  {versions.length > 1 ? `Xoá cả ảnh khỏi thư viện (${versions.length} phiên bản)` : 'Xoá khỏi thư viện'}
+                  {versions.length > 1 ? `Chuyển cả ảnh vào thùng rác (${versions.length} phiên bản)` : 'Chuyển vào thùng rác'}
                 </button>
               </>
             )}
@@ -307,14 +284,24 @@ export function ImageDetail({
             <div className="row-between">
               <div className="row" style={{ gap: 6, fontSize: 13 }}>
                 <EditModelChip models={imageModels} current={editModel} onPick={(m) => setEditModelId(m.id)} />
+                <OptionChip
+                  label="Số lượng"
+                  value={String(editQty)}
+                  options={EDIT_QUANTITIES.map((q) => ({
+                    value: q,
+                    label: q,
+                    price: editCredits != null ? `${fmtNumber(editCredits * Number(q))} credit` : undefined,
+                  }))}
+                  onPick={(v) => setEditQty(Number(v))}
+                />
                 <span className="faint">Sửa từ</span>
                 <span style={{ fontWeight: 500 }}>{activeLabel}</span>
               </div>
               <div className="row" style={{ gap: 14 }}>
-                {editCredits != null && (
+                {editTotal != null && (
                   <span className={`cost${lackingEdit ? ' lacking' : ''}`}>
                     <Icon name="coin" size={14} />
-                    {fmtNumber(editCredits)} credit
+                    {fmtNumber(editTotal)} credit
                   </span>
                 )}
                 {lackingEdit && (
@@ -323,8 +310,8 @@ export function ImageDetail({
                   </Link>
                 )}
                 <button type="button" className="submit" style={{ padding: '0 18px' }} disabled={!canEdit} onClick={submitEdit}>
-                  {lackingEdit ? 'Không đủ credit' : 'Tạo bản sửa'}
-                  {busy === 'edit' ? <span className="spinner" /> : <Icon name="arrow-right" />}
+                  {lackingEdit ? 'Không đủ credit' : editQty > 1 ? `Tạo ${editQty} bản sửa` : 'Tạo bản sửa'}
+                  {busy ? <span className="spinner" /> : <Icon name="arrow-right" />}
                 </button>
               </div>
             </div>
@@ -352,7 +339,7 @@ export function ImageDetail({
                   )}
                   <span className="txt">
                     <span className="l">{labels.get(v.id)}</span>
-                    <span className="p">{v.op === 'upscale' ? 'Upscale ảnh' : v.prompt}</span>
+                    <span className="p">{v.prompt}</span>
                     <span className="t">
                       {isRunning(v.status)
                         ? 'Đang xử lý…'

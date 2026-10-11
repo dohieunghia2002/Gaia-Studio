@@ -203,7 +203,7 @@ export function VideoDetail({
                 }}
               >
                 <Icon name="trash" />
-                Xoá khỏi thư viện
+                Chuyển vào thùng rác
               </button>
             )}
           </MoreMenu>

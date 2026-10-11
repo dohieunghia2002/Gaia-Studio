@@ -62,7 +62,6 @@ img, video { display: block; }
 .frame { position: relative; aspect-ratio: 1 / 1; background: #121211; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .frame .media { width: calc(min(1, var(--r)) * 100%); aspect-ratio: var(--r); display: flex; align-items: center; justify-content: center; position: relative; background: #1c1c19; overflow: hidden; }
 .frame .media > img, .frame .media > video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.lib-fill .frame .media { width: 100%; height: 100%; aspect-ratio: auto; }
 .frame.status { flex-direction: column; gap: 6px; padding: 16px; text-align: center; background: #1c1c19; }
 .frame.status.failed { background: #1a1513; gap: 8px; }
 .progress-track { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: #262622; overflow: hidden; }
@@ -74,9 +73,23 @@ img, video { display: block; }
 .card-actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
 .card:hover .card-actions, .card:focus-within .card-actions, .card-actions.open { opacity: 1; }
 @media (hover: none) { .card-actions { opacity: 1; } }
-.fit-toggle { display: flex; gap: 2px; padding: 2px; margin-bottom: 6px; background: #0f0f0e; border: 1px solid #262622; border-radius: 10px; }
-.fit-toggle button { height: 28px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: #a8a399; font-size: 12px; font-weight: 500; }
-.fit-toggle button[aria-pressed='true'] { background: #2e2e29; color: #edebe6; }
+.mini-toggle { display: flex; gap: 2px; padding: 2px; background: #0f0f0e; border: 1px solid #262622; border-radius: 10px; }
+.mini-toggle button { height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: #a8a399; font-size: 12px; font-weight: 500; }
+.mini-toggle button[aria-pressed='true'] { background: #2e2e29; color: #edebe6; }
+.tab-count { margin-left: 6px; font-family: var(--font-mono); font-size: 11px; font-weight: 500; color: #8c877d; }
+/* Ảnh có nhiều phiên bản: huy hiệu góc trên trái (nút thao tác nằm góc trên phải). */
+.ver-badge { position: absolute; top: 10px; left: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 8px; border-radius: 7px; background: rgba(15, 15, 14, .8); border: 1px solid rgba(237, 235, 230, .18); color: #edebe6; font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+/* Thùng rác */
+.trash-note { margin: 16px 0 0; font-size: 13px; color: #8c877d; }
+.trash-tools { gap: 8px; margin-bottom: 6px; }
+.trash-left { margin: 6px 0 0; font-size: 12px; color: #8c877d; }
+.trash-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+.mini-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px; border: 1px solid #2e2e29; border-radius: 10px; background: #1f1f1c; color: #edebe6; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.mini-btn:hover:not(:disabled) { border-color: #3a3a34; }
+.mini-btn:disabled { opacity: .5; }
+.mini-btn.danger-ghost { background: transparent; border-color: #3d2a25; color: #ee7a63; }
+.mini-btn.danger-ghost:hover:not(:disabled) { border-color: #ee7a63; }
+.mini-btn.danger-fill { background: #ee7a63; border-color: #ee7a63; color: #1a0f0c; font-weight: 600; }
 .media-label { position: absolute; left: 10px; bottom: 10px; font-family: var(--font-mono); font-size: 11px; color: #d8d3c8; background: rgba(15, 15, 14, .6); padding: 2px 6px; border-radius: 4px; z-index: 1; }
 .media-label.right { left: auto; right: 10px; }
 .play-badge { width: 52px; height: 52px; border-radius: 50%; background: rgba(15, 15, 14, .6); display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }

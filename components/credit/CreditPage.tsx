@@ -306,14 +306,15 @@ function TopupPanel({ enabled, resume, onPaid }: { enabled: boolean; resume: Top
 
 function Ledger({ initial }: { initial: { entries: LedgerEntry[]; hasMore: boolean } }) {
   const [filter, setFilter] = useState<LedgerFilter>('all');
+  const [order, setOrder] = useState<'desc' | 'asc'>('desc');
   const [entries, setEntries] = useState(initial.entries);
   const [hasMore, setHasMore] = useState(initial.hasMore);
   const [loading, setLoading] = useState(false);
 
-  const load = useCallback(async (f: LedgerFilter, before?: number) => {
+  const load = useCallback(async (f: LedgerFilter, o: 'desc' | 'asc', before?: number) => {
     setLoading(true);
     try {
-      const qs = new URLSearchParams({ limit: '20' });
+      const qs = new URLSearchParams({ limit: '20', order: o });
       if (f !== 'all') qs.set('kind', f);
       if (before) qs.set('before', String(before));
       const res = await api<{ entries: LedgerEntry[]; hasMore: boolean }>(`/api/credits?${qs}`);
@@ -329,22 +330,40 @@ function Ledger({ initial }: { initial: { entries: LedgerEntry[]; hasMore: boole
     <section className="panel" id="history" aria-label="Lịch sử giao dịch" style={{ padding: '8px 24px 16px' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px 24px', borderBottom: '1px solid #262622' }}>
         <h2 style={{ margin: 0, padding: '12px 0', fontSize: 18, fontWeight: 600 }}>Lịch sử giao dịch</h2>
-        <nav aria-label="Lọc giao dịch" style={{ display: 'flex', gap: 20 }}>
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              className="tab"
-              aria-pressed={filter === f.key}
-              onClick={() => {
-                setFilter(f.key);
-                load(f.key);
-              }}
-            >
-              {f.label}
-            </button>
-          ))}
-        </nav>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 20px' }}>
+          <nav aria-label="Lọc giao dịch" style={{ display: 'flex', gap: 20 }}>
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                className="tab"
+                aria-pressed={filter === f.key}
+                onClick={() => {
+                  setFilter(f.key);
+                  load(f.key, order);
+                }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </nav>
+          <div className="mini-toggle" role="group" aria-label="Sắp xếp giao dịch">
+            {(['desc', 'asc'] as const).map((o) => (
+              <button
+                key={o}
+                type="button"
+                aria-pressed={order === o}
+                onClick={() => {
+                  if (o === order) return;
+                  setOrder(o);
+                  load(filter, o);
+                }}
+              >
+                {o === 'desc' ? 'Mới nhất' : 'Cũ nhất'}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
       <div className="ledger-head ledger">
         <span style={{ width: 110 }}>Thời gian</span>
@@ -377,7 +396,7 @@ function Ledger({ initial }: { initial: { entries: LedgerEntry[]; hasMore: boole
           className="ghost"
           style={{ marginTop: 8 }}
           disabled={loading}
-          onClick={() => load(filter, entries[entries.length - 1]?.id)}
+          onClick={() => load(filter, order, entries[entries.length - 1]?.id)}
         >
           {loading ? 'Đang tải…' : 'Xem thêm'}
         </button>

@@ -49,17 +49,19 @@ function toEntry(r: LedgerRow): LedgerEntry {
 
 export async function getLedger(
   userId: string,
-  opts: { kind?: LedgerKind; before?: number; limit?: number } = {},
+  opts: { kind?: LedgerKind; before?: number; limit?: number; order?: 'asc' | 'desc' } = {},
 ): Promise<{ entries: LedgerEntry[]; hasMore: boolean }> {
+  // `before` là con trỏ phân trang: id của dòng cuối trang trước (theo chiều đang sắp xếp).
+  const asc = opts.order === 'asc';
   const limit = Math.min(Math.max(opts.limit ?? 20, 1), 100);
   let q = supabaseAdmin()
     .from('credit_ledger')
     .select('id, kind, delta, balance_after, title, detail, created_at')
     .eq('user_id', userId)
-    .order('id', { ascending: false })
+    .order('id', { ascending: asc })
     .limit(limit + 1);
   if (opts.kind) q = q.eq('kind', opts.kind);
-  if (opts.before) q = q.lt('id', opts.before);
+  if (opts.before) q = asc ? q.gt('id', opts.before) : q.lt('id', opts.before);
   const { data, error } = await q;
   if (error) throw error;
   const rows = (data ?? []) as LedgerRow[];

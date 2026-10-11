@@ -6,7 +6,7 @@ import type { LedgerKind } from '@/lib/types';
 
 const KINDS: LedgerKind[] = ['topup', 'use', 'refund', 'expire'];
 
-/** Số dư + lịch sử credit: ?kind=topup|use|refund&before=<id>&limit=20 */
+/** Số dư + lịch sử credit: ?kind=topup|use|refund&order=asc|desc&before=<id>&limit=20 */
 export const GET = handle(async (req: NextRequest) => {
   const user = await requireUserApi();
   const sp = req.nextUrl.searchParams;
@@ -17,6 +17,7 @@ export const GET = handle(async (req: NextRequest) => {
       kind: kind && KINDS.includes(kind) ? kind : undefined,
       before: Number(sp.get('before')) || undefined,
       limit: Number(sp.get('limit')) || 20,
+      order: sp.get('order') === 'asc' ? 'asc' : 'desc',
     }),
   ]);
   return json({ ...summary, ...ledger });

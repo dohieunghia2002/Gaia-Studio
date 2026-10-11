@@ -68,7 +68,9 @@ Tham số: `project_id` (mặc định `default`), `category`, `source`, `projec
 
 Tham số: `data` (base64 **không** có tiền tố `data:image/...;base64,`), `project_id`, `file_name`, `size`. Phản hồi: `{ success, imageInfo: { id_base, status: "SUCCESS", url } }`. Ảnh dùng cho tham số `images` của create-video phải được upload qua đây.
 
-### Upscale ảnh — `/api/apps/go-mmo/ai_templates/tools`
+### Upscale ảnh — `/api/apps/go-mmo/ai_templates/tools` (GAIA đã gỡ 2026-10-11)
+
+**Lỗi phía Gommo (2026-10-11):** gửi `url` ảnh công khai trên `ai-cdn.gommo.net` (tải được, HTTP 200) vẫn nhận `{ error, message: "Upload ảnh thất bại (HTTP 401)" }`. Lần đầu Gommo vẫn trừ 200 credit ("Upscale Image with AI Credit [4K]") mà không có ảnh trong `/ai/images`; lần thứ hai không trừ. Giá thật của upscale là 200, không phải 300/500.
 
 Tham số: `id_base` = `image_resolution` (cố định), `url` (ảnh cần upscale), `project_id`. Trả kết quả ngay, không cần poll: `{ success, imageInfo: { id_base, status, model: "upscale", url, credit }, balancesInfo: { credits_ai } }`.
 

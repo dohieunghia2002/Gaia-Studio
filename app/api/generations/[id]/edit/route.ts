@@ -8,16 +8,17 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export const maxDuration = 120;
 
-/** Tạo bản sửa từ một phiên bản ảnh. */
+/** Tạo một hoặc nhiều bản sửa (quantity 1–4) từ một phiên bản ảnh. */
 export const POST = handle(async (req: NextRequest, ctx: Ctx) => {
   const user = await requireUserApi();
   const { id } = await ctx.params;
   if (!isUuid(id)) throw new ApiError(404, 'not_found', 'Không tìm thấy ảnh này.');
-  const body = await readJson<{ prompt?: string; model?: string; expectedCredits?: number }>(req);
-  const item = await editImage(user.id, id, {
+  const body = await readJson<{ prompt?: string; model?: string; expectedCredits?: number; quantity?: number }>(req);
+  const items = await editImage(user.id, id, {
     prompt: body.prompt ?? '',
     model: body.model,
     expectedCredits: Number(body.expectedCredits),
+    quantity: Number(body.quantity) || 1,
   });
-  return json({ item, balance: await getBalance(user.id) }, 201);
+  return json({ items, balance: await getBalance(user.id) }, 201);
 });

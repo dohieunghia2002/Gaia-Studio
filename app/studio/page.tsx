@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getProfile, requireUserPage } from '@/lib/auth.server';
 import { getCatalog } from '@/lib/models.server';
 import { getBalance } from '@/lib/credits.server';
-import { getDetail, listLibrary } from '@/lib/generations.server';
+import { getDetail, listLibrary, trashCount } from '@/lib/generations.server';
 import { isUuid } from '@/lib/api.server';
 import { CreditProvider } from '@/components/CreditContext';
 import { ToastProvider } from '@/components/Toasts';
@@ -22,10 +22,11 @@ export default async function StudioPage({
   const initialPrompt = text ? { kind: (kind === 'image' ? 'image' : 'video') as Kind, prompt: text } : null;
   const user = await requireUserPage(initialPrompt ? promptHref(initialPrompt.kind, initialPrompt.prompt) : '/studio');
 
-  const [profile, balance, library, catalog] = await Promise.all([
+  const [profile, balance, library, trash, catalog] = await Promise.all([
     getProfile(user),
     getBalance(user.id),
     listLibrary(user.id),
+    trashCount(user.id),
     getCatalog().catch(() => ({ image: [], video: [] })),
   ]);
 
@@ -43,6 +44,7 @@ export default async function StudioPage({
           profile={profile}
           initialItems={library.items}
           initialCursor={library.nextCursor}
+          initialTrashCount={trash}
           initialCatalog={catalog}
           reuse={reuse}
           initialPrompt={reuse ? null : initialPrompt}

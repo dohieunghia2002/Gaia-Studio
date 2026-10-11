@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 GAIA Studio is a multi-user web app for generating AI images and videos. Users sign in with Google, buy GAIA credits through PayOS, and spend them on generations. Generation runs on the third-party **Gommo** API (`https://api.gommo.net`), reached through the founder's 79ai account, so Gommo credits are GAIA's cost and never the user's balance. Supabase stores users, the library and the credit wallet.
 
-All UI copy and most code comments are in Vietnamese (`<html lang="vi">`). Creator terms stay in English (prompt, model, ratio, resolution, start/end frame, reference, upscale, credit); actions and statuses are Vietnamese. The UI was rebuilt on 2026-10-08 from `../mockup-gaia/GAIA-Studio-mockup.html` (the "Phòng tối"/Darkroom design). Change the mockup and the app together, and match the mockup's classes in `app/globals.css`.
+All UI copy and most code comments are in Vietnamese (`<html lang="vi">`). Creator terms stay in English (prompt, model, ratio, resolution, start/end frame, reference, credit); actions and statuses are Vietnamese. The UI was rebuilt on 2026-10-08 from `../mockup-gaia/GAIA-Studio-mockup.html` (the "Phòng tối"/Darkroom design). Change the mockup and the app together, and match the mockup's classes in `app/globals.css`.
 
 Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Supabase (`@supabase/ssr` + `supabase-js`), `qrcode`. There is **no Tailwind**: styling is plain CSS in `app/globals.css`, ported from the mockup. Fonts come from `next/font` (Be Vietnam Pro as `--font-ui`, JetBrains Mono as `--font-mono`). The `@/*` alias points to the project root. `SETUP.md` (Vietnamese) covers the Supabase, Google OAuth and PayOS setup.
 
@@ -87,14 +87,25 @@ Gommo's response shapes:
 - `credit`/`credit_fee` are the real charge and equal the `/ai/models` price row: the balance dropped by exactly the listed 6,800. `GAIA_SETTLE_ACTUAL_COST=1` is safe to enable (still off).
 - Gommo does not return the translated prompt for `translate_to_en`; `videoInfo.prompt` stays the Vietnamese original, so `prompt_sent` stays empty.
 
-**Still unverified (needs a run through the app itself):**
+**Verified 2026-10-11** (the founder's QA run through the app):
 
-- The element format of `images` (video start/end frames) and `subjects` (image references). The code sends `[{ id_base, url }]`. `toGommoImageRefs` in `lib/gommo.ts` is the single place to change it.
-- The upscale model and its price. GAIA holds the higher estimate of 500 Gommo credits.
+- `subjects` as `[{ id_base, url }]` works: reference images are used. Video `images` (start/end frames) go through the same `toGommoImageRefs` but are still untested.
+- Jobs keep running after the tab closes.
+- An edit costs the same as a create (Nano Banana 2 vip 1k = 400 Gommo credits).
+- `users/paymentsHistory` (`currency_name=credits_ai`) lists every real charge and refund for free. Use it to audit costs.
 
-Images are versioned. Edits (`op='edit'`, `editImage` + `base64Image` data URL) and upscales (`op='upscale'`, `ai_templates/tools` `image_resolution`, synchronous) are `generations` rows with `root_id`/`source_id`. The library lists roots only (`root_id is null`), with version count, total credits and the latest successful version as the thumbnail.
+**Upscale was removed on 2026-10-11.** Gommo's `ai_templates/tools` `image_resolution` returned `Upload ảnh thất bại (HTTP 401)` for public source URLs. It charged 200 credits once with no output. The founder chose to drop the feature and build one later. Old `op='upscale'` rows stay in the DB (the check constraint allows them), and the server filters them out of versions and summaries.
 
-"Xoá khỏi thư viện" is a soft delete (`deleted_at`), because Gommo has no delete API. Undo restores the rows that share the same `deleted_at` stamp.
+Images are versioned. Edits (`op='edit'`, `editImage` + `base64Image` data URL, 1–4 per request) are `generations` rows with `root_id`/`source_id`. The library lists roots only (`root_id is null`), with version count, total credits and the latest successful version as the thumbnail. A layers badge on the card marks images with more than one version.
+
+**Trash (Thùng rác).**
+
+- "Chuyển vào thùng rác" soft-deletes the root and its versions with one `deleted_at` stamp. The undo toast restores the rows that carry that stamp.
+- The Studio tab "Thùng rác" lists deleted roots (`?trash=1`, ordered by `deleted_at`). From there an item can be restored (`POST /restore` without `deletedAt` reuses the item's own stamp) or deleted permanently (`DELETE ?scope=permanent`). "Dọn thùng rác" is `DELETE /api/generations/trash`.
+- Permanent delete really deletes the rows. Versions cascade, and `credit_ledger.generation_id` is set null, so the history stays intact. Files on Gommo can't be deleted (no API).
+- Items in the trash for `TRASH_DAYS` (30, `lib/trash.ts`) are purged lazily whenever the trash is listed.
+- Running jobs are never hard-deleted.
+- Deleting a single edit version ("Xoá phiên bản này") stays a soft delete with undo. It doesn't show in the trash and is purged after 30 days.
 
 Downloads go through `/api/generations/[id]/download`, because Gommo's CDN is cross-origin and `<a download>` can't force a download.
 
@@ -124,3 +135,6 @@ Prompt translation sits behind `preparePrompt()` (`lib/prompt.server.ts`). For n
   - Its "Model và giá" table lists the live catalog (available models, featured first) with each model's "from" price.
 - No placeholder art anywhere (no colour blocks standing in for images). `Suggestion.sample` in `lib/suggestions.ts` is only for real GAIA outputs stored in `public/samples/`; suggestion cards and the landing "Tạo bằng GAIA" section render media only when a sample exists.
 - Mono type is for numbers, params and credit only, not for labels or eyebrows. Media labels read "Ảnh · 3:4" / "Video · 16:9", not uppercase.
+- Library cells always show the whole image or video ("Trọn khung"). The founder removed the "Lấp đầy" (cover) option on 2026-10-11.
+- Pasting an image (Ctrl+V) into the composer's prompt box adds it: as a Reference in image mode, or as the Start and then End frame in video mode (`pasteImages` in `StudioApp`). Pasting text behaves normally.
+- The credit history can be sorted Mới nhất / Cũ nhất (`/api/credits?order=asc|desc`; `before` is the id cursor in either direction).

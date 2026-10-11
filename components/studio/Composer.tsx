@@ -50,7 +50,7 @@ export function draftCost(catalog: Catalog, draft: Draft) {
 
 const QUANTITIES = ['1', '2', '3', '4'];
 
-function OptionChip({
+export function OptionChip({
   label,
   value,
   options,
@@ -179,6 +179,7 @@ export function Composer({
   submitting,
   onSubmit,
   onPickFile,
+  onPasteImages,
   textareaRef,
 }: {
   catalog: Catalog;
@@ -188,6 +189,7 @@ export function Composer({
   submitting: boolean;
   onSubmit: () => void;
   onPickFile: (slot: 'start' | 'end' | 'ref', file: File) => void;
+  onPasteImages: (files: File[]) => void;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -290,7 +292,7 @@ export function Composer({
                   onRemove={() => setDraft((d) => ({ ...d, start: null, end: null }))}
                 />
               ) : (
-                <button type="button" className="dashed" onClick={() => openFile('start')}>
+                <button type="button" className="dashed" title="Chọn ảnh, hoặc dán ảnh (Ctrl+V) vào ô prompt" onClick={() => openFile('start')}>
                   <Icon name="plus" />
                   Start frame
                 </button>
@@ -324,7 +326,7 @@ export function Composer({
                 />
               ))}
               {draft.refs.length < model.maxReferences && (
-                <button type="button" className="dashed" onClick={() => openFile('ref')}>
+                <button type="button" className="dashed" title="Chọn ảnh, hoặc dán ảnh (Ctrl+V) vào ô prompt" onClick={() => openFile('ref')}>
                   <Icon name="plus" />
                   Reference
                 </button>
@@ -366,6 +368,13 @@ export function Composer({
               e.preventDefault();
               if (canSubmit) onSubmit();
             }
+          }}
+          onPaste={(e) => {
+            // Dán ảnh (vd "Copy image" trên trình duyệt) → thêm ảnh; dán chữ thì giữ như bình thường.
+            const files = Array.from(e.clipboardData?.files ?? []).filter((f) => f.type.startsWith('image/'));
+            if (!files.length) return;
+            e.preventDefault();
+            onPasteImages(files);
           }}
         />
 

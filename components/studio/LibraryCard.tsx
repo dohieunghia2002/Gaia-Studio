@@ -6,6 +6,7 @@ import { Icon } from '../Icon';
 import { useDismiss } from '../useDismiss';
 import { paramSummary, ratioLabel, ratioNumber } from '@/lib/catalog';
 import { fmtClock, fmtElapsed, fmtNumber } from '@/lib/format';
+import { trashDaysLeft } from '@/lib/trash';
 import type { LibraryItem } from '@/lib/types';
 
 export function detailHref(item: { id: string; kind: 'image' | 'video' }) {
@@ -174,6 +175,13 @@ export function LibraryCard({
       <Link href={detailHref(item)}>
         <div className="frame">
           <Media item={item} />
+          {multi && (
+            <span className="ver-badge" title={`${item.versionCount} phiên bản`}>
+              <Icon name="layers" size={14} />
+              {item.versionCount}
+              <span className="sr-only"> phiên bản</span>
+            </span>
+          )}
           <span className="media-label">
             {item.kind === 'video' ? 'Video' : 'Ảnh'}
             {item.params.ratio ? ` · ${ratioLabel(item.params.ratio)}` : ''}
@@ -237,10 +245,101 @@ export function LibraryCard({
               }}
             >
               <Icon name="trash" />
-              Xoá khỏi thư viện
+              Chuyển vào thùng rác
             </button>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** Một mục trong Thùng rác: xem trước, số ngày còn lại, Khôi phục hoặc Xoá vĩnh viễn (có bước xác nhận). */
+export function TrashCard({
+  item,
+  now,
+  onRestore,
+  onPurge,
+}: {
+  item: LibraryItem;
+  now: number | null;
+  onRestore: (item: LibraryItem) => Promise<void>;
+  onPurge: (item: LibraryItem) => Promise<void>;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const running = item.status === 'pending' || item.status === 'processing';
+  const daysLeft = now != null && item.deletedAt ? trashDaysLeft(item.deletedAt, now) : null;
+  const run = async (fn: (item: LibraryItem) => Promise<void>) => {
+    setBusy(true);
+    try {
+      await fn(item);
+    } finally {
+      setBusy(false);
+      setConfirming(false);
+    }
+  };
+  return (
+    <div className="card trash-card">
+      {item.status === 'success' ? (
+        <div className="frame">
+          <Media item={item} />
+          {item.kind === 'image' && item.versionCount > 1 && (
+            <span className="ver-badge" title={`${item.versionCount} phiên bản`}>
+              <Icon name="layers" size={14} />
+              {item.versionCount}
+              <span className="sr-only"> phiên bản</span>
+            </span>
+          )}
+          <span className="media-label">
+            {item.kind === 'video' ? 'Video' : 'Ảnh'}
+            {item.params.ratio ? ` · ${ratioLabel(item.params.ratio)}` : ''}
+          </span>
+        </div>
+      ) : (
+        <div className="frame status">
+          <span className="muted" style={{ fontSize: 13, fontWeight: 500 }}>
+            {running ? 'Đang tạo dở' : `Không tạo được ${item.kind === 'video' ? 'video' : 'ảnh'}`}
+          </span>
+        </div>
+      )}
+      <div className="card-body">
+        <p className="card-title">{item.prompt}</p>
+        <p className="trash-left">
+          {daysLeft == null ? '\u00a0' : daysLeft === 0 ? 'Tự xoá vĩnh viễn hôm nay' : `Tự xoá vĩnh viễn sau ${daysLeft} ngày`}
+        </p>
+        <div className="trash-actions">
+          {confirming ? (
+            <>
+              <span className="danger-text" style={{ fontSize: 13, fontWeight: 500, marginRight: 'auto' }}>
+                Xoá vĩnh viễn?
+              </span>
+              <button type="button" className="mini-btn danger-fill" disabled={busy} onClick={() => run(onPurge)}>
+                Xoá
+              </button>
+              <button type="button" className="mini-btn" disabled={busy} onClick={() => setConfirming(false)}>
+                Huỷ
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="mini-btn" disabled={busy} onClick={() => run(onRestore)}>
+                <Icon name="undo" size={14} />
+                Khôi phục
+              </button>
+              <button
+                type="button"
+                className="mini-btn danger-ghost"
+                disabled={busy || running}
+                title={running ? 'Đợi tạo xong rồi hãy xoá vĩnh viễn' : undefined}
+                onClick={() => setConfirming(true)}
+              >
+                <Icon name="trash" size={14} />
+                Xoá vĩnh viễn
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -2,10 +2,11 @@ import 'server-only';
 import { supabaseAdmin } from './supabase/admin';
 import { ApiError } from './api.server';
 import { GommoError, gommoPost, toGommoImageRefs, VIDEO_STATUS, type GommoImageInfo, type GommoVideoInfo } from './gommo';
-import { gaiaCredits, getModel, UPSCALE_GOMMO_HOLD } from './models.server';
+import { gaiaCredits, getModel } from './models.server';
 import { preparePrompt } from './prompt.server';
 import { priceFor, resolveSelection, selectionFields } from './catalog';
 import { getBalance } from './credits.server';
+import { TRASH_DAYS } from './trash';
 import type {
   CatalogModel,
   GenerationInputs,
@@ -83,55 +84,79 @@ export function toItem(r: GenRow): GenerationItem {
     refundedCredits: r.refunded_credits,
     createdAt: r.created_at,
     finishedAt: r.finished_at,
+    deletedAt: r.deleted_at,
   };
 }
 
 const db = () => supabaseAdmin();
 
-async function getRow(userId: string, id: string): Promise<GenRow> {
+async function getRow(userId: string, id: string, opts: { deleted?: boolean } = {}): Promise<GenRow> {
   const { data, error } = await db().from('generations').select(COLS).eq('id', id).eq('user_id', userId).maybeSingle();
   if (error) throw error;
-  if (!data || (data as GenRow).deleted_at) throw new ApiError(404, 'not_found', 'Không tìm thấy mục này trong thư viện.');
-  return data as GenRow;
+  const row = data as GenRow | null;
+  // Mặc định chỉ lấy mục đang trong thư viện; `deleted: true` chỉ lấy mục đang trong Thùng rác.
+  if (!row || Boolean(row.deleted_at) !== Boolean(opts.deleted)) {
+    throw new ApiError(404, 'not_found', 'Không tìm thấy mục này trong thư viện.');
+  }
+  return row;
 }
 
 // ───────────────────────── Thư viện ─────────────────────────
 
 export async function listLibrary(
   userId: string,
-  opts: { kind?: Kind; before?: string; limit?: number } = {},
+  opts: { kind?: Kind; before?: string; limit?: number; trash?: boolean } = {},
 ): Promise<{ items: LibraryItem[]; nextCursor: string | null }> {
   const limit = Math.min(Math.max(opts.limit ?? 40, 1), 100);
+  // Thư viện xếp theo ngày tạo; Thùng rác xếp theo lúc xoá (mới xoá lên đầu).
+  const sortKey = opts.trash ? 'deleted_at' : 'created_at';
+  if (opts.trash) await purgeExpired(userId);
   let q = db()
     .from('generations')
     .select(COLS)
     .eq('user_id', userId)
     .is('root_id', null)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
+    .order(sortKey, { ascending: false })
     .limit(limit + 1);
+  q = opts.trash ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
   if (opts.kind) q = q.eq('kind', opts.kind);
-  if (opts.before) q = q.lt('created_at', opts.before);
+  if (opts.before) q = q.lt(sortKey, opts.before);
   const { data, error } = await q;
   if (error) throw error;
   const rows = (data ?? []) as GenRow[];
   const page = rows.slice(0, limit);
   const items = await withVersionSummary(page);
-  return { items, nextCursor: rows.length > limit ? page[page.length - 1].created_at : null };
+  const last = page[page.length - 1];
+  return { items, nextCursor: rows.length > limit ? (opts.trash ? last.deleted_at : last.created_at) : null };
+}
+
+/** Số mục trong Thùng rác (hiện trên tab). */
+export async function trashCount(userId: string): Promise<number> {
+  const { count, error } = await db()
+    .from('generations')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .is('root_id', null)
+    .not('deleted_at', 'is', null);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 async function withVersionSummary(roots: GenRow[]): Promise<LibraryItem[]> {
   const imageRootIds = roots.filter((r) => r.kind === 'image').map((r) => r.id);
+  const rootDeletedAt = new Map(roots.map((r) => [r.id, r.deleted_at]));
   const versionsByRoot = new Map<string, GenRow[]>();
   if (imageRootIds.length) {
     const { data, error } = await db()
       .from('generations')
       .select(COLS)
       .in('root_id', imageRootIds)
-      .is('deleted_at', null)
+      .neq('op', 'upscale')
       .order('created_at', { ascending: true });
     if (error) throw error;
     for (const v of (data ?? []) as GenRow[]) {
+      // Mục trong thư viện: các phiên bản chưa xoá. Mục trong Thùng rác: các phiên bản bị xoá cùng lúc với nó.
+      if (v.deleted_at !== rootDeletedAt.get(v.root_id!)) continue;
       const list = versionsByRoot.get(v.root_id!) ?? [];
       list.push(v);
       versionsByRoot.set(v.root_id!, list);
@@ -162,6 +187,7 @@ export async function getDetail(userId: string, id: string): Promise<{ root: Gen
     .eq('root_id', root.id)
     .eq('user_id', userId)
     .is('deleted_at', null)
+    .neq('op', 'upscale')
     .order('created_at', { ascending: true });
   if (error) throw error;
   return { root: toItem(root), versions: [root, ...((data ?? []) as GenRow[])].map(toItem) };
@@ -431,7 +457,6 @@ async function refund(row: GenRow, amount: number | null, title: string, detail:
 }
 
 function refundDetail(row: GenRow): string {
-  if (row.op === 'upscale') return `Upscale lỗi · ${row.model_name}`;
   if (row.op === 'edit') return `Sửa ảnh lỗi · ${row.model_name}`;
   return `${row.kind === 'video' ? 'Video' : 'Ảnh'} lỗi · ${row.model_name}`;
 }
@@ -559,7 +584,7 @@ export async function syncRunning(userId: string): Promise<GenerationItem[]> {
   return synced.map(toItem);
 }
 
-// ───────────────────────── Sửa ảnh, upscale ─────────────────────────
+// ───────────────────────── Sửa ảnh ─────────────────────────
 
 async function successfulImage(userId: string, id: string): Promise<GenRow> {
   const row = await getRow(userId, id);
@@ -581,8 +606,8 @@ async function fetchAsDataUrl(url: string): Promise<string> {
 export async function editImage(
   userId: string,
   sourceId: string,
-  req: { prompt: string; model?: string; expectedCredits: number },
-): Promise<GenerationItem> {
+  req: { prompt: string; model?: string; expectedCredits: number; quantity?: number },
+): Promise<GenerationItem[]> {
   const source = await successfulImage(userId, sourceId);
   const prompt = cleanPrompt(req.prompt);
   const model = await loadModel('image', req.model || source.model);
@@ -592,80 +617,48 @@ export async function editImage(
   if (credits !== Number(req.expectedCredits)) {
     throw new ApiError(409, 'price_changed', `Giá vừa cập nhật thành ${credits} credit. Bạn kiểm tra lại rồi bấm Tạo bản sửa.`);
   }
+  const quantity = Math.min(Math.max(Math.floor(Number(req.quantity) || 1), 1), MAX_QUANTITY);
+  if ((await getBalance(userId)) < credits * quantity) {
+    throw new ApiError(402, 'insufficient_credits', 'Không đủ credit. Bạn nạp thêm credit để tiếp tục.');
+  }
   const base64Image = await fetchAsDataUrl(source.url!);
-  const row = await insertGeneration({
-    userId,
-    kind: 'image',
-    op: 'edit',
-    rootId: source.root_id ?? source.id,
-    sourceId: source.id,
-    model: model.id,
-    modelName: model.name,
-    params,
-    inputs: {},
-    prompt,
-    credits,
-    title: 'Sửa ảnh',
-    detail: model.name,
-  });
-  return toItem(await submitToGommo(row, { model, base64Image }));
-}
-
-export function upscaleCredits() {
-  return gaiaCredits(UPSCALE_GOMMO_HOLD);
-}
-
-export async function upscaleImage(userId: string, sourceId: string, expectedCredits: number): Promise<GenerationItem> {
-  const source = await successfulImage(userId, sourceId);
-  const credits = upscaleCredits();
-  if (credits !== Number(expectedCredits)) {
-    throw new ApiError(409, 'price_changed', `Giá upscale vừa cập nhật thành ${credits} credit.`);
-  }
-  const row = await insertGeneration({
-    userId,
-    kind: 'image',
-    op: 'upscale',
-    rootId: source.root_id ?? source.id,
-    sourceId: source.id,
-    model: 'image_resolution',
-    modelName: 'Upscale',
-    params: source.params ?? {},
-    inputs: {},
-    prompt: source.prompt,
-    credits,
-    title: 'Upscale ảnh',
-    detail: source.model_name,
-  });
-  try {
-    const data = await gommoPost<{ imageInfo?: GommoImageInfo }>('/api/apps/go-mmo/ai_templates/tools', {
-      id_base: 'image_resolution',
-      url: source.url,
-      project_id: 'default',
-    });
-    const info = data.imageInfo;
-    if (info?.status === 'ERROR') return toItem(await failGeneration(row, info.message || 'Upscale lỗi'));
-    if (info?.url) {
-      return toItem(await succeedGeneration(row, { url: info.url, thumb: info.url_thumb || info.url_preview, cost: info.credit }));
+  const rows: GenRow[] = [];
+  for (let i = 0; i < quantity; i++) {
+    try {
+      rows.push(
+        await insertGeneration({
+          userId,
+          kind: 'image',
+          op: 'edit',
+          rootId: source.root_id ?? source.id,
+          sourceId: source.id,
+          model: model.id,
+          modelName: model.name,
+          params,
+          inputs: {},
+          prompt,
+          credits,
+          title: 'Sửa ảnh',
+          detail: model.name,
+        }),
+      );
+    } catch (err) {
+      if (rows.length) break; // đã tạo được vài bản thì vẫn chạy các bản đó
+      throw err;
     }
-    if (info?.id_base) {
-      // Không có kết quả ngay thì theo dõi như một job ảnh thường.
-      const { data: updated } = await db()
-        .from('generations')
-        .update({ gommo_id: info.id_base, status: 'processing', updated_at: new Date().toISOString() })
-        .eq('id', row.id)
-        .select(COLS)
-        .single();
-      return toItem(updated as GenRow);
-    }
-    return toItem(await failGeneration(row, 'Gommo không trả kết quả upscale'));
-  } catch (err) {
-    return toItem(await failGeneration(row, err instanceof Error ? err.message : 'Upscale lỗi'));
   }
+  const started = await Promise.all(rows.map((row) => submitToGommo(row, { model, base64Image })));
+  return started.map(toItem);
 }
 
-// ───────────────────────── Xoá, hoàn tác, tải về ─────────────────────────
+// ───────────────────────── Thùng rác, hoàn tác, tải về ─────────────────────────
+//
+// Xoá mềm: mục (gốc + mọi phiên bản) được đánh dấu `deleted_at` và nằm trong Thùng rác.
+// Xoá cứng: xoá hẳn dòng trong DB (các phiên bản đi theo nhờ `on delete cascade`; lịch sử credit
+// giữ nguyên vì `credit_ledger.generation_id` là `on delete set null`). File trên Gommo không xoá được
+// (Gommo không có API xoá), GAIA chỉ quên đường dẫn. Mục đang tạo dở không bao giờ bị xoá cứng.
 
-/** Xoá khỏi thư viện (ẩn, không xoá file trên Gommo vì Gommo không có API xoá). */
+/** Chuyển cả ảnh/video vào Thùng rác, hoặc xoá một phiên bản sửa (`scope: 'version'`). */
 export async function softDelete(userId: string, id: string, scope: 'item' | 'version') {
   const row = await getRow(userId, id);
   const stamp = new Date().toISOString();
@@ -685,13 +678,55 @@ export async function softDelete(userId: string, id: string, scope: 'item' | 've
   return { rootId, deletedAt: stamp };
 }
 
-export async function restoreDeleted(userId: string, id: string, deletedAt: string) {
+/**
+ * Hoàn tác xoá, hoặc khôi phục từ Thùng rác: đưa lại mọi dòng bị xoá cùng lúc (cùng `deleted_at`).
+ * Không truyền `deletedAt` thì lấy dấu thời gian xoá của chính mục đó trong Thùng rác.
+ */
+export async function restoreDeleted(userId: string, id: string, deletedAt?: string) {
+  const stamp = deletedAt ?? (await getRow(userId, id, { deleted: true })).deleted_at!;
   const { error } = await db()
     .from('generations')
     .update({ deleted_at: null })
     .eq('user_id', userId)
-    .eq('deleted_at', deletedAt)
+    .eq('deleted_at', stamp)
     .or(`id.eq.${id},root_id.eq.${id}`);
+  if (error) throw error;
+}
+
+/** Xoá vĩnh viễn một mục đang trong Thùng rác. */
+export async function purgeItem(userId: string, id: string) {
+  const row = await getRow(userId, id, { deleted: true });
+  if (row.root_id) throw new ApiError(400, 'bad_request', 'Chỉ xoá vĩnh viễn được cả ảnh hoặc video.');
+  if (RUNNING.includes(row.status)) {
+    throw new ApiError(409, 'running', 'Mục này đang tạo dở. Đợi tạo xong rồi hãy xoá vĩnh viễn.');
+  }
+  const { error } = await db().from('generations').delete().eq('id', row.id).eq('user_id', userId);
+  if (error) throw error;
+}
+
+/** Dọn Thùng rác: xoá vĩnh viễn mọi mục trong đó, trừ mục đang tạo dở. Trả về số mục đã xoá. */
+export async function emptyTrash(userId: string): Promise<number> {
+  const { data, error } = await db()
+    .from('generations')
+    .delete()
+    .eq('user_id', userId)
+    .is('root_id', null)
+    .not('deleted_at', 'is', null)
+    .not('status', 'in', `(${RUNNING.join(',')})`)
+    .select('id');
+  if (error) throw error;
+  return data?.length ?? 0;
+}
+
+/** Tự xoá vĩnh viễn những gì đã nằm trong Thùng rác (hoặc phiên bản đã xoá) quá TRASH_DAYS ngày. */
+async function purgeExpired(userId: string) {
+  const cutoff = new Date(Date.now() - TRASH_DAYS * 24 * 60 * 60_000).toISOString();
+  const { error } = await db()
+    .from('generations')
+    .delete()
+    .eq('user_id', userId)
+    .lt('deleted_at', cutoff)
+    .not('status', 'in', `(${RUNNING.join(',')})`);
   if (error) throw error;
 }
 

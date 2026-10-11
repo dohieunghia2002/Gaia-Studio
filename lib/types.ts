@@ -2,6 +2,7 @@
 
 export type Kind = 'image' | 'video';
 export type GenStatus = 'pending' | 'processing' | 'success' | 'error';
+// 'upscale' chỉ còn ở vài dòng cũ trong DB (tính năng đã gỡ 2026-10-11); server lọc bỏ khi trả về.
 export type GenOp = 'create' | 'edit' | 'upscale';
 
 export interface Option {
@@ -74,6 +75,8 @@ export interface GenerationItem {
   refundedCredits: number;
   createdAt: string;
   finishedAt: string | null;
+  /** Lúc chuyển vào Thùng rác (null nếu đang ở thư viện). */
+  deletedAt: string | null;
 }
 
 /** Một ô trong thư viện: bản gốc + tóm tắt các phiên bản sửa (chỉ ảnh mới có). */

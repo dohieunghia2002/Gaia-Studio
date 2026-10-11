@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { requireUserPage } from '@/lib/auth.server';
-import { getCatalog, gaiaCredits, UPSCALE_GOMMO_FROM } from '@/lib/models.server';
+import { getCatalog } from '@/lib/models.server';
 import { getBalance } from '@/lib/credits.server';
-import { getDetail, upscaleCredits } from '@/lib/generations.server';
+import { getDetail } from '@/lib/generations.server';
 import { isUuid } from '@/lib/api.server';
-import { fmtNumber } from '@/lib/format';
 import { CreditProvider } from '@/components/CreditContext';
 import { ToastProvider } from '@/components/Toasts';
 import { ImageDetail } from '@/components/detail/ImageDetail';
@@ -21,12 +20,6 @@ export default async function ImagePage({ params }: { params: Promise<{ id: stri
   if (detail.root.kind === 'video') redirect(`/studio/video/${detail.root.id}`);
 
   const [balance, catalog] = await Promise.all([getBalance(user.id), getCatalog().catch(() => ({ image: [], video: [] }))]);
-  const hold = upscaleCredits();
-  // Khi đã bật hoàn chênh lệch theo giá thật thì hiện "từ X", còn không thì hiện đúng số sẽ trừ.
-  const label =
-    process.env.GAIA_SETTLE_ACTUAL_COST === '1'
-      ? `từ ${fmtNumber(gaiaCredits(UPSCALE_GOMMO_FROM))} credit`
-      : `${fmtNumber(hold)} credit`;
 
   return (
     <CreditProvider initial={balance}>
@@ -35,7 +28,6 @@ export default async function ImagePage({ params }: { params: Promise<{ id: stri
           initialRoot={detail.root}
           initialVersions={detail.versions}
           imageModels={catalog.image}
-          upscale={{ credits: hold, label }}
         />
       </ToastProvider>
     </CreditProvider>

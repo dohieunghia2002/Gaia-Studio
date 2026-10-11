@@ -22,12 +22,6 @@ export function gaiaCredits(gommoCredits: number): number {
   return Math.ceil((gommoCredits * costPerGommoCredit() * markup()) / 100);
 }
 
-// Upscale ảnh qua `ai_templates/tools` (image_resolution) trả giá thật sau khi chạy xong.
-// Chưa rõ nó ứng với "Nâng cấp ảnh AI" (300) hay Topaz (500), nên giữ trước theo giá cao
-// rồi hoàn chênh lệch khi biết giá thật. Nút hiển thị "từ" theo giá thấp.
-export const UPSCALE_GOMMO_FROM = 300;
-export const UPSCALE_GOMMO_HOLD = 500;
-
 // ── Danh mục ──
 
 /** Model không muốn bán cho người dùng (giá trị `model` của Gommo). */
