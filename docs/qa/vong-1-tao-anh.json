@@ -1,0 +1,688 @@
+[
+  {
+    "credit": 0,
+    "expected": [
+      "Góc phải hiện 500 credit.",
+      "Trang Credit: số dư 500, hạn dùng 08/01/2027.",
+      "Lịch sử có dòng \"Tặng credit · Credit dùng thử\" +500."
+    ],
+    "group": "A. Chuẩn bị",
+    "id": "A01",
+    "note": "",
+    "order": 1,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Mở localhost:3000/studio, nhìn góc phải trên.",
+      "Bấm vào ô credit để mở bảng nhỏ.",
+      "Mở trang Credit & giao dịch."
+    ],
+    "title": "Ví dùng thử hiện đúng",
+    "updatedAt": "2026-10-11T00:16:18.286Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Trang gợi ý đầu có ảnh/video mẫu thật; rê chuột lên video thì video phát.",
+      "Bấm thẻ: prompt được điền vào khung soạn, chế độ Ảnh; không tạo gì, số dư không đổi.",
+      "Gợi ý khác: trang 2 chỉ có chữ, các thẻ cao bằng nhau."
+    ],
+    "group": "B. Khung soạn ảnh",
+    "id": "B01",
+    "note": "",
+    "order": 2,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Khi thư viện còn trống, bấm một thẻ Ảnh trong \"Ý tưởng để bắt đầu\".",
+      "Bấm \"Gợi ý khác\"."
+    ],
+    "title": "Gợi ý ở Studio lần đầu (làm trước C01, khi thư viện còn trống)",
+    "updatedAt": "2026-10-11T00:18:24.263Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Model chuyển sang Nano Banana 2 (model ảnh đầu danh sách).",
+      "Có các chip Ratio, Resolution, Mode, Số lượng và nút + Reference.",
+      "Không còn nút Start frame / End frame.",
+      "Ô nhập ghi \"Mô tả ảnh bạn muốn tạo… (Enter để gửi)\"."
+    ],
+    "group": "B. Khung soạn ảnh",
+    "id": "B02",
+    "note": "",
+    "order": 3,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Trong khung soạn ở cuối trang, bấm Ảnh."
+    ],
+    "title": "Chuyển sang chế độ Ảnh",
+    "updatedAt": "2026-10-11T00:19:26.819Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Nút Tạo mờ, không bấm được.",
+      "Enter không gửi gì, số dư không đổi."
+    ],
+    "group": "B. Khung soạn ảnh",
+    "id": "B03",
+    "note": "",
+    "order": 4,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Để trống ô prompt, bấm Tạo và nhấn Enter.",
+      "Gõ vài dấu cách rồi thử lại."
+    ],
+    "title": "Nút Tạo khoá khi chưa có prompt",
+    "updatedAt": "2026-10-11T00:20:27.107Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "1K × 1 ảnh = 6 credit.",
+      "Số lượng 4 = 24 credit.",
+      "2K đắt hơn 1K (11 hoặc 12 credit một ảnh tuỳ Mode)."
+    ],
+    "group": "B. Khung soạn ảnh",
+    "id": "B04",
+    "note": "",
+    "order": 5,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Chọn Nano Banana 2, Resolution 1K, Số lượng 1, đọc số credit cạnh nút Tạo.",
+      "Đổi Số lượng thành 4.",
+      "Đổi Resolution sang 2K, xem giá, rồi trả về 1K và Số lượng 1."
+    ],
+    "title": "Giá đổi theo thông số",
+    "updatedAt": "2026-10-11T00:21:19.093Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Mỗi dòng có tên, nhãn khả năng (Text → Image, Reference…) và giá \"từ X\".",
+      "Model đang chọn có dấu ✓.",
+      "Model tạm ngưng (nếu có) bị mờ và ghi lý do.",
+      "Đổi model thì giá cạnh nút Tạo đổi theo."
+    ],
+    "group": "B. Khung soạn ảnh",
+    "id": "B05",
+    "note": "",
+    "order": 6,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Bấm nút tên model (Nano Banana 2).",
+      "Lướt danh sách, chọn một model khác, rồi chọn lại Nano Banana 2."
+    ],
+    "title": "Danh sách model ảnh",
+    "updatedAt": "2026-10-11T00:22:47.161Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Ô prompt chỉ nhận tối đa 2.000 ký tự."
+    ],
+    "group": "B. Khung soạn ảnh",
+    "id": "B06",
+    "note": "",
+    "order": 7,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Dán một đoạn văn dài hơn 2.000 ký tự vào ô prompt.",
+      "Xoá đi trước khi sang dòng khác."
+    ],
+    "title": "Prompt tối đa 2.000 ký tự",
+    "updatedAt": "2026-10-11T00:24:58.277Z",
+    "verify": false
+  },
+  {
+    "credit": 6,
+    "expected": [
+      "Thẻ mới xuất hiện đầu thư viện: \"Đang chờ xử lý\" rồi \"Đang render · m:ss\".",
+      "Số dư giảm 6 ngay khi bấm (500 → 494).",
+      "Khoảng 1 phút sau thẻ hiện ảnh, có thông báo \"Ảnh đã tạo xong\" kèm nút Xem.",
+      "Dòng dưới thẻ: \"Nano Banana 2 · 16:9 · 1K\" và 6 credit."
+    ],
+    "group": "C. Tạo ảnh",
+    "id": "C01",
+    "note": "",
+    "order": 8,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Gõ: Một chiếc xe đạp cũ dựng trước quán cà phê vỉa hè Hà Nội, buổi sáng, ánh nắng nghiêng",
+      "Ratio 16:9, Resolution 1K, Số lượng 1, bấm Tạo.",
+      "Chờ, không rời trang."
+    ],
+    "title": "Tạo 1 ảnh từ prompt tiếng Việt",
+    "updatedAt": "2026-10-11T00:28:33.366Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Ảnh có xe đạp cũ, quán cà phê vỉa hè, nắng sáng: đúng câu mô tả tiếng Việt.",
+      "Không có chữ lạ hay hình méo rõ ràng."
+    ],
+    "group": "C. Tạo ảnh",
+    "id": "C02",
+    "note": "",
+    "order": 9,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Mở ảnh vừa tạo ở C01."
+    ],
+    "title": "Ảnh đúng nội dung prompt",
+    "updatedAt": "2026-10-11T00:30:07.718Z",
+    "verify": false
+  },
+  {
+    "credit": 24,
+    "expected": [
+      "Hiện 4 thẻ riêng, mỗi thẻ 6 credit.",
+      "Số dư giảm 24.",
+      "Trang Credit có 4 dòng \"Tạo ảnh · Nano Banana 2 · 1K\" −6."
+    ],
+    "group": "C. Tạo ảnh",
+    "id": "C03",
+    "note": "",
+    "order": 10,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Gõ một prompt bất kỳ, Số lượng 4, bấm Tạo."
+    ],
+    "title": "Tạo 4 ảnh một lần",
+    "updatedAt": "2026-10-11T00:34:51.287Z",
+    "verify": false
+  },
+  {
+    "credit": 6,
+    "expected": [
+      "Ảnh ra đúng khổ dọc.",
+      "Trọn khung: thấy trọn ảnh trong ô vuông, hai bên có viền tối.",
+      "Lấp đầy: ảnh phủ kín ô, bị cắt bớt phần trên và dưới."
+    ],
+    "group": "C. Tạo ảnh",
+    "id": "C04",
+    "note": "Tôi ko cần chức năng Lấp đầy đâu. Cứ luôn luôn là Trọn khung thôi",
+    "order": 11,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Chọn Ratio 9:16, tạo 1 ảnh.",
+      "Trên thanh thư viện bấm \"Trọn khung\" rồi \"Lấp đầy\"."
+    ],
+    "title": "Ảnh dọc 9:16 và cách hiển thị trong ô",
+    "updatedAt": "2026-10-11T00:38:34.270Z",
+    "verify": false
+  },
+  {
+    "credit": 6,
+    "expected": [
+      "Ảnh tải lên hiện thành chip Reference có ảnh nhỏ.",
+      "Ảnh kết quả dùng đúng người hoặc đồ vật trong ảnh tham chiếu.",
+      "Nếu báo lỗi, hoặc ảnh không liên quan gì tới ảnh tham chiếu: chọn Lỗi. Khi đó cách GAIA gửi Reference sang Gommo đang sai."
+    ],
+    "group": "C. Tạo ảnh",
+    "id": "C05",
+    "note": "",
+    "order": 12,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Bấm + Reference, chọn một ảnh JPG hoặc PNG có người hay đồ vật rõ ràng.",
+      "Gõ: Đặt nhân vật trong ảnh tham chiếu vào một quán cà phê buổi tối",
+      "Bấm Tạo."
+    ],
+    "title": "Tạo ảnh có Reference",
+    "updatedAt": "2026-10-11T00:42:54.937Z",
+    "verify": true
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Báo \"Chỉ nhận ảnh PNG, JPG hoặc WEBP.\"",
+      "Không trừ credit."
+    ],
+    "group": "C. Tạo ảnh",
+    "id": "C06",
+    "note": "",
+    "order": 13,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Bấm + Reference. Trong hộp chọn file, đổi bộ lọc sang All files rồi chọn một file GIF hoặc PDF."
+    ],
+    "title": "File không hợp lệ cho Reference",
+    "updatedAt": "2026-10-11T00:43:25.382Z",
+    "verify": false
+  },
+  {
+    "credit": 6,
+    "expected": [
+      "Ảnh có trong thư viện, hoặc chuyển sang có ảnh vài giây sau khi mở.",
+      "Trang Credit chỉ có một dòng −6, không có dòng hoàn credit."
+    ],
+    "group": "C. Tạo ảnh",
+    "id": "C07",
+    "note": "Nhưng tôi test thấy hệ thống ko nhận được ảnh Copy, mà chỉ nhận được ảnh có lưu trong máy. Tôi đã thử tìm một ảnh trên Google Images, click chọn \"copy image\" và qua ô prompt của Gaia, ctrl + V để dán ảnh nhưng Gaia ko nhận được ảnh copy của tôi.",
+    "order": 14,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Tạo 1 ảnh, bấm Tạo xong thì đóng tab ngay.",
+      "Đợi 2 phút rồi mở lại localhost:3000/studio."
+    ],
+    "title": "Đóng tab khi ảnh đang tạo",
+    "updatedAt": "2026-10-11T00:49:02.742Z",
+    "verify": true
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Số credit cạnh nút chuyển màu đỏ, nút ghi \"Không đủ credit\" và không bấm được.",
+      "Có link \"Nạp credit\" dẫn sang trang Credit."
+    ],
+    "group": "C. Tạo ảnh",
+    "id": "C08",
+    "note": "",
+    "order": 15,
+    "priority": "Thấp",
+    "status": "todo",
+    "steps": [
+      "Chỉ làm được khi số dư thấp hơn giá một lần tạo (có thể để sau): chọn thông số có giá lớn hơn số dư."
+    ],
+    "title": "Không đủ credit",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Tab Ảnh chỉ hiện ảnh, không có video.",
+      "Tất cả hiện lại mọi thẻ."
+    ],
+    "group": "D. Thư viện",
+    "id": "D01",
+    "note": "",
+    "order": 16,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Bấm tab Ảnh trên thư viện, rồi bấm Tất cả."
+    ],
+    "title": "Lọc theo Ảnh",
+    "updatedAt": "2026-10-11T00:49:32.090Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Sau khi tải lại vẫn là Lấp đầy."
+    ],
+    "group": "D. Thư viện",
+    "id": "D02",
+    "note": "Tôi ko muốn có chức năng Lấp đầy này. Tất cả đều nên là Trọn khung luôn. Tính thẫm mỹ của hệ thống sẽ cao hơn.",
+    "order": 17,
+    "priority": "Thấp",
+    "status": "fail",
+    "steps": [
+      "Chọn Lấp đầy, tải lại trang (F5)."
+    ],
+    "title": "Nhớ cách hiển thị sau khi tải lại",
+    "updatedAt": "2026-10-11T00:50:25.047Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Prompt, model và thông số của ảnh đó được điền vào khung soạn.",
+      "Không tạo ảnh mới, số dư không đổi."
+    ],
+    "group": "D. Thư viện",
+    "id": "D03",
+    "note": "",
+    "order": 18,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Rê chuột lên một thẻ ảnh, bấm nút bút chì."
+    ],
+    "title": "Dùng lại prompt",
+    "updatedAt": "2026-10-11T00:51:03.456Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Thông báo \"Đã sao chép prompt\".",
+      "Dán ra đúng prompt của ảnh."
+    ],
+    "group": "D. Thư viện",
+    "id": "D04",
+    "note": "",
+    "order": 19,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Bấm ⋯ trên thẻ, chọn Sao chép prompt, rồi dán vào Notepad."
+    ],
+    "title": "Sao chép prompt",
+    "updatedAt": "2026-10-11T00:51:33.785Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Máy tải về một file ảnh mở được, đúng ảnh trên thẻ."
+    ],
+    "group": "D. Thư viện",
+    "id": "D05",
+    "note": "",
+    "order": 20,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Bấm nút tải về trên thẻ."
+    ],
+    "title": "Tải ảnh về máy",
+    "updatedAt": "2026-10-11T00:51:41.220Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Thẻ biến mất, thông báo \"Đã xoá khỏi thư viện\" có nút Hoàn tác.",
+      "Hoàn tác: thẻ quay lại đúng chỗ cũ.",
+      "Xoá không hoàn credit: trang Credit không có dòng mới."
+    ],
+    "group": "D. Thư viện",
+    "id": "D06",
+    "note": "Tôi nghĩ là chức năng xóa rồi hoàn tác này nên chuyển item đó vào \"Thùng rác\" của hệ thống. Và chỉ khi người dùng vào Thùng rác để xóa thì ảnh/video đó mới thật sự là bị xóa. Tôi đang muốn nói đến thiết kế chức năng Xóa cứng và Xóa mềm đấy.",
+    "order": 21,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Bấm ⋯ trên thẻ, chọn Xoá khỏi thư viện.",
+      "Bấm Hoàn tác trên thông báo."
+    ],
+    "title": "Xoá rồi hoàn tác",
+    "updatedAt": "2026-10-11T00:53:45.921Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Thư viện giữ nguyên, các thẻ nằm trong nhóm \"Hôm nay\"."
+    ],
+    "group": "D. Thư viện",
+    "id": "D07",
+    "note": "",
+    "order": 22,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Nhấn F5 ở Studio."
+    ],
+    "title": "Tải lại trang Studio",
+    "updatedAt": "2026-10-11T00:54:04.362Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Ảnh lớn ở giữa, nhãn \"Ảnh · 16:9 · Bản gốc\".",
+      "Cột phải: Phiên bản (Bản gốc), Thông tin (Model, Ratio, Resolution, Credit 6, Tạo lúc), Prompt gốc có nút sao chép.",
+      "Thanh trên: Upscale · từ 5 credit, Tải về, Dùng lại prompt, ⋯."
+    ],
+    "group": "E. Chi tiết, sửa ảnh, upscale",
+    "id": "E01",
+    "note": "",
+    "order": 23,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Bấm vào ảnh đã tạo ở C01."
+    ],
+    "title": "Trang chi tiết ảnh",
+    "updatedAt": "2026-10-11T00:55:51.735Z",
+    "verify": false
+  },
+  {
+    "credit": 6,
+    "expected": [
+      "Có phiên bản mới \"Chỉnh sửa 1\"; chạy xong thì hiện ảnh.",
+      "Ảnh sửa giữ bố cục ảnh gốc, chỉ đổi sang buổi tối.",
+      "Số dư giảm 6; phần Thông tin ghi Credit \"6 · tổng 12\"."
+    ],
+    "group": "E. Chi tiết, sửa ảnh, upscale",
+    "id": "E02",
+    "note": "Nhưng ta ko được chỉnh số lượng ảnh sinh ra của chỉnh sửa à?",
+    "order": 24,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Ở ô dưới ảnh gõ: Chuyển sang buổi tối, đèn đường vàng ấm",
+      "Bấm Tạo bản sửa · 6 credit."
+    ],
+    "title": "Tạo bản sửa",
+    "updatedAt": "2026-10-11T00:57:22.669Z",
+    "verify": false
+  },
+  {
+    "credit": 6,
+    "expected": [
+      "Dòng dưới ô sửa ghi \"Sửa từ Chỉnh sửa 1\".",
+      "Có \"Chỉnh sửa 2\": vẫn là buổi tối, có thêm con mèo."
+    ],
+    "group": "E. Chi tiết, sửa ảnh, upscale",
+    "id": "E03",
+    "note": "",
+    "order": 25,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Chọn \"Chỉnh sửa 1\" ở cột Phiên bản.",
+      "Gõ: Thêm một con mèo nằm trên yên xe, bấm Tạo bản sửa."
+    ],
+    "title": "Sửa tiếp từ một bản sửa",
+    "updatedAt": "2026-10-11T00:58:04.302Z",
+    "verify": false
+  },
+  {
+    "credit": 8,
+    "expected": [
+      "Nút đổi thành \"Đang upscale…\", xong thì có phiên bản \"Upscale\".",
+      "Ảnh Upscale lớn hơn bản gốc (bản gốc 1376 × 768).",
+      "Trang Credit có \"Upscale ảnh\" −8. Ghi vào ghi chú: có dòng \"Hoàn chênh lệch\" không. Theo cấu hình hiện tại thì không có (xem Lỗi đã biết)."
+    ],
+    "group": "E. Chi tiết, sửa ảnh, upscale",
+    "id": "E04",
+    "note": "Gaia hiện ra \"Hệ thống không xử lý được yêu cầu này. Bạn có thể thử lại, hoặc sửa prompt rồi tạo mới.\"",
+    "order": 26,
+    "priority": "Cao",
+    "status": "fail",
+    "steps": [
+      "Chọn Bản gốc, bấm Upscale · từ 5 credit.",
+      "Chờ đến khi xong (có thể lâu hơn tạo ảnh).",
+      "Tải bản Upscale về, xem kích thước ảnh (chuột phải → Properties → Details).",
+      "Mở trang Credit."
+    ],
+    "title": "Upscale ảnh",
+    "updatedAt": "2026-10-11T01:00:30.409Z",
+    "verify": true
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "File tải về là ảnh buổi tối (Chỉnh sửa 1), không phải bản gốc."
+    ],
+    "group": "E. Chi tiết, sửa ảnh, upscale",
+    "id": "E05",
+    "note": "",
+    "order": 27,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Chọn \"Chỉnh sửa 1\", bấm Tải về."
+    ],
+    "title": "Tải về đúng phiên bản đang xem",
+    "updatedAt": "2026-10-11T01:00:55.968Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Chỉnh sửa 2 biến mất, có thông báo kèm Hoàn tác.",
+      "Với Bản gốc, menu chỉ có \"Xoá cả ảnh khỏi thư viện (N phiên bản)\"."
+    ],
+    "group": "E. Chi tiết, sửa ảnh, upscale",
+    "id": "E06",
+    "note": "",
+    "order": 28,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Chọn \"Chỉnh sửa 2\", bấm ⋯ rồi Xoá phiên bản này.",
+      "Chọn Bản gốc rồi mở ⋯."
+    ],
+    "title": "Xoá một phiên bản",
+    "updatedAt": "2026-10-11T01:03:52.422Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Thẻ hiện ảnh của phiên bản mới nhất đã xong.",
+      "Dòng dưới ghi \"Nano Banana 2 · N phiên bản\"; số credit là tổng của mọi phiên bản."
+    ],
+    "group": "E. Chi tiết, sửa ảnh, upscale",
+    "id": "E07",
+    "note": "Nên có thêm một icon ký hiệu item có nhiều phiên bản sẽ trực quan - dễ nhận biết hơn. Vì dòng chữ \"N phiên bản\" có kích thước nhỏ và màu chữ mờ. Dùng icon khác biệt để ghi chú sẽ tốt nhất.",
+    "order": 29,
+    "priority": "Trung bình",
+    "status": "todo",
+    "steps": [
+      "Quay lại Studio, nhìn thẻ của ảnh vừa sửa."
+    ],
+    "title": "Thẻ thư viện của ảnh nhiều phiên bản",
+    "updatedAt": "2026-10-11T01:03:54.126Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Mỗi lần tạo, sửa, upscale có đúng một dòng trừ: \"Tạo ảnh\" −6, \"Sửa ảnh\" −6, \"Upscale ảnh\" −8.",
+      "Cột Số dư sau giảm đúng theo từng dòng.",
+      "Tổng đã trừ bằng tổng credit trên các thẻ trong thư viện.",
+      "Tab Sử dụng chỉ có các dòng trừ."
+    ],
+    "group": "F. Credit và hoàn tiền",
+    "id": "F01",
+    "note": "Lịch sử giao dịch nên có thêm chức năng sort theo Mới nhất, Cũ nhất",
+    "order": 30,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Mở trang Credit, xem tab Tất cả rồi tab Sử dụng."
+    ],
+    "title": "Lịch sử giao dịch khớp với thư viện",
+    "updatedAt": "2026-10-11T01:05:08.415Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Thẻ lỗi ghi \"Đã hoàn N credit\" và có nút Thử lại · N.",
+      "Trang Credit có dòng \"Hoàn credit\" +N, số dư được cộng lại."
+    ],
+    "group": "F. Credit và hoàn tiền",
+    "id": "F02",
+    "note": "Chức năng upscale bị lỗi, credit được hoàn.",
+    "order": 31,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Chỉ test nếu gặp thẻ \"Không tạo được ảnh\" trong lúc làm các dòng trên; không gặp thì chọn Bỏ qua."
+    ],
+    "title": "Ảnh lỗi được hoàn credit",
+    "updatedAt": "2026-10-11T01:05:33.711Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Trình duyệt chuyển sang trang Studio.",
+      "Khung soạn ở cuối trang Studio đã có sẵn câu \"Con mèo đen ngồi trên mái ngói\" và đang ở chế độ Ảnh.",
+      "Chưa có ảnh nào được tạo, số dư không đổi. Phải bấm Tạo thêm một lần nữa trong Studio thì mới tạo.",
+      "Thanh địa chỉ chỉ còn localhost:3000/studio."
+    ],
+    "group": "G. Từ trang chủ vào Studio",
+    "id": "G01",
+    "note": "Tôi vẫn chưa hiểu bước thực hiện",
+    "order": 32,
+    "priority": "Trung bình",
+    "status": "todo",
+    "steps": [
+      "Vẫn đang đăng nhập GAIA. Gõ vào thanh địa chỉ trình duyệt: localhost:3000 rồi nhấn Enter. Đây là trang chủ, không phải /studio.",
+      "Ở khung lớn giữa trang chủ (dòng chữ mờ \"Mô tả video bạn muốn tạo…\"), bấm nút \"Ảnh\" ở góc trái dưới khung.",
+      "Gõ vào khung: Con mèo đen ngồi trên mái ngói",
+      "Bấm nút \"Tạo\" ở góc phải dưới khung."
+    ],
+    "title": "Gõ prompt ở trang chủ rồi vào Studio (khi đã đăng nhập)",
+    "updatedAt": "2026-10-11T01:07:23.917Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Bước 3: hộp xám ghi \"Prompt của bạn sẽ được giữ lại sau khi đăng nhập\" và bên dưới là đúng câu con mèo.",
+      "Đăng nhập xong: vào thẳng Studio, khung soạn có sẵn câu con mèo, chế độ Ảnh, chưa tạo gì."
+    ],
+    "group": "G. Từ trang chủ vào Studio",
+    "id": "G02",
+    "note": "Giải thích bước thực hiện rõ hơn giúp",
+    "order": 33,
+    "priority": "Trung bình",
+    "status": "todo",
+    "steps": [
+      "Ở Studio, bấm vòng tròn chữ H ở góc phải trên, chọn Đăng xuất. Bạn được đưa về trang chủ localhost:3000.",
+      "Ở khung lớn giữa trang chủ, bấm \"Ảnh\", gõ: Con mèo đen ngồi trên mái ngói, rồi bấm \"Tạo\".",
+      "Trang đăng nhập hiện ra. Nhìn hộp xám nằm phía trên nút \"Tiếp tục với Google\".",
+      "Bấm \"Tiếp tục với Google\" và đăng nhập bằng dhnghia.ctu@gmail.com."
+    ],
+    "title": "Gõ prompt ở trang chủ khi chưa đăng nhập",
+    "updatedAt": "2026-10-11T01:07:56.179Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Studio mở với đúng prompt đó, chế độ Ảnh."
+    ],
+    "group": "G. Từ trang chủ vào Studio",
+    "id": "G03",
+    "note": "",
+    "order": 34,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Ở trang chủ, mục \"Tạo bằng GAIA\", bấm \"Dùng prompt này\" dưới một ảnh."
+    ],
+    "title": "Dùng prompt của ảnh mẫu",
+    "updatedAt": "2026-10-11T01:08:24.023Z",
+    "verify": false
+  }
+]

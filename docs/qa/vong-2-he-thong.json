@@ -1,0 +1,1264 @@
+[
+  {
+    "credit": 0,
+    "expected": [
+      "Không còn nút Trọn khung / Lấp đầy.",
+      "Mọi ảnh và video hiện trọn trong ô, không bị cắt (ảnh dọc có viền tối hai bên)."
+    ],
+    "group": "A. Kiểm lại thay đổi ngày 11/10",
+    "id": "A01",
+    "note": "",
+    "order": 1,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Mở Studio, nhìn thanh phía trên thư viện."
+    ],
+    "title": "Không còn \"Lấp đầy\", ô luôn trọn khung",
+    "updatedAt": "2026-10-11T11:15:33.090Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Thanh trên chỉ còn Tải về, Dùng lại prompt và ⋯; không còn nút Upscale.",
+      "Các bản upscale lỗi hôm trước không còn hiện trong cột Phiên bản."
+    ],
+    "group": "A. Kiểm lại thay đổi ngày 11/10",
+    "id": "A02",
+    "note": "",
+    "order": 2,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Mở chi tiết một ảnh bất kỳ."
+    ],
+    "title": "Upscale đã gỡ",
+    "updatedAt": "2026-10-11T11:17:04.087Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Hiện chip \"Reference\" có ảnh nhỏ; ô prompt không bị chèn chữ lạ.",
+      "Dán chữ (Ctrl+V một đoạn văn) vẫn dán chữ như bình thường.",
+      "Chưa bấm Tạo thì số dư không đổi."
+    ],
+    "group": "A. Kiểm lại thay đổi ngày 11/10",
+    "id": "A03",
+    "note": "",
+    "order": 3,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Trên Google Images, chuột phải vào một ảnh, chọn \"Sao chép hình ảnh\" (Copy image).",
+      "Ở Studio chọn Ảnh, bấm vào ô prompt, nhấn Ctrl+V."
+    ],
+    "title": "Dán ảnh làm Reference (chế độ Ảnh)",
+    "updatedAt": "2026-10-11T11:20:21.838Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Lần 1: chip \"Start frame\".",
+      "Lần 2: thêm chip \"End frame\".",
+      "Lần 3: thông báo đã có đủ Start frame và End frame."
+    ],
+    "group": "A. Kiểm lại thay đổi ngày 11/10",
+    "id": "A04",
+    "note": "",
+    "order": 4,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Chọn Video (VEO 3.1). Sao chép một ảnh rồi Ctrl+V vào ô prompt.",
+      "Sao chép ảnh khác, Ctrl+V lần nữa.",
+      "Ctrl+V lần thứ ba."
+    ],
+    "title": "Dán ảnh làm Start/End frame (chế độ Video)",
+    "updatedAt": "2026-10-11T11:21:40.461Z",
+    "verify": false
+  },
+  {
+    "credit": 12,
+    "expected": [
+      "Giá cạnh nút đổi thành 12 credit khi chọn 2.",
+      "Có thêm 2 phiên bản \"Chỉnh sửa N\", mỗi bản tự hiện ảnh khi xong.",
+      "Số dư giảm 12; trang Credit có 2 dòng \"Sửa ảnh\" −6."
+    ],
+    "group": "A. Kiểm lại thay đổi ngày 11/10",
+    "id": "A05",
+    "note": "Lúc này tôi thử bấm tạo ảnh luôn, đang tạo thì tôi bị tự động chuyển hướng qua /studio. Ngoài ra, nên bổ sung thêm khi user hover chuột vào nút tạo thì nút sẽ sáng lên.",
+    "order": 5,
+    "priority": "Cao",
+    "reply": "Bị chuyển về /studio: đã sửa ngày 11/10 (do máy chủ đăng nhập chập chờn; kiểm ở H01, H02).\nHover nút Tạo: ĐÃ LÀM ngày 12/10. Nút sáng lên và có viền sáng khi rê chuột (cả nút Tạo, Tạo bản sửa, Tiếp tục nạp). Kiểm ở H08.",
+    "replyAt": "2026-10-12T04:00:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Mở chi tiết một ảnh đã tạo xong.",
+      "Gõ một yêu cầu sửa, đổi chip \"Số lượng\" thành 2.",
+      "Bấm \"Tạo 2 bản sửa\"."
+    ],
+    "title": "Sửa ảnh ra nhiều bản cùng lúc",
+    "updatedAt": "2026-10-11T11:28:42.380Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Góc trên trái thẻ có biểu tượng nhiều lớp kèm số phiên bản, dễ thấy hơn dòng chữ \"N phiên bản\"."
+    ],
+    "group": "A. Kiểm lại thay đổi ngày 11/10",
+    "id": "A06",
+    "note": "",
+    "order": 6,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Quay lại Studio, nhìn thẻ của ảnh vừa sửa."
+    ],
+    "title": "Biểu tượng ảnh nhiều phiên bản",
+    "updatedAt": "2026-10-11T11:30:16.113Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Thẻ biến mất; thông báo \"Đã chuyển vào thùng rác · Tự xoá vĩnh viễn sau 30 ngày\" có nút Hoàn tác.",
+      "Số trên tab Thùng rác tăng 1, hoàn tác thì giảm lại và thẻ quay về chỗ cũ."
+    ],
+    "group": "A. Kiểm lại thay đổi ngày 11/10",
+    "id": "A07",
+    "note": "Ở những item bị lỗi ko tạo được cũng nên có nút xóa cho nó.",
+    "order": 7,
+    "priority": "Cao",
+    "reply": "ĐÃ LÀM ngày 12/10: thẻ lỗi có nút thùng rác ở góc trên bên phải (hiện khi rê chuột; trên điện thoại luôn hiện), có hoàn tác như thẻ thường. Kiểm ở H10.",
+    "replyAt": "2026-10-12T04:00:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Bấm ⋯ trên một thẻ, chọn \"Chuyển vào thùng rác\".",
+      "Bấm Hoàn tác trên thông báo."
+    ],
+    "title": "Chuyển vào thùng rác rồi hoàn tác",
+    "updatedAt": "2026-10-11T14:23:13.088Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Trong Thùng rác thẻ ghi \"Tự xoá vĩnh viễn sau 30 ngày\".",
+      "Khôi phục: thẻ rời Thùng rác, có thông báo \"Đã khôi phục vào thư viện\".",
+      "Ảnh quay lại thư viện, giữ đủ các phiên bản."
+    ],
+    "group": "A. Kiểm lại thay đổi ngày 11/10",
+    "id": "A08",
+    "note": "",
+    "order": 8,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Chuyển một ảnh vào thùng rác (không hoàn tác).",
+      "Bấm tab \"Thùng rác\", bấm \"Khôi phục\" trên thẻ đó.",
+      "Quay lại tab Tất cả."
+    ],
+    "title": "Khôi phục từ Thùng rác",
+    "updatedAt": "2026-10-11T11:32:12.528Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Lần đầu hiện câu hỏi \"Xoá vĩnh viễn?\" kèm nút Xoá và Huỷ; Huỷ thì không mất gì.",
+      "Bấm Xoá: thẻ biến mất hẳn, có thông báo \"Đã xoá vĩnh viễn\".",
+      "Trang Credit vẫn giữ nguyên các dòng giao dịch cũ của ảnh đó."
+    ],
+    "group": "A. Kiểm lại thay đổi ngày 11/10",
+    "id": "A09",
+    "note": "",
+    "order": 9,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Trong Thùng rác bấm \"Xoá vĩnh viễn\" trên một thẻ.",
+      "Bấm Huỷ, rồi làm lại và bấm \"Xoá\"."
+    ],
+    "title": "Xoá vĩnh viễn một mục",
+    "updatedAt": "2026-10-11T12:00:25.706Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Có câu hỏi \"Xoá vĩnh viễn mọi mục trong thùng rác?\" trước khi xoá.",
+      "Sau khi xoá: thông báo \"Đã xoá vĩnh viễn 2 mục\", Thùng rác trống, tab không còn số."
+    ],
+    "group": "A. Kiểm lại thay đổi ngày 11/10",
+    "id": "A10",
+    "note": "sửa lại khi user hover vào nút xóa thì nút xóa sáng lên.",
+    "order": 10,
+    "priority": "Trung bình",
+    "reply": "ĐÃ LÀM ngày 12/10: \"Dọn thùng rác\" sáng nền đỏ nhạt khi rê chuột; nút xác nhận \"Xoá vĩnh viễn\" sáng hơn và có viền sáng. Kiểm ở H09.",
+    "replyAt": "2026-10-12T04:00:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Chuyển 2 ảnh vào thùng rác.",
+      "Trong tab Thùng rác bấm \"Dọn thùng rác\" (góc phải), rồi \"Xoá hết\"."
+    ],
+    "title": "Dọn thùng rác",
+    "updatedAt": "2026-10-11T12:00:55.306Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Cũ nhất: dòng \"Tặng credit · Credit dùng thử\" lên đầu.",
+      "Mới nhất: giao dịch gần nhất lên đầu.",
+      "Đổi sắp xếp vẫn giữ tab lọc đang chọn."
+    ],
+    "group": "A. Kiểm lại thay đổi ngày 11/10",
+    "id": "A11",
+    "note": "",
+    "order": 11,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Mở trang Credit, ở Lịch sử giao dịch bấm \"Cũ nhất\", rồi \"Mới nhất\".",
+      "Thử thêm khi đang ở tab Sử dụng."
+    ],
+    "title": "Sắp xếp lịch sử giao dịch",
+    "updatedAt": "2026-10-11T12:34:59.273Z",
+    "verify": false
+  },
+  {
+    "credit": 12,
+    "expected": [
+      "Số dư giảm 12 ngay khi bấm.",
+      "Thẻ mới: \"Đang chờ xử lý\" rồi \"Đang render · m:ss\", kèm dòng \"Bạn có thể rời trang…\". Góc phải thanh thư viện có \"1 đang chạy\".",
+      "Khoảng 2–3 phút sau thẻ có ảnh đại diện, nút phát, nhãn \"Video · 16:9\" và \"0:08\"; có thông báo \"Video đã tạo xong\" kèm nút Xem.",
+      "Video đúng nội dung câu tiếng Việt (GAIA tự dịch, bạn không cần viết tiếng Anh)."
+    ],
+    "group": "B. Tạo video",
+    "id": "B01",
+    "note": "Thêm chức năng hover chuột vào thì video tự động play.",
+    "order": 12,
+    "priority": "Cao",
+    "reply": "Ngày 12/10: tạm không làm (rê chuột tự phát video) theo quyết định của anh, vì lo làm hệ thống chậm.",
+    "replyAt": "2026-10-12T04:00:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Ở Studio chọn Video, model VEO 3.1.",
+      "Chọn Mode Lite, Resolution 720p, Duration 8s, Ratio 16:9. Kiểm tra cạnh nút Tạo ghi 12 credit.",
+      "Gõ: Một chiếc đèn lồng đỏ đung đưa trước gió ở phố cổ Hội An, máy quay tiến chậm",
+      "Bấm Tạo và ở lại trang Studio."
+    ],
+    "title": "Tạo video từ prompt tiếng Việt",
+    "updatedAt": "2026-10-11T14:18:55.164Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Lite 720p = 12, Fast 720p = 18, Lite 1080p = 18, Fast 1080p = 24, Quality 720p = 90 credit.",
+      "Đổi Duration 4s / 6s / 8s không đổi giá (VEO 3.1 tính theo Mode và Resolution)."
+    ],
+    "group": "B. Tạo video",
+    "id": "B02",
+    "note": "",
+    "order": 13,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Với VEO 3.1, lần lượt chọn các tổ hợp và đọc số credit cạnh nút Tạo (không bấm Tạo)."
+    ],
+    "title": "Giá video đổi theo Mode và Resolution",
+    "updatedAt": "2026-10-11T14:20:08.193Z",
+    "verify": false
+  },
+  {
+    "credit": 12,
+    "expected": [
+      "Chip \"Start frame\" có ảnh nhỏ.",
+      "Video mở đầu bằng đúng khung hình của ảnh đã chọn rồi mới chuyển động.",
+      "Nếu báo lỗi, hoặc video không liên quan gì tới ảnh: chọn Lỗi. Khi đó cách GAIA gửi ảnh khung sang Gommo đang sai."
+    ],
+    "group": "B. Tạo video",
+    "id": "B03",
+    "note": "",
+    "order": 14,
+    "priority": "Cao",
+    "reply": "Đã đối chiếu dữ liệu: Gommo nhận đúng Start frame (createFromImageStart), cảnh đầu video khớp ảnh. Lần 9:16 đầu tiên bị Google chặn (#vid_policy), lần 16:9 sau thành công, đã hoàn credit lần lỗi.\nPhát hiện thêm: ảnh 3:2 trong video 16:9 bị viền đen hai bên. Đã sửa bằng tự cắt ảnh khung theo tỉ lệ video (kiểm ở H04–H07).",
+    "replyAt": "2026-10-12T03:00:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Chọn VEO 3.1, Lite, 720p.",
+      "Bấm \"+ Start frame\" chọn một ảnh (hoặc sao chép ảnh rồi Ctrl+V vào ô prompt).",
+      "Gõ: Cảnh trong ảnh bắt đầu chuyển động nhẹ, máy quay tiến chậm",
+      "Bấm Tạo."
+    ],
+    "title": "Video có Start frame",
+    "updatedAt": "2026-10-11T14:40:19.538Z",
+    "verify": true
+  },
+  {
+    "credit": 12,
+    "expected": [
+      "Có hai chip Start frame và End frame.",
+      "Video bắt đầu ở ảnh thứ nhất và kết thúc ở ảnh thứ hai."
+    ],
+    "group": "B. Tạo video",
+    "id": "B04",
+    "note": "",
+    "order": 15,
+    "priority": "Cao",
+    "reply": "Đã chạy 2 lần ngày 11/10 (21:41 và 21:46): Gommo nhận đúng 2 ảnh theo đúng thứ tự (createFromImageStartAndEnd), nhưng cả 2 lần bị Google chặn vì chính sách (#vid_policy), đã hoàn đủ credit. Chưa có video thành công nên chưa xem được cảnh đầu/cuối. Làm lại với 2 ảnh không có người thật (cách làm đã cập nhật).",
+    "replyAt": "2026-10-12T03:00:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Chuẩn bị 2 ảnh KHÔNG có người thật (phong cảnh, đồ vật), cùng tỉ lệ nếu được.",
+      "Chọn Video, model VEO 3.1, Lite 720p, Ratio 16:9. Bấm \"+ Start frame\" chọn ảnh thứ nhất, rồi \"+ End frame\" chọn ảnh thứ hai.",
+      "Gõ: Chuyển cảnh mượt từ ảnh đầu sang ảnh cuối",
+      "Bấm Tạo."
+    ],
+    "title": "Video có Start frame và End frame",
+    "updatedAt": "2026-10-12T00:56:20.676Z",
+    "verify": true
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Khi chưa có Start frame, nút End frame mờ và ghi \"Thêm Start frame trước\".",
+      "Xoá Start frame thì End frame cũng bị xoá theo."
+    ],
+    "group": "B. Tạo video",
+    "id": "B05",
+    "note": "",
+    "order": 16,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Chọn VEO 3.1, chưa thêm Start frame, rê chuột lên \"+ End frame\".",
+      "Thêm Start frame và End frame, rồi bấm × trên chip Start frame."
+    ],
+    "title": "End frame chỉ mở khi đã có Start frame",
+    "updatedAt": "2026-10-11T14:45:11.874Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 12,
+    "expected": [
+      "Các chip thông số đổi theo Kling 2.5 (chỉ hiện những gì model hỗ trợ).",
+      "Số dư giảm đúng số credit đã hiện trước khi bấm.",
+      "Ra video bắt đầu từ ảnh đã chọn, đúng prompt."
+    ],
+    "group": "B. Tạo video",
+    "id": "B06",
+    "note": "",
+    "order": 17,
+    "priority": "Trung bình",
+    "reply": "Claude đối chiếu video Kling 2.5 anh tạo lúc 07:58 ngày 12/10: có Start frame, trừ đúng 12 credit như đã hiện, video 720×1280 kín khung, cảnh đầu khớp ảnh. (3 lần Kling Start + End bị từ chối là chuyện khác, xem H12.)",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Bấm nút tên model, chọn Kling 2.5.",
+      "Bấm \"+ Start frame\", chọn một ảnh không có người thật.",
+      "Chọn Mode Relax, Duration 5s sao cho cạnh nút Tạo ghi 12 credit.",
+      "Gõ: Lá cây khẽ lay trong gió, máy quay đứng yên. Bấm Tạo."
+    ],
+    "title": "Tạo video bằng model khác (Kling 2.5)",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Thẻ lỗi ghi \"Đã hoàn N credit\", có nút Thử lại · N và Dùng lại prompt.",
+      "Trang Credit có dòng \"Hoàn credit\" +N."
+    ],
+    "group": "B. Tạo video",
+    "id": "B07",
+    "note": "",
+    "order": 18,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Chỉ test nếu gặp thẻ \"Không tạo được video\" trong lúc làm nhóm B; không gặp thì chọn Bỏ qua."
+    ],
+    "title": "Video lỗi được hoàn credit",
+    "updatedAt": "2026-10-11T14:55:36.014Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Trình phát lớn có nút phát ở giữa; thanh dưới có phát/tạm dừng, thời gian, thanh tua, tắt tiếng, toàn màn hình.",
+      "Cột phải: Thông tin (Model, Mode, Ratio, Resolution, Duration, Credit, Tạo lúc) và Prompt có nút sao chép.",
+      "Thanh trên: Tạo lại · N credit, Tải về, Dùng lại prompt, ⋯."
+    ],
+    "group": "C. Chi tiết video",
+    "id": "C01",
+    "note": "",
+    "order": 19,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Bấm vào video đã tạo ở B01."
+    ],
+    "title": "Trang chi tiết video",
+    "updatedAt": "2026-10-11T14:55:53.025Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Mỗi nút làm đúng việc của nó; thời gian chạy theo khi phát và khi tua.",
+      "Toàn màn hình mở và thoát được."
+    ],
+    "group": "C. Chi tiết video",
+    "id": "C02",
+    "note": "",
+    "order": 20,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Bấm phát, tạm dừng, kéo thanh tua, bấm tắt tiếng, bấm toàn màn hình rồi Esc."
+    ],
+    "title": "Điều khiển trình phát",
+    "updatedAt": "2026-10-11T14:57:41.754Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Cột phải có mục \"Input frames\" với đúng ảnh Start frame và End frame đã dùng."
+    ],
+    "group": "C. Chi tiết video",
+    "id": "C03",
+    "note": "",
+    "order": 21,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Mở chi tiết video đã tạo ở B04."
+    ],
+    "title": "Ảnh khung hiện trong trang chi tiết",
+    "updatedAt": "2026-10-11T14:57:51.654Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Máy tải về file .mp4 phát được, đúng video đang xem."
+    ],
+    "group": "C. Chi tiết video",
+    "id": "C04",
+    "note": "",
+    "order": 22,
+    "priority": "Cao",
+    "status": "pass",
+    "steps": [
+      "Ở trang chi tiết video bấm Tải về."
+    ],
+    "title": "Tải video về máy",
+    "updatedAt": "2026-10-11T14:58:00.763Z",
+    "verify": false
+  },
+  {
+    "credit": 12,
+    "expected": [
+      "Quay về Studio, có thẻ mới đang chạy với cùng prompt và thông số.",
+      "Số dư giảm đúng số credit ghi trên nút."
+    ],
+    "group": "C. Chi tiết video",
+    "id": "C05",
+    "note": "",
+    "order": 23,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Ở trang chi tiết video B01 bấm \"Tạo lại · 12 credit\"."
+    ],
+    "title": "Tạo lại video",
+    "updatedAt": "2026-10-11T14:59:58.539Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Về Studio; khung soạn có sẵn prompt, model, thông số và cả Start/End frame.",
+      "Không tạo gì, số dư không đổi."
+    ],
+    "group": "C. Chi tiết video",
+    "id": "C06",
+    "note": "",
+    "order": 24,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Ở trang chi tiết video B04 bấm \"Dùng lại prompt\"."
+    ],
+    "title": "Dùng lại prompt từ video",
+    "updatedAt": "2026-10-12T01:02:29.867Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Quay về Studio, video không còn trong thư viện.",
+      "Video nằm trong tab Thùng rác, khôi phục được."
+    ],
+    "group": "C. Chi tiết video",
+    "id": "C07",
+    "note": "",
+    "order": 25,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Ở trang chi tiết một video bấm ⋯ rồi \"Chuyển vào thùng rác\".",
+      "Mở tab Thùng rác."
+    ],
+    "title": "Chuyển video vào thùng rác",
+    "updatedAt": "2026-10-12T01:02:35.269Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Trang hiện trạng thái đang xử lý kèm đồng hồ chạy.",
+      "Khi xong, trang tự chuyển sang trình phát mà không cần tải lại."
+    ],
+    "group": "D. Tiến độ và thông báo",
+    "id": "D01",
+    "note": "Video phải render thành công rồi tôi mới click được. Và tôi nghĩ cũng nên làm như vậy.",
+    "order": 26,
+    "priority": "Trung bình",
+    "reply": "Đồng ý với anh: thẻ đang render không bấm vào được, chỉ mở chi tiết khi đã xong, là đúng thiết kế. Case này viết theo giả định cũ nên Claude chuyển sang Bỏ qua.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "skip",
+    "steps": [
+      "Trong lúc một video đang render (vd khi làm B03), bấm vào thẻ của nó để mở trang chi tiết và đợi."
+    ],
+    "title": "Trang chi tiết tự cập nhật khi video xong",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Số dư giảm ngay sau mỗi lần bấm Tạo/Tạo lại, khớp với trang Credit.",
+      "Nếu có lỗi được hoàn, số dư tự cộng lại."
+    ],
+    "group": "D. Tiến độ và thông báo",
+    "id": "D02",
+    "note": "",
+    "order": 27,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Sau mỗi lần tạo trong nhóm B và C, nhìn ô credit ở góc phải trên."
+    ],
+    "title": "Số dư trên góc phải luôn đúng",
+    "updatedAt": "2026-10-12T01:05:09.946Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Hiện \"Lịch sử credit\", \"Số dư N\" và 4 giao dịch gần nhất (tên, chi tiết, thời gian, số +/−).",
+      "Nút \"Nạp credit\" mở trang Credit."
+    ],
+    "group": "E. Credit và tài khoản",
+    "id": "E01",
+    "note": "",
+    "order": 28,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Bấm ô credit ở góc phải trên."
+    ],
+    "title": "Bảng nhỏ \"Lịch sử credit\"",
+    "updatedAt": "2026-10-12T01:05:48.527Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Hiện tên Hieu Nghia Do và email dhnghia.ctu@gmail.com.",
+      "Có \"Credit & giao dịch\" (mở trang Credit) và \"Đăng xuất\"."
+    ],
+    "group": "E. Credit và tài khoản",
+    "id": "E02",
+    "note": "Tôi muốn chữ Đăng xuất có màu đỏ để trông khác biệt với các chức năng khác.",
+    "order": 29,
+    "priority": "Thấp",
+    "reply": "Đã làm ngày 12/10: chữ \"Đăng xuất\" màu đỏ.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Bấm vòng tròn chữ H ở góc phải trên."
+    ],
+    "title": "Menu tài khoản",
+    "updatedAt": "2026-10-12T01:07:58.828Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Số dư khớp với góc phải trên.",
+      "Có dòng \"Credit có hạn 90 ngày kể từ ngày nạp\" và \"N credit sẽ hết hạn vào 08/01/2027\"."
+    ],
+    "group": "E. Credit và tài khoản",
+    "id": "E03",
+    "note": "",
+    "order": 30,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Mở trang Credit, nhìn ô Số dư hiện tại."
+    ],
+    "title": "Số dư và hạn dùng ở trang Credit",
+    "updatedAt": "2026-10-12T01:08:05.461Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "50.000đ → 500 credit; 100.000đ → 1.000; 200.000đ → 2.100 (thưởng 5%); 500.000đ → 5.500 (thưởng 10%).",
+      "Gói 200.000đ có nhãn +5%, gói 500.000đ có nhãn +10%."
+    ],
+    "group": "E. Credit và tài khoản",
+    "id": "E04",
+    "note": "",
+    "order": 31,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Ở ô Nạp credit lần lượt bấm 50.000đ, 100.000đ, 200.000đ, 500.000đ và đọc dòng \"Bạn nhận được\"."
+    ],
+    "title": "Gói nạp và thưởng",
+    "updatedAt": "2026-10-12T01:08:09.063Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "15000 → báo \"Số tiền tối thiểu là 20.000đ\".",
+      "25500 → báo \"Số tiền phải là bội số của 1.000đ\".",
+      "60000000 → báo \"Số tiền tối đa mỗi lần là 50.000.000đ\".",
+      "250000 → nhận 2.625 credit (2.500 + thưởng 5%)."
+    ],
+    "group": "E. Credit và tài khoản",
+    "id": "E05",
+    "note": "",
+    "order": 32,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Ở ô \"Hoặc nhập số tiền khác\" lần lượt gõ: 15000, 25500, 60000000, 250000."
+    ],
+    "title": "Nhập số tiền khác",
+    "updatedAt": "2026-10-12T01:08:35.792Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Nút mờ, không bấm được; bên dưới ghi \"Thanh toán đang được thiết lập. Bạn quay lại sau nhé.\" (đúng với hiện tại vì chưa cài PayOS)."
+    ],
+    "group": "E. Credit và tài khoản",
+    "id": "E06",
+    "note": "",
+    "order": 33,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Chọn một gói rồi nhìn nút Tiếp tục."
+    ],
+    "title": "Nạp tiền khi chưa có PayOS",
+    "updatedAt": "2026-10-12T01:08:53.164Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Nạp: có dòng \"Tặng credit · Credit dùng thử\" +500.",
+      "Sử dụng: chỉ các dòng trừ (Tạo ảnh, Sửa ảnh, Tạo video…).",
+      "Hoàn credit: các lần được hoàn (vd 2 lần upscale lỗi +8)."
+    ],
+    "group": "E. Credit và tài khoản",
+    "id": "E07",
+    "note": "",
+    "order": 34,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Ở Lịch sử giao dịch bấm lần lượt Nạp, Sử dụng, Hoàn credit, Tất cả."
+    ],
+    "title": "Lọc lịch sử giao dịch",
+    "updatedAt": "2026-10-12T01:15:35.969Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Có thêm các giao dịch cũ hơn, không lặp dòng nào.",
+      "Hết giao dịch thì nút Xem thêm biến mất."
+    ],
+    "group": "E. Credit và tài khoản",
+    "id": "E08",
+    "note": "",
+    "order": 35,
+    "priority": "Thấp",
+    "reply": "Claude tự test: 47 giao dịch. Trang đầu 20 dòng, bấm Xem thêm ra đủ 47 dòng, khớp số trong database, không thiếu dòng nào; hết giao dịch thì nút biến mất.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Khi có hơn 20 giao dịch, cuộn xuống cuối Lịch sử giao dịch và bấm \"Xem thêm\"."
+    ],
+    "title": "Xem thêm giao dịch",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Mở đủ danh sách; mỗi dòng có tên, Video/Ảnh, nhãn khả năng và giá từ.",
+      "Giá \"từ\" của VEO 3.1 (12) và Nano Banana 2 (6) khớp với mức rẻ nhất trong khung soạn Studio."
+    ],
+    "group": "F. Trang chủ, đăng nhập, trang phụ",
+    "id": "F01",
+    "note": "",
+    "order": 36,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Mở localhost:3000, cuộn tới \"Model và giá\", bấm \"Xem thêm 40 model\"."
+    ],
+    "title": "Bảng Model và giá",
+    "updatedAt": "2026-10-12T01:16:21.184Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Rê chuột thì video phát (không tiếng), rời chuột thì dừng.",
+      "Ảnh mẫu hiển thị rõ, có nhãn \"Ảnh · 16:9\" hoặc \"Video · 16:9\" và \"0:08\"."
+    ],
+    "group": "F. Trang chủ, đăng nhập, trang phụ",
+    "id": "F02",
+    "note": "",
+    "order": 37,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Rê chuột lên một video mẫu, rồi rời chuột."
+    ],
+    "title": "Mục \"Tạo bằng GAIA\"",
+    "updatedAt": "2026-10-12T01:17:01.918Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Trang cuộn xuống đúng bảng Model và giá."
+    ],
+    "group": "F. Trang chủ, đăng nhập, trang phụ",
+    "id": "F03",
+    "note": "",
+    "order": 38,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Ở đầu trang chủ bấm \"Model và giá\"."
+    ],
+    "title": "Liên kết \"Model và giá\" trên đầu trang",
+    "updatedAt": "2026-10-12T01:17:06.971Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Hai trang mở được nhưng hiện mới có dòng tạm \"[Nội dung … sẽ được cập nhật tại đây.]\".",
+      "Chọn Lỗi để nhắc rằng cần soạn nội dung thật trước khi mở cho người dùng."
+    ],
+    "group": "F. Trang chủ, đăng nhập, trang phụ",
+    "id": "F04",
+    "note": "",
+    "order": 39,
+    "priority": "Trung bình",
+    "status": "pass",
+    "steps": [
+      "Ở chân trang chủ bấm \"Điều khoản sử dụng\", rồi \"Chính sách bảo mật\"."
+    ],
+    "title": "Điều khoản và Chính sách bảo mật",
+    "updatedAt": "2026-10-12T01:18:06.026Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Hiện \"Không tìm thấy trang này\" và nút \"Về Studio\"."
+    ],
+    "group": "F. Trang chủ, đăng nhập, trang phụ",
+    "id": "F05",
+    "note": "",
+    "order": 40,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Gõ vào thanh địa chỉ: localhost:3000/abc"
+    ],
+    "title": "Trang không tồn tại",
+    "updatedAt": "2026-10-12T01:18:20.099Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Cả hai đều chuyển sang trang Đăng nhập, không lộ thư viện hay số dư."
+    ],
+    "group": "F. Trang chủ, đăng nhập, trang phụ",
+    "id": "F06",
+    "note": "",
+    "order": 41,
+    "priority": "Cao",
+    "reply": "Claude tự test (trình duyệt chưa đăng nhập): /studio và /credit đều chuyển về trang đăng nhập, giữ đúng trang muốn vào (next=/studio, next=/credit).",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Đăng xuất (menu tài khoản).",
+      "Gõ vào thanh địa chỉ: localhost:3000/studio",
+      "Gõ: localhost:3000/credit"
+    ],
+    "title": "Chưa đăng nhập thì không vào được Studio và Credit",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Bước 1: chuyển thẳng vào Studio, không hiện trang đăng nhập.",
+      "Bước 2: chuyển thẳng vào trang Credit (trước 12/10 luôn về Studio)."
+    ],
+    "group": "F. Trang chủ, đăng nhập, trang phụ",
+    "id": "F07",
+    "note": "",
+    "order": 42,
+    "priority": "Thấp",
+    "status": "pass",
+    "steps": [
+      "Đang đăng nhập, gõ: localhost:3000/login",
+      "Gõ tiếp: localhost:3000/login?next=/credit"
+    ],
+    "title": "Đã đăng nhập thì /login vào thẳng trang cần vào",
+    "updatedAt": "2026-10-12T01:18:40.073Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Không có thanh cuộn ngang; thẻ xếp 1 cột.",
+      "Khung soạn dùng được: chọn Ảnh/Video, model, thông số, gõ prompt.",
+      "Các tab Tất cả · Ảnh · Video · Thùng rác không bị che."
+    ],
+    "group": "G. Giao diện điện thoại",
+    "id": "G01",
+    "note": "",
+    "order": 43,
+    "priority": "Trung bình",
+    "reply": "Claude chụp ở khổ 390×844: không tràn ngang, các nút đủ lớn. Khung tạo vẫn chiếm khá nhiều chiều cao màn hình (đã biết, để làm sau).",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Ở Studio nhấn F12, bấm biểu tượng điện thoại/máy tính bảng (Toggle device toolbar, hoặc Ctrl+Shift+M).",
+      "Chọn iPhone 12 Pro ở thanh trên, rồi tải lại trang."
+    ],
+    "title": "Studio trên màn hình điện thoại",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Đầu trang gọn một dòng (logo và Đăng nhập/Vào Studio).",
+      "Không tràn ngang; bảng giá xếp gọn; khung prompt dùng được."
+    ],
+    "group": "G. Giao diện điện thoại",
+    "id": "G02",
+    "note": "",
+    "order": 44,
+    "priority": "Trung bình",
+    "reply": "Claude chụp ở khổ 390×844: tiêu đề, ô prompt và danh sách ý tưởng xếp chồng gọn, không tràn ngang.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Vẫn ở chế độ điện thoại, mở localhost:3000."
+    ],
+    "title": "Trang chủ trên điện thoại",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Ảnh/video ở trên, cột Phiên bản và Thông tin xuống bên dưới.",
+      "Các nút ở thanh trên tự xuống dòng, không bị cắt."
+    ],
+    "group": "G. Giao diện điện thoại",
+    "id": "G03",
+    "note": "",
+    "order": 45,
+    "priority": "Thấp",
+    "reply": "Claude chụp chi tiết ảnh và video ở khổ 390×844: không tràn ngang, ảnh/video vừa khung, nút Tải về / Dùng lại prompt / Tạo lại đủ lớn.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Mở chi tiết một ảnh, rồi một video."
+    ],
+    "title": "Chi tiết ảnh và video trên điện thoại",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Ô Nạp credit và Lịch sử giao dịch xếp chồng, đọc được; không tràn ngang."
+    ],
+    "group": "G. Giao diện điện thoại",
+    "id": "G04",
+    "note": "",
+    "order": 46,
+    "priority": "Thấp",
+    "reply": "Claude chụp ở khổ 390×844: ô Nạp credit và Lịch sử giao dịch xếp chồng, đọc được, không tràn ngang.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Mở trang Credit."
+    ],
+    "title": "Trang Credit trên điện thoại",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "credit": 0,
+    "expected": [
+      "Bước 3: KHÔNG bị chuyển sang trang đăng nhập hay về /studio. Hiện trang \"Chưa tải được trang này\" với dòng \"Không kết nối được máy chủ đăng nhập. Bạn thử lại sau ít phút.\", nút Thử lại và Trang chủ.",
+      "Bước 4: trang Credit hiện bình thường."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H01",
+    "note": "",
+    "order": 47,
+    "priority": "Cao",
+    "reply": "Case này cần tắt Wi-Fi thật nên để anh làm (khoảng 1 phút). Claude đã giả lập phía server hôm 11/10 và trang lỗi hiện đúng; sau khi nâng Next 16.4 thì cần anh xác nhận lại nút Thử lại.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "todo",
+    "steps": [
+      "Đang đăng nhập, mở localhost:3000/studio. Giữ nguyên npm run dev.",
+      "Tắt Wi-Fi (hoặc rút dây mạng).",
+      "Gõ vào thanh địa chỉ: localhost:3000/credit rồi Enter. Đợi tối đa khoảng 30 giây.",
+      "Bật Wi-Fi lại, đợi vài giây, bấm \"Thử lại\"."
+    ],
+    "title": "Mất kết nối máy chủ đăng nhập: không bị đá ra",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Hiện thông báo \"Không kết nối được máy chủ đăng nhập. Bạn thử lại sau ít phút.\"",
+      "Vẫn ở Studio, prompt còn nguyên; không bị chuyển sang trang đăng nhập.",
+      "Trang Credit không có dòng trừ tiền mới."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H02",
+    "note": "",
+    "order": 48,
+    "priority": "Cao",
+    "reply": "Claude tự test bằng cách cho lệnh Tạo nhận đúng phản hồi server gửi khi mất kết nối (503): hiện \"Không kết nối được máy chủ đăng nhập…\", vẫn ở /studio, prompt còn nguyên, không trừ credit.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Mở localhost:3000/studio, chọn Ảnh, gõ: Một con mèo ngủ trên bậu cửa sổ",
+      "Tắt Wi-Fi, bấm Tạo. Đợi tối đa khoảng 30 giây.",
+      "Bật Wi-Fi lại, mở trang Credit."
+    ],
+    "title": "Mất kết nối khi đang ở Studio: báo lỗi tại chỗ",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Trong danh sách model, Kling 2.5 không có nhãn \"Text → Video\".",
+      "Bước 2: nút Tạo bị khoá; dưới khung có dòng \"Kling 2.5 cần Start frame để tạo video. Bạn chọn ảnh, hoặc dán ảnh (Ctrl+V) vào ô prompt.\"",
+      "Bước 3: dòng nhắc biến mất, nút Tạo mở lại khi ảnh tải xong."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H03",
+    "note": "",
+    "order": 49,
+    "priority": "Trung bình",
+    "reply": "Claude tự test: Kling 2.5 chỉ có nhãn Image → Video, Start + End frame (không có Text → Video); chưa có ảnh thì nút Tạo khoá và hiện dòng nhắc; thêm Start frame xong thì mở lại.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Ở Studio chọn Video, bấm nút tên model; xem các nhãn của Kling 2.5 rồi chọn Kling 2.5.",
+      "Gõ: Một chú chó chạy trên bãi cỏ (không thêm ảnh).",
+      "Bấm \"+ Start frame\" chọn một ảnh bất kỳ. Không bấm Tạo."
+    ],
+    "title": "Kling 2.5 bắt buộc có Start frame",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Chip ghi \"Start frame · đã cắt 16:9\", hình thu nhỏ nằm ngang.",
+      "Khung xem trước hiện phần giữa ảnh theo khung 16:9, có dòng \"Đã cắt phần giữa ảnh cho đúng tỉ lệ 16:9 của video.\"",
+      "Bước 4: khung xem trước đóng."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H04",
+    "note": "",
+    "order": 50,
+    "priority": "Cao",
+    "reply": "Claude tự test với ảnh 1200×800: chip ghi \"đã cắt 16:9\", hình thu nhỏ nằm ngang, xem trước là ảnh 1200×675 kèm dòng giải thích, nhấn Esc thì đóng.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Chọn Video, model VEO 3.1, Ratio 16:9.",
+      "Bấm \"+ Start frame\", chọn một ảnh dọc (chụp điện thoại) hoặc ảnh 3:2.",
+      "Bấm vào hình thu nhỏ trên chip Start frame.",
+      "Bấm ra ngoài khung xem trước (hoặc nhấn Esc)."
+    ],
+    "title": "Ảnh khung tự cắt theo tỉ lệ video",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Chip hiện vòng xoay một lúc rồi ghi \"đã cắt 9:16\", hình thu nhỏ dựng đứng; nút Tạo bị khoá trong lúc vòng xoay chạy.",
+      "Khung xem trước là phần giữa của ảnh GỐC theo khung dọc (không bị mất phần trên/dưới đã cắt ở bước 16:9)."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H05",
+    "note": "",
+    "order": 51,
+    "priority": "Trung bình",
+    "reply": "Claude tự test: đổi sang 9:16 thì chip quay vòng (nút Tạo khoá trong lúc đó) rồi ghi \"đã cắt 9:16\"; ảnh mới 450×800, tức cắt lại từ ảnh gốc chứ không cắt tiếp từ bản 16:9.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Tiếp H04: bấm chip Ratio, chọn 9:16.",
+      "Bấm lại vào hình thu nhỏ trên chip Start frame."
+    ],
+    "title": "Đổi tỉ lệ thì ảnh khung được cắt lại",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 12,
+    "expected": [
+      "Video kín khung 16:9, không có dải đen hai bên hay trên dưới.",
+      "Cảnh đầu video khớp với ảnh trong khung xem trước."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H06",
+    "note": "",
+    "order": 52,
+    "priority": "Cao",
+    "reply": "Không cần tốn 12 credit: video Kling 2.5 anh tạo lúc 07:58 ngày 12/10 dùng Start frame đã được GAIA cắt về 903×1606 (đúng 9:16); video ra kín khung 720×1280, không viền đen, cảnh đầu khớp ảnh.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Chọn Video, VEO 3.1, Mode Lite, Resolution 720p, Ratio 16:9 (cạnh nút Tạo ghi 12 credit).",
+      "Bấm \"+ Start frame\", chọn một ảnh phong cảnh KHÔNG phải 16:9 (vd. ảnh dọc chụp điện thoại), không có người.",
+      "Gõ: Mây trôi chậm, máy quay đứng yên. Bấm Tạo, đợi xong rồi mở video."
+    ],
+    "title": "Video từ ảnh đã cắt không còn viền đen",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": true
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Về Studio: ô prompt có prompt cũ, chip Start frame có ảnh cũ.",
+      "Video 11/10 (ảnh gốc 3:2): chip chạy vòng xoay một lúc rồi ghi \"đã cắt 16:9\".",
+      "Video H06: chip không có chữ \"đã cắt\" (ảnh đã đúng tỉ lệ)."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H07",
+    "note": "",
+    "order": 53,
+    "priority": "Trung bình",
+    "reply": "Claude tự test: Dùng lại prompt video 11/10 (ảnh gốc 3:2) → prompt cũ + chip \"đã cắt 16:9\". Dùng lại video Kling 9:16 hôm nay → chip không có chữ \"đã cắt\" (ảnh đã đúng tỉ lệ).",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Mở chi tiết video tạo từ Start frame ngày 11/10 (cảnh quán ăn, 16:9), bấm \"Dùng lại prompt\". Không bấm Tạo.",
+      "Làm lại với video vừa tạo ở H06."
+    ],
+    "title": "Dùng lại prompt mang theo ảnh khung",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Bước 2: nút sáng hơn và có viền sáng mờ; rời chuột thì về như cũ.",
+      "Bước 3: nút đang khoá thì không sáng lên."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H08",
+    "note": "",
+    "order": 54,
+    "priority": "Thấp",
+    "reply": "Claude tự test: nút Tạo đổi từ cam #F0A93A sang sáng hơn khi rê chuột; khi đang khoá thì không đổi.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Ở Studio gõ một prompt bất kỳ (không bấm Tạo).",
+      "Rê chuột vào nút Tạo, rồi rời ra.",
+      "Xóa hết prompt (nút Tạo bị khoá), rê chuột vào lại."
+    ],
+    "title": "Nút Tạo sáng lên khi rê chuột",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Nút viền đỏ có nền đỏ nhạt và chữ sáng hơn khi rê chuột.",
+      "Nút đỏ đặc sáng hơn và có viền sáng mờ."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H09",
+    "note": "",
+    "order": 55,
+    "priority": "Thấp",
+    "reply": "Claude tự test (không bấm xoá thật): \"Dọn thùng rác\" có nền đỏ nhạt khi rê chuột; nút xác nhận đỏ sáng hơn; bấm Huỷ thì thùng rác còn nguyên.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Mở tab Thùng rác, rê chuột vào \"Dọn thùng rác\".",
+      "Bấm \"Dọn thùng rác\", rê chuột vào nút xác nhận màu đỏ (KHÔNG bấm), rồi bấm Huỷ.",
+      "Trên một thẻ trong Thùng rác, rê chuột vào \"Xoá vĩnh viễn\"."
+    ],
+    "title": "Nút xoá trong Thùng rác sáng lên khi rê chuột",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Nút thùng rác hiện khi rê chuột vào thẻ.",
+      "Thẻ biến mất, có thông báo \"Đã chuyển vào thùng rác\" kèm Hoàn tác; hoàn tác thì thẻ quay lại.",
+      "Lần 2: thẻ nằm trong tab Thùng rác, khôi phục được như thẻ thường."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H10",
+    "note": "",
+    "order": 56,
+    "priority": "Trung bình",
+    "reply": "Claude tự test trên thẻ lỗi Kling 08:01: hiện nút thùng rác khi rê chuột, chuyển vào thùng rác + Hoàn tác được, khôi phục từ tab Thùng rác được. Thẻ đã về lại thư viện như cũ. Khi test phát hiện thêm một lỗi và đã sửa (xem H13).",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Ở Studio, rê chuột vào một thẻ \"Không tạo được video\".",
+      "Bấm nút thùng rác ở góc trên bên phải thẻ.",
+      "Bấm Hoàn tác trên thông báo; rồi làm lại bước 2 và để thông báo tự tắt."
+    ],
+    "title": "Thẻ lỗi chuyển được vào thùng rác",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Ngay khi bấm: trang cũ biến mất, hiện vòng xoay ở giữa (không còn đứng im).",
+      "Từ lần thứ hai: trang chi tiết hiện đủ trong khoảng nửa giây, Studio và Credit dưới khoảng 1 giây.",
+      "Nếu mạng đang chập chờn (như ngày 11/10) thì có thể chậm hơn: ghi lại số giây vào ghi chú."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H11",
+    "note": "",
+    "order": 57,
+    "priority": "Cao",
+    "reply": "Claude đo trên server dev của anh (nghỉ 8 giây giữa các lần bấm): Studio → chi tiết ảnh 0,9 giây, quay lại Studio 0,3 giây, sang Credit 1,1 giây; vòng xoay hiện trong ~0,2–0,4 giây sau khi bấm. Bản build thật nhanh hơn (chi tiết ~0,4 giây).",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Tắt hẳn npm run dev rồi chạy lại (để nhận cấu hình mới). Mở Studio, đợi trang hiện xong.",
+      "Bấm một ảnh trong thư viện; xem xong bấm \"Studio\" để về.",
+      "Đợi khoảng 10 giây; bấm số credit ở góc phải rồi bấm \"Nạp credit\" để sang trang Credit.",
+      "Lặp lại bước 2–3 vài lần (lần đầu mỗi trang có thể chậm hơn vì dev phải biên dịch)."
+    ],
+    "title": "Chuyển trang phản hồi ngay, nhanh hơn",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Bước 1: nút Tạo khoá, có dòng \"Kling 2.5 chỉ tạo được Start + End frame ở Mode Professional. Bạn đổi Mode hoặc bỏ End frame.\"",
+      "Bước 2: dòng nhắc biến mất, nút Tạo mở, giá đổi theo Professional."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H12",
+    "note": "",
+    "order": 58,
+    "priority": "Trung bình",
+    "reply": "Mới thêm ngày 12/10 vì sáng nay 3 lần Kling 2.5 Start + End (Mode Relax) bị Gommo từ chối: \"chỉ hoạt động ở chế độ Professional\" (không mất tiền, đã hoàn). Claude tự test: Relax thì khoá + nhắc; Professional thì mở, giá 60 credit.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Chọn Video, Kling 2.5, Mode Relax. Thêm Start frame rồi End frame. Không bấm Tạo.",
+      "Đổi Mode sang Professional."
+    ],
+    "title": "Kling 2.5: Start + End frame chỉ ở Mode Professional",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  },
+  {
+    "by": "claude",
+    "credit": 0,
+    "expected": [
+      "Trong lúc tải chỉ hiện vòng xoay; không có lúc nào thẻ của thư viện hiện thành thẻ Thùng rác (có nút Khôi phục / Xoá vĩnh viễn).",
+      "Bấm nhanh qua lại thì cuối cùng luôn hiện đúng danh sách của tab đang chọn."
+    ],
+    "group": "H. Thay đổi ngày 12/10",
+    "id": "H13",
+    "note": "",
+    "order": 59,
+    "priority": "Cao",
+    "reply": "Lỗi Claude phát hiện khi chạy H10: vừa bấm sang Thùng rác, trong lúc chờ tải, app vẽ tạm video thư viện thành thẻ Thùng rác; bấm Khôi phục lúc đó ra lỗi \"Không tìm thấy mục này\" (không mất dữ liệu). Đã sửa: hiện vòng xoay tới khi tải xong, bỏ kết quả của tab cũ. Claude chạy lại H10 sau khi sửa: đạt.",
+    "replyAt": "2026-10-12T02:10:00.000Z",
+    "status": "pass",
+    "steps": [
+      "Ở Studio tab Tất cả, bấm ngay sang tab Thùng rác.",
+      "Bấm qua lại nhanh giữa Tất cả, Video, Thùng rác."
+    ],
+    "title": "Bấm sang tab Thùng rác không hiện nhầm mục của thư viện",
+    "updatedAt": "2026-10-12T02:10:00.000Z",
+    "verify": false
+  }
+]

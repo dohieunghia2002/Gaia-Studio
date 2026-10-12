@@ -1,0 +1,17 @@
+- [Converse in Vietnamese](user-language-vietnamese.md) — user wants all replies in Vietnamese
+- [User working style](user-working-style.md) — founder; wants options + recommendation, design before code, sourced facts, explicit OK before spending credits
+- [Redesign status](gaia-redesign-status.md) — START HERE: app coded 2026-10-08, login works, less-AI rework + real samples 2026-10-10, mockup/canvas/PNG how-to
+- [GitHub repo](gaia-github-repo.md) — dohieunghia2002/Gaia-Studio (private, main); gh CLI installed + logged in
+- [GAIA logo](gaia-logo.md) — chosen 2026-10-07, SVG master + favicons in logo/final/, geometry, where it's used
+- [UX conventions](gaia-ux-conventions.md) — Darkroom tokens/fonts, anti-AI-look rules, Trash (30-day), no upscale, always contain, credit display, honest copy; frame chip "· đã cắt 16:9" + preview popover (2026-10-12)
+- [Implementation status](gaia-implementation-plan.md) — app built; Supabase/Google done, PayOS pending; first paid run 2026-10-10 (cost = listed price), still-unverified Gommo facts; speed fixes + Next 16.4 committed 2442699 (2026-10-12)
+- [Rebuild UI from mockup](rebuild-ui-from-mockup.md) — old gaia-studio UI is throwaway; rebuild from mockup, never patch old components
+- [Aligned grids, no masonry](ui-aligned-grids.md) — galleries must be uniform equal-size cells; user finds masonry uneven
+- [UI copy: English creator terms](ui-copy-english-terms.md) — keep frame/text-to-video/upscale etc. in English, actions & status in Vietnamese
+- [Verify before UI claims](verify-gommo-before-ui-claims.md) — no UI feature/estimate/promise unless Gommo or our stack verifiably supports it
+- [GAIA is multi-user](gaia-multi-user-business.md) — Google login, GAIA credits (1.000đ=10, +50% markup, 90-day expiry, auto-refund), PayOS top-up
+- [Prompt translation plan](prompt-translation-plan.md) — Gommo translate_to_en now, own Claude translation later; invisible to users; one switchable function
+- [Cost basis: 79ai](gommo-cost-basis-79ai.md) — GAIA → 79ai account → Gommo; ~1đ/credit, 90-day expiry, model "from" prices; user won't negotiate
+- [QA trackers](gaia-qa-image-tracker.md) — round 1 image 6V1FGJZQBgn2RN9gkKzyTo, round 2 system GLEQL5BL9Px7gobtFFwvng (59 cases; default tab "Cần làm"; `reply` + `by` fields); db 'cases'; read status/note
+- [No build while dev runs](no-build-while-dev.md) — next build during user's next dev corrupted .next → all routes 404; fix = kill dev, rm -rf .next, restart
+- [Login fails: network + Unhealthy project](login-fails-flaky-network.md) — 2026-10-11 'phiên hết hạn'/error=1 = flaky IPv4→Cloudflare + Supabase project Unhealthy; check project status first; getUser() maps errors to 401

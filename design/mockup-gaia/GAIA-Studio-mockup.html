@@ -1,0 +1,1190 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GAIA Studio – bản xem thử giao diện</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2713%27 fill=%27%23F0A93A%27/%3E%3Cpath d=%27M10 23.5V10h16M54 44.5V54H38%27 fill=%27none%27 stroke=%27%231A1206%27 stroke-width=%275%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3Cpath d=%27M17 34.5a15 15 0 0 1 30 0z%27 fill=%27%231A1206%27/%3E%3Crect x=%277.5%27 y=%2736%27 width=%2749%27 height=%274%27 fill=%27%231A1206%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--accent:#F0A93A}
+*{box-sizing:border-box}
+html,body{margin:0;background:#0F0F0E;color:#EDEBE6}
+body{font-family:'Be Vietnam Pro',system-ui,sans-serif}
+a{color:#EDEBE6;text-decoration:none}a:hover{color:#FFFFFF}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+textarea::placeholder{color:#8C877D}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+[hidden]{display:none!important}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+@keyframes gaia-slide{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+@keyframes gaia-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* Thanh chọn màn của bản xem thử (không thuộc thiết kế) */
+.viewer-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;padding:8px 16px;background:#EDEBE6;color:#1A1A18;font-size:13px}
+.viewer-bar strong{font-weight:600}
+.viewer-bar nav{display:flex;flex-wrap:wrap;gap:4px}
+.viewer-bar a{color:#1A1A18;display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:8px}
+.viewer-bar a[aria-current="page"]{background:#1A1A18;color:#EDEBE6}
+.viewer-bar label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+body.png .viewer-bar{display:none}
+.screen{display:none}
+.screen.active{display:block}
+
+.page{min-height:100vh;background:#0F0F0E;color:#EDEBE6;font-size:14px;line-height:1.5;display:flex;flex-direction:column;position:relative}
+.topbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding:12px 32px;border-bottom:1px solid #262622}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:.12em;min-height:44px}
+.logo .mark{width:20px;height:20px;flex:none;display:block}
+.logo .sub{font-weight:500;letter-spacing:0;color:#A8A399}
+.credit-btn{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px 0 14px;border:1px solid #2A2A26;border-radius:999px;background:transparent;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.avatar{width:44px;height:44px;border-radius:50%;border:1px solid #2A2A26;background:#1C1C19;display:flex;align-items:center;justify-content:center;color:#A8A399}
+.popover{position:absolute;background:#1C1C19;border:1px solid #2E2E29;border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.6);z-index:40}
+.tx{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid #262622}
+.tx span span{display:block}
+
+.tab{height:44px;padding:0 2px;border:0;background:transparent;font-weight:500;color:#A8A399}
+.tab[aria-pressed="true"]{font-weight:600;color:#EDEBE6;box-shadow:inset 0 -2px 0 #EDEBE6}
+.running{display:inline-flex;align-items:center;gap:8px;height:32px;margin-bottom:6px;padding:0 14px;border-radius:999px;background:#2A2112;color:var(--accent);font-size:13px;font-weight:500}
+
+.group-title{margin:24px 0 12px;font-size:13px;font-weight:500;color:#A8A399}
+/* Thư viện: lưới đều, mọi ô cùng khung vuông; ảnh/video luôn đặt vừa trong khung (không cắt) */
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{display:flex;flex-direction:column;position:relative;border-radius:12px;overflow:hidden;background:#181816;border:1px solid #262622}
+.card > a{display:flex;flex-direction:column;flex:1}
+.frame{position:relative;aspect-ratio:1/1;background:#121211;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.frame .media{width:calc(min(1, var(--r)) * 100%);aspect-ratio:var(--r);display:flex;align-items:center;justify-content:center}
+.frame.status{flex-direction:column;gap:6px;padding:16px;text-align:center}
+.card-body{padding:10px 12px 12px}
+.card-title{margin:0;font-size:13px;line-height:1.5;min-height:3em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{margin:6px 0 0;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:#8C877D;white-space:nowrap}
+.card-meta > span:first-child{overflow:hidden;text-overflow:ellipsis}
+.mini-toggle{display:flex;gap:2px;padding:2px;background:#0F0F0E;border:1px solid #262622;border-radius:10px}
+.mini-toggle button{height:32px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#A8A399;font-size:12px;font-weight:500}
+.mini-toggle button[aria-pressed="true"]{background:#2E2E29;color:#EDEBE6}
+.tab-count{margin-left:6px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;color:#8C877D}
+.ver-badge{position:absolute;top:10px;left:10px;z-index:1;display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 8px;border-radius:7px;background:rgba(15,15,14,.8);border:1px solid rgba(237,235,230,.18);color:#EDEBE6;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:500}
+.frame .media>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.trash-note{margin:16px 0 0;font-size:13px;color:#8C877D}
+.trash-left{margin:6px 0 0;font-size:12px;color:#8C877D}
+.trash-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
+.mini-btn{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 12px;border:1px solid #2E2E29;border-radius:10px;background:#1F1F1C;color:#EDEBE6;font-size:13px;font-weight:500;white-space:nowrap}
+.mini-btn.danger-ghost{background:transparent;border-color:#3D2A25;color:#EE7A63}
+.mini-btn.danger-fill{background:#EE7A63;border-color:#EE7A63;color:#1A0F0C;font-weight:600}
+.warn{color:#EE7A63;font-size:13px;font-weight:500}
+.media-label{position:absolute;left:10px;bottom:10px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:#D8D3C8;background:rgba(15,15,14,.6);padding:2px 6px;border-radius:4px}
+.play-badge{width:52px;height:52px;border-radius:50%;background:rgba(15,15,14,.6);display:flex;align-items:center;justify-content:center}
+.overlay-btn{width:40px;height:40px;border-radius:10px;border:1px solid #3A3A34;background:rgba(15,15,14,.8);display:flex;align-items:center;justify-content:center}
+.menu{position:absolute;width:220px;background:#1C1C19;border:1px solid #2E2E29;border-radius:12px;padding:6px;box-shadow:0 20px 50px rgba(0,0,0,.6);display:flex;flex-direction:column;z-index:20}
+.menu button{display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border:0;border-radius:8px;background:transparent;text-align:left;font-size:13px}
+.menu button:hover{background:#26261F}
+.menu .danger{color:#EE7A63}
+.toast{display:flex;align-items:center;gap:12px;background:#1C1C19;border:1px solid #2E2E29;border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.link-btn{display:inline-flex;align-items:center;height:36px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--accent);font-size:13px;font-weight:600}
+.ghost-icon{width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:#A8A399;display:flex;align-items:center;justify-content:center}
+
+.dock{position:sticky;bottom:20px;padding:0 16px;display:flex;justify-content:center;z-index:5}
+.composer{width:100%;max-width:880px;background:#181816;border:1px solid #2E2E29;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.55);padding:14px;display:flex;flex-direction:column;gap:10px;position:relative}
+.composer textarea,.edit-box textarea{width:100%;resize:none;border:0;background:transparent;color:#EDEBE6;font:inherit;font-size:15px;line-height:1.6;padding:4px 6px}
+.segwrap{display:flex;gap:4px;padding:3px;background:#0F0F0E;border:1px solid #262622;border-radius:12px}
+.seg{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border:0;border-radius:9px;font-weight:500;background:transparent;color:#A8A399}
+.seg[aria-pressed="true"]{background:#2E2E29;color:#EDEBE6}
+.model-btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 12px 0 14px;border:1px solid #2E2E29;border-radius:12px;background:#1F1F1C;font-weight:600}
+.dashed{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 12px;border:1px dashed #3A3A34;border-radius:10px;background:transparent;color:#A8A399;font-size:13px}
+.dashed:disabled{opacity:.45;border-color:#2E2E29}
+.frame-chip{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 2px 0 6px;border:1px solid #2E2E29;border-radius:10px;background:#1F1F1C;font-size:13px}
+.frame-chip .thumb{width:28px;height:28px;border-radius:6px}
+.frame-chip button{width:34px;height:34px;border:0;border-radius:8px;background:transparent;color:#A8A399;display:flex;align-items:center;justify-content:center}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border:1px solid #2E2E29;border-radius:10px;background:#1F1F1C;font-size:13px}
+.chip .k{color:#8C877D}
+.chip .v{font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:500}
+.meta-row{display:flex;justify-content:space-between;gap:8px}
+.credit-used{display:inline-flex;align-items:center;gap:4px;color:#A8A399}
+.cost{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;color:#A8A399}
+.submit{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border:0;border-radius:12px;background:var(--accent);color:#1A1206;font-weight:600;font-size:14px}
+.submit:disabled{background:#2A2A26;color:#8C877D}
+.pick{width:100%;text-align:left;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:0;border-radius:10px;background:transparent}
+.pick[aria-pressed="true"]{background:#26261F}
+.pick:disabled{opacity:.5}
+.pick .check{width:16px;flex-shrink:0;padding-top:2px;color:var(--accent);display:flex}
+.pick .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.pick .tags{display:flex;flex-wrap:wrap;gap:4px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:#A8A399}
+.pick .price{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;white-space:nowrap}
+.pick .price small{color:#8C877D;font-size:11px}
+.tag{padding:1px 6px;border:1px solid #3A3A34;border-radius:4px}
+
+.detail-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding:10px 24px;border-bottom:1px solid #262622}
+.back{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 12px 0 8px;border-radius:10px;color:#A8A399;font-weight:500}
+.detail-title{margin:0;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 14px;border:1px solid #2E2E29;border-radius:12px;background:#1F1F1C;font-weight:500;color:#EDEBE6}
+.btn .c{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#A8A399}
+.icon-btn{width:44px;height:44px;border:1px solid #2E2E29;border-radius:12px;background:#1F1F1C;display:flex;align-items:center;justify-content:center}
+.split{flex:1;display:flex;flex-wrap:wrap;align-items:stretch}
+.stage{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:16px;padding:24px;background:#0B0B0A}
+.side{flex:1 1 320px;max-width:100%;border-left:1px solid #262622;padding:20px;display:flex;flex-direction:column;gap:24px}
+.side h2{margin:0 0 12px;font-size:13px;font-weight:500;color:#A8A399}
+.info{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;font-size:13px}
+.info dt{color:#8C877D}
+.info dd{margin:2px 0 0}
+.prompt-box{padding:12px;border-radius:12px;background:#181816;border:1px solid #262622}
+.prompt-box .head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.prompt-box .head span{font-size:12px;color:#8C877D}
+.prompt-box p{margin:0;font-size:13px;line-height:1.6}
+.ver{width:100%;text-align:left;display:flex;gap:12px;align-items:center;padding:8px;border-radius:12px;border:1px solid #262622;background:transparent}
+.ver[aria-pressed="true"]{border-color:var(--accent);background:#1F1F1C}
+.ver .thumb{width:48px;height:64px;flex-shrink:0;border-radius:8px}
+.ver .txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ver .l{font-size:13px;font-weight:600}
+.ver .p{font-size:12px;color:#A8A399;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ver .t{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:#8C877D}
+.edit-box{width:100%;max-width:760px;margin:0 auto;background:#181816;border:1px solid #2E2E29;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.player[data-playing="true"] .ico-play{display:none}
+.player:not([data-playing="true"]) .ico-pause{display:none}
+.ctl{width:44px;height:44px;flex-shrink:0;border-radius:10px;border:0;background:transparent;color:#A8A399;display:flex;align-items:center;justify-content:center}
+
+.menu a.menu-link{display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border-radius:8px;font-size:13px}
+.menu a.menu-link:hover{background:#26261F}
+.panel{background:#181816;border:1px solid #262622;border-radius:18px}
+.field{width:100%;height:48px;padding:0 14px;border:1px solid #2E2E29;border-radius:12px;background:#0F0F0E;color:#EDEBE6;font:inherit;font-size:15px}
+input::placeholder{color:#8C877D}
+.flabel{display:block;margin-bottom:6px;font-size:13px;font-weight:500}
+.primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:48px;border:0;border-radius:12px;background:var(--accent);color:#1A1206;font-weight:600;font-size:15px}
+a.primary:hover{color:#1A1206}
+.ghost{width:100%;height:44px;border:1px solid #2E2E29;border-radius:12px;background:transparent;font-weight:500}
+.amount{height:52px;border:1px solid #2E2E29;border-radius:12px;background:#1F1F1C;color:#EDEBE6;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:15px;font-weight:500}
+.amount[aria-pressed="true"]{border-color:var(--accent);background:#2A2112;color:var(--accent)}
+.ledger li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;padding:12px 0;border-top:1px solid #262622}
+.ledger .t{width:110px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#8C877D}
+.ledger .c{flex:1 1 200px;min-width:0;display:flex;flex-direction:column}
+.ledger .c small{font-size:12px;color:#A8A399}
+.ledger .d{width:90px;text-align:right;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:14px}
+.ledger .a{width:90px;text-align:right;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#8C877D}
+.ledger .plus{color:var(--accent)}
+.suggest{text-align:left;display:flex;flex-direction:column;padding:0;border:1px solid #262622;border-radius:12px;background:#181816;overflow:hidden;color:#EDEBE6;transition:border-color .15s,background-color .15s}
+.suggest:hover{border-color:#3A3A34;background:#1C1C19}
+.suggest .b{flex:1;display:flex;flex-direction:column;gap:10px;padding:16px}
+.suggest .k{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#8C877D}
+.suggest .p{font-size:15px;line-height:1.55;min-height:4.65em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.suggest .go{margin-top:auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:#A8A399}
+.suggest:hover .go{color:var(--accent)}
+/* Trang chủ */
+.home-wrap{max-width:1240px;margin:0 auto;padding-left:24px;padding-right:24px}
+.home-nav-link{display:inline-flex;align-items:center;height:44px;padding:0 14px;color:#A8A399;font-size:15px}
+.home-login{display:inline-flex;align-items:center;height:44px;padding:0 18px;margin-left:8px;border-radius:12px;background:#EDEBE6;color:#0F0F0E;font-weight:600;font-size:15px}
+a.home-login:hover{color:#0F0F0E}
+.home-hero{padding-top:88px;padding-bottom:112px}
+.home-hero h1{margin:0;max-width:17ch;font-size:clamp(38px,5.4vw,72px);line-height:1.08;font-weight:700;letter-spacing:-.025em;text-wrap:balance}
+.home-lede{margin:24px 0 0;max-width:600px;font-size:18px;color:#A8A399}
+.hero-grid{display:flex;flex-wrap:wrap;align-items:flex-end;gap:48px 64px}
+.hero-main{flex:999 1 560px;min-width:0;max-width:780px}
+.composer.home-prompt{margin-top:40px;max-width:none;padding:16px}
+.home-prompt textarea{width:100%;resize:none;border:0;background:transparent;color:#EDEBE6;font:inherit;font-size:16px;line-height:1.6;padding:4px 6px;outline:none}
+.home-prompt-note{margin:12px 0 0;padding:0 4px;font-size:13px;color:#8C877D}
+.hero-ideas{flex:1 1 300px;max-width:400px}
+.hero-ideas h2{margin:0 0 6px;font-size:13px;font-weight:500;color:#8C877D}
+.hero-ideas ul{list-style:none;margin:0;padding:0}
+.idea{width:100%;text-align:left;display:flex;flex-direction:column;gap:4px;padding:12px 0;border:0;border-top:1px solid #262622;background:transparent;color:#A8A399}
+.idea .k{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#8C877D}
+.idea .p{font-size:14px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.idea:hover .p{color:#EDEBE6}
+.home-section{border-top:1px solid #262622;padding:88px 0}
+.home-section-lede{margin:12px 0 0;max-width:560px;color:#A8A399}
+.h2{margin:0;font-size:clamp(28px,3vw,40px);line-height:1.2;font-weight:700;letter-spacing:-.01em}
+.price-layout{display:flex;flex-wrap:wrap;align-items:flex-start;gap:48px 72px}
+.price-intro{flex:1 1 320px;max-width:420px}
+.facts{margin:36px 0 0;display:flex;flex-direction:column}
+.facts>div{padding:14px 0;border-top:1px solid #262622}
+.facts dt{font-weight:600;font-size:15px}
+.facts dd{margin:2px 0 0;font-size:14px;color:#A8A399}
+.price-table{flex:999 1 520px;min-width:0}
+.price-table ul{list-style:none;margin:0;padding:0}
+.price-row{display:grid;grid-template-columns:minmax(150px,1.1fr) 2fr 90px;align-items:center;gap:8px 20px;padding:14px 0;border-top:1px solid #262622}
+.price-head{padding:0 0 10px;border-top:0;font-size:13px;color:#8C877D}
+.price-head span:last-child{text-align:right}
+.price-row .name{display:flex;flex-direction:column;font-weight:600;font-size:15px;line-height:1.35}
+.price-row .name small{font-weight:400;font-size:12px;color:#8C877D;margin-top:2px}
+.price-row .tags{display:flex;flex-wrap:wrap;gap:6px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#A8A399}
+.price-row .price{display:inline-flex;align-items:center;justify-content:flex-end;gap:6px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:14px}
+.price-row .price svg{color:#8C877D}
+.price-more{display:flex;align-items:center;gap:6px;height:44px;margin-top:4px;padding:0 2px;border-top:1px solid #262622;color:#A8A399;font-size:14px;font-weight:500}
+.frame .media{position:relative;overflow:hidden}
+.frame .media>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.media-label.right{left:auto;right:10px}
+.suggest .frame{aspect-ratio:16/9}
+.idea{align-items:center;flex-direction:row;gap:14px}
+.idea-thumb{width:96px;aspect-ratio:16/9;flex-shrink:0;border-radius:8px;object-fit:cover;background:#1C1C19}
+.idea-text{min-width:0;display:flex;flex-direction:column;gap:4px}
+.sample-grid{margin-top:40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.sample-card .frame{aspect-ratio:16/9}
+/* Đăng nhập */
+.google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;height:52px;border:1px solid #747775;border-radius:12px;background:#FFFFFF;color:#1F1F1F;font-weight:600;font-size:15px}
+a.google-btn:hover{color:#1F1F1F;background:#F2F2F2}
+.carried{width:100%;text-align:left;padding:12px 14px;border-radius:12px;background:#0F0F0E;border:1px solid #262622}
+.carried span{font-size:12px;color:#8C877D}
+.carried p{margin:4px 0 0;font-size:14px;line-height:1.5}
+@media (max-width:640px){
+  .home-hero{padding-top:48px;padding-bottom:72px}
+  .home-nav-link{display:none}
+  .home-section{padding:64px 0}
+  .price-row{grid-template-columns:minmax(0,1fr) auto}
+  .price-row .tags{grid-column:1/-1;grid-row:2}
+  .price-head span:nth-child(2){display:none}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-gaia" viewBox="0 0 64 64"><rect width="64" height="64" rx="13" fill="#F0A93A"/><path d="M10 23.5V10h16M54 44.5V54H38" fill="none" stroke="#1A1206" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 34.5a15 15 0 0 1 30 0z" fill="#1A1206"/><rect x="7.5" y="36" width="49" height="4" fill="#1A1206"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m6 6 1 14h10l1-14"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="15" height="14" rx="2"/><path d="m17 10 5-3v10l-5-3"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v.01"/><path d="M14 20h.01"/><path d="M17 20h4v-3"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 18 18"/><path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1"/><path d="M6.6 6.6A17.3 17.3 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+    <symbol id="i-max" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H3v5"/><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M16 21h5v-5"/></symbol>
+  </defs>
+</svg>
+
+<div class="viewer-bar">
+  <span><strong>GAIA Studio</strong> · bản xem thử giao diện (ảnh/video là khối màu giữ chỗ)</span>
+  <nav aria-label="Chọn màn hình">
+    <a data-tab="studio" href="#studio">Studio</a>
+    <a data-tab="trash" href="#trash">Thùng rác</a>
+    <a data-tab="empty" href="#empty">Studio lần đầu</a>
+    <a data-tab="edit" href="#edit">Chi tiết ảnh</a>
+    <a data-tab="video" href="#video">Chi tiết video</a>
+    <a data-tab="home" href="#home">Trang chủ</a>
+    <a data-tab="auth" href="#auth">Đăng nhập</a>
+    <a data-tab="credit" href="#credit">Credit</a>
+  </nav>
+  <label><input type="checkbox" id="sim-credit"> Giả lập: không đủ credit</label>
+</div>
+
+<!-- ═════════════ STUDIO ═════════════ -->
+<div class="screen" id="studio">
+<div class="page">
+  <header class="topbar">
+    <a href="#home" class="logo"><svg class="mark" aria-hidden="true"><use href="#i-gaia"/></svg>GAIA<span class="sub">Studio</span></a>
+    <div style="display: flex; align-items: center; gap: 12px; position: relative">
+      <button type="button" class="credit-btn" id="credit-btn" aria-expanded="false" aria-haspopup="true">
+        <svg width="16" height="16" aria-hidden="true" style="color: var(--accent)"><use href="#i-coin"/></svg>2.026 <span style="color: #A8A399">credit</span>
+        <svg width="14" height="14" aria-hidden="true"><use href="#i-chevron"/></svg>
+      </button>
+      <div class="popover" id="credit-pop" hidden style="right: 56px; top: calc(100% + 8px); width: 340px; max-width: calc(100vw - 32px); padding: 14px">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px">
+          <span style="font-size: 13px; font-weight: 600">Lịch sử credit</span>
+          <span class="mono" style="font-size: 12px; color: #A8A399">Số dư 2.026</span>
+        </div>
+        <ul style="list-style: none; margin: 0; padding: 0">
+          <li class="tx"><span><span style="font-size: 13px">Tạo video · WAN 3.0</span><span style="font-size: 12px; color: #8C877D">Hôm nay, 14:32</span></span><span class="mono" style="font-size: 13px">−50</span></li>
+          <li class="tx"><span><span style="font-size: 13px">Hoàn credit · video lỗi</span><span style="font-size: 12px; color: #8C877D">Hôm nay, 14:10</span></span><span class="mono" style="font-size: 13px; color: var(--accent)">+50</span></li>
+          <li class="tx"><span><span style="font-size: 13px">Tạo video · WAN 3.0</span><span style="font-size: 12px; color: #8C877D">Hôm nay, 14:05</span></span><span class="mono" style="font-size: 13px">−50</span></li>
+          <li class="tx"><span><span style="font-size: 13px">Tạo video · VEO 3.1</span><span style="font-size: 12px; color: #8C877D">Hôm nay, 13:40</span></span><span class="mono" style="font-size: 13px">−12</span></li>
+        </ul>
+        <div style="display: flex; gap: 8px; margin-top: 12px"><a href="#credit" class="primary" style="flex: 1; height: 40px; font-size: 13px">Nạp credit</a><a href="#credit" class="ghost" style="flex: 1; height: 40px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px">Xem tất cả</a></div>
+      </div>
+      <button type="button" class="avatar" id="account-btn" aria-label="Tài khoản" aria-expanded="false" aria-haspopup="true" style="background: #2D3142; color: #EDEBE6; font-weight: 600"><span aria-hidden="true">M</span></button>
+      <div class="menu" id="account-menu" hidden style="right: 0; top: calc(100% + 8px); width: 260px">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px 10px 12px; margin-bottom: 6px; border-bottom: 1px solid #262622"><span aria-hidden="true" style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: #2D3142; display: flex; align-items: center; justify-content: center; font-weight: 600">M</span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 13px; font-weight: 600">Minh Anh</span><span style="font-size: 12px; color: #A8A399">minhanh@example.com</span></span></div>
+        <a href="#credit" class="menu-link"><svg width="16" height="16" aria-hidden="true"><use href="#i-coin"/></svg>Credit &amp; giao dịch</a>
+        <a href="#home" class="menu-link"><svg width="16" height="16" aria-hidden="true"><use href="#i-logout"/></svg>Đăng xuất</a>
+      </div>
+    </div>
+  </header>
+
+  <div style="position: absolute; top: 132px; right: 32px; z-index: 30; display: flex; flex-direction: column; gap: 8px; width: 340px; max-width: calc(100% - 32px)">
+    <div class="toast" id="done-toast" aria-live="polite" style="padding: 12px 8px 12px 14px">
+      <span style="color: var(--accent); display: flex"><svg width="20" height="20" aria-hidden="true"><use href="#i-done"/></svg></span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+        <span style="font-size: 13px; font-weight: 600">Video đã tạo xong</span>
+        <span style="font-size: 12px; color: #A8A399; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Sóng biển vỗ vào ghềnh đá, chuyển động chậm</span>
+      </span>
+      <a href="#video" class="link-btn">Xem</a>
+      <button type="button" class="ghost-icon" id="done-close" aria-label="Đóng thông báo"><svg width="16" height="16" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="toast" id="undo-toast" hidden aria-live="polite" style="justify-content: space-between; padding: 8px 8px 8px 14px">
+      <span style="font-size: 13px">Đã chuyển vào thùng rác</span>
+      <button type="button" class="link-btn" id="undo-btn">Hoàn tác</button>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 8px 32px 0; border-bottom: 1px solid #1C1C19">
+    <nav aria-label="Lọc thư viện" style="display: flex; flex-wrap: wrap; gap: 0 24px">
+      <button type="button" class="tab" data-lib="all" aria-pressed="true">Tất cả</button>
+      <button type="button" class="tab" data-lib="image" aria-pressed="false">Ảnh</button>
+      <button type="button" class="tab" data-lib="video" aria-pressed="false">Video</button>
+      <button type="button" class="tab" data-lib="trash" aria-pressed="false">Thùng rác<span class="tab-count" id="trash-count">2</span></button>
+    </nav>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+      <div class="running" id="lib-running"><span style="width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: gaia-pulse 1.6s ease-in-out infinite"></span>2 đang chạy</div>
+      <div id="trash-tools" hidden style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px">
+        <button type="button" class="mini-btn danger-ghost" id="empty-trash"><svg width="14" height="14" aria-hidden="true"><use href="#i-trash"/></svg>Dọn thùng rác</button>
+        <span id="empty-confirm" hidden style="display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px"><span class="warn">Xoá vĩnh viễn mọi mục trong thùng rác?</span><button type="button" class="mini-btn danger-fill" id="empty-yes">Xoá hết</button><button type="button" class="mini-btn" id="empty-no">Huỷ</button></span>
+      </div>
+    </div>
+  </div>
+
+  <main id="library" style="flex: 1; padding: 0 32px 48px">
+    <h2 class="group-title">Hôm nay</h2>
+    <div class="lib-grid">
+
+      <div class="card">
+        <div class="frame status" style="background: #1C1C19">
+          <span style="font-size: 13px; font-weight: 600; color: var(--accent)">Đang render · 12:40</span>
+          <span style="font-size: 12px; color: #A8A399">Bạn có thể rời trang. Kết quả sẽ hiện trong thư viện khi xong.</span>
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: #262622; overflow: hidden"><div style="width: 40%; height: 100%; background: var(--accent); animation: gaia-slide 1.6s ease-in-out infinite"></div></div>
+        </div>
+        <div class="card-body">
+          <p class="card-title">Drone bay qua ruộng bậc thang Mù Cang Chải lúc bình minh, sương mỏng</p>
+          <p class="card-meta meta-row"><span>WAN 3.0 · 16:9 · 5s</span><span class="credit-used" title="Credit đã dùng"><svg width="12" height="12" aria-hidden="true"><use href="#i-coin"/></svg>50<span class="sr-only"> credit</span></span></p>
+        </div>
+      </div>
+
+      <div class="card" id="cat-card" style="border-color: #3A3A34">
+        <a href="#edit">
+          <div class="frame"><div class="media" style="--r: 3/4; background: #3D3129"></div><span class="ver-badge" title="3 phiên bản"><svg width="14" height="14" aria-hidden="true"><use href="#i-layers"/></svg>3<span class="sr-only"> phiên bản</span></span><span class="media-label">Ảnh · 3:4</span></div>
+          <div class="card-body">
+            <p class="card-title">Một con mèo cam ngủ trên bậu cửa sổ, nắng chiều, phong cách phim 35mm</p>
+            <p class="card-meta meta-row"><span>Nano Banana 2 · 3 phiên bản</span><span class="credit-used" title="Tổng credit đã dùng cho 3 phiên bản"><svg width="12" height="12" aria-hidden="true"><use href="#i-coin"/></svg>18<span class="sr-only"> credit</span></span></p>
+          </div>
+        </a>
+        <div style="position: absolute; top: 8px; right: 8px; display: flex; gap: 4px">
+          <button type="button" class="overlay-btn" aria-label="Tải về" title="Tải về"><svg width="18" height="18" aria-hidden="true"><use href="#i-download"/></svg></button>
+          <button type="button" class="overlay-btn" aria-label="Dùng lại prompt" title="Dùng lại prompt"><svg width="18" height="18" aria-hidden="true"><use href="#i-pencil"/></svg></button>
+          <button type="button" class="overlay-btn" id="cat-more" aria-label="Thêm thao tác" title="Thêm thao tác" aria-expanded="false" aria-haspopup="true"><svg width="18" height="18" aria-hidden="true"><use href="#i-more"/></svg></button>
+        </div>
+        <div class="menu" id="cat-menu" hidden style="top: 56px; right: 8px; width: 210px">
+          <button type="button" data-close-menu><svg width="16" height="16" aria-hidden="true"><use href="#i-copy"/></svg>Sao chép prompt</button>
+          <button type="button" class="danger" id="cat-delete"><svg width="16" height="16" aria-hidden="true"><use href="#i-trash"/></svg>Chuyển vào thùng rác</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="frame status" style="background: #1C1C19; gap: 4px">
+          <span style="font-size: 13px; font-weight: 500; color: #A8A399">Đang chờ xử lý</span>
+          <span class="mono" style="font-size: 12px; color: #8C877D">0:08</span>
+        </div>
+        <div class="card-body">
+          <p class="card-title">Cận cảnh ly cà phê sữa đá trên bàn gỗ, hơi nước đọng trên thành ly</p>
+          <p class="card-meta">Nano Banana 2 · 1:1 · 1K</p>
+        </div>
+      </div>
+
+      <a href="#video" class="card">
+        <div class="frame">
+          <div class="media" style="--r: 9/16; background: #263238"><span class="play-badge"><svg width="20" height="20" aria-hidden="true"><use href="#i-play"/></svg></span></div>
+          <span class="media-label">Video · 9:16</span>
+          <span class="media-label" style="left: auto; right: 10px">0:08</span>
+        </div>
+        <div class="card-body">
+          <p class="card-title">Sóng biển vỗ vào ghềnh đá, chuyển động chậm, trời u ám</p>
+          <p class="card-meta meta-row"><span>VEO 3.1 · 9:16 · 720p</span><span class="credit-used" title="Credit đã dùng"><svg width="12" height="12" aria-hidden="true"><use href="#i-coin"/></svg>12<span class="sr-only"> credit</span></span></p>
+        </div>
+      </a>
+
+      <div class="card">
+        <div class="frame status" style="background: #1A1513; gap: 8px">
+          <span style="color: #EE7A63; display: flex"><svg width="24" height="24" aria-hidden="true"><use href="#i-alert"/></svg></span>
+          <span style="font-size: 14px; font-weight: 600; color: #EE7A63">Không tạo được video</span>
+          <span style="font-size: 12px; color: #A8A399">Hệ thống không xử lý được yêu cầu này. Bạn có thể thử lại, hoặc sửa prompt rồi tạo mới.</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px"><svg width="14" height="14" aria-hidden="true" style="color: var(--accent)"><use href="#i-check"/></svg>Đã hoàn 50 credit</span>
+          <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px">
+            <button type="button" style="height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid #3A3A34; background: #23231F; font-size: 13px; font-weight: 500">Thử lại <span class="mono" style="color: #A8A399">· 50</span></button>
+            <button type="button" style="height: 40px; padding: 0 12px; border-radius: 10px; border: 0; background: transparent; font-size: 13px; font-weight: 500">Dùng lại prompt</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <p class="card-title">Cô gái mặc áo dài trắng đạp xe qua phố, lá vàng rơi</p>
+          <p class="card-meta">WAN 3.0 · 9:16 · 5s</p>
+        </div>
+      </div>
+
+      <a href="#edit" class="card">
+        <div class="frame"><div class="media" style="--r: 16/9; background: #2D3142"></div><span class="media-label">Ảnh · 16:9</span></div>
+        <div class="card-body">
+          <p class="card-title">Phố cổ Hội An về đêm, đèn lồng, mưa nhẹ, góc máy thấp</p>
+          <p class="card-meta meta-row"><span>Nano Banana 2 · 16:9 · 1K</span><span class="credit-used" title="Credit đã dùng"><svg width="12" height="12" aria-hidden="true"><use href="#i-coin"/></svg>6<span class="sr-only"> credit</span></span></p>
+        </div>
+      </a>
+    </div>
+
+    <h2 class="group-title">Hôm qua</h2>
+    <div class="lib-grid">
+      <a href="#edit" class="card">
+        <div class="frame"><div class="media" style="--r: 1/1; background: #3E3A2B"></div><span class="media-label">Ảnh · 1:1</span></div>
+        <div class="card-body"><p class="card-title">Bánh mì Sài Gòn trên giấy gói, ánh sáng studio, nền be</p><p class="card-meta meta-row"><span>Nano Banana 2 · 1:1 · 1K</span><span class="credit-used" title="Credit đã dùng"><svg width="12" height="12" aria-hidden="true"><use href="#i-coin"/></svg>6<span class="sr-only"> credit</span></span></p></div>
+      </a>
+      <a href="#video" class="card">
+        <div class="frame">
+          <div class="media" style="--r: 16/9; background: #2E3B36"><span class="play-badge"><svg width="20" height="20" aria-hidden="true"><use href="#i-play"/></svg></span></div>
+          <span class="media-label">Video · 16:9</span><span class="media-label" style="left: auto; right: 10px">0:08</span>
+        </div>
+        <div class="card-body"><p class="card-title">Thuyền thúng trôi trên sông lúc hoàng hôn, máy quay lia chậm</p><p class="card-meta meta-row"><span>VEO 3.1 · 16:9 · 720p</span><span class="credit-used" title="Credit đã dùng"><svg width="12" height="12" aria-hidden="true"><use href="#i-coin"/></svg>12<span class="sr-only"> credit</span></span></p></div>
+      </a>
+      <a href="#edit" class="card">
+        <div class="frame"><div class="media" style="--r: 3/4; background: #35293A"></div><span class="media-label">Ảnh · 3:4</span></div>
+        <div class="card-body"><p class="card-title">Chân dung ông lão đánh cá, nếp nhăn rõ, ánh sáng bên hông</p><p class="card-meta meta-row"><span>Nano Banana 2 · 3:4 · 1K</span><span class="credit-used" title="Credit đã dùng"><svg width="12" height="12" aria-hidden="true"><use href="#i-coin"/></svg>6<span class="sr-only"> credit</span></span></p></div>
+      </a>
+      <a href="#edit" class="card">
+        <div class="frame"><div class="media" style="--r: 4/3; background: #2B3330"></div><span class="media-label">Ảnh · 4:3</span></div>
+        <div class="card-body"><p class="card-title">Logo tối giản hình ngọn núi, nét mảnh, nền trắng</p><p class="card-meta meta-row"><span>Nano Banana 2 · 4:3 · 1K</span><span class="credit-used" title="Credit đã dùng"><svg width="12" height="12" aria-hidden="true"><use href="#i-coin"/></svg>6<span class="sr-only"> credit</span></span></p></div>
+      </a>
+    </div>
+  </main>
+
+  <main id="trash" hidden style="flex: 1; padding: 0 32px 48px">
+    <p class="trash-note">Ảnh và video trong thùng rác tự xoá vĩnh viễn sau 30 ngày. Khôi phục để đưa lại vào thư viện.</p>
+    <div class="lib-grid" id="trash-grid" style="margin-top: 16px">
+      <div class="card trash-card"><div class="frame"><div class="media" style="--r: 1.7778"><img src="samples/rung-tre.webp" alt=""></div><span class="media-label">Ảnh · 16:9</span></div><div class="card-body"><p class="card-title">Rừng tre mờ sương lúc bình minh, tia nắng xuyên qua lá, góc rộng điện ảnh</p><p class="trash-left">Tự xoá vĩnh viễn sau 27 ngày</p><div class="trash-actions" data-normal><button type="button" class="mini-btn" data-restore><svg width="14" height="14" aria-hidden="true"><use href="#i-undo"/></svg>Khôi phục</button><button type="button" class="mini-btn danger-ghost" data-ask><svg width="14" height="14" aria-hidden="true"><use href="#i-trash"/></svg>Xoá vĩnh viễn</button></div><div class="trash-actions" data-confirm hidden><span class="warn" style="margin-right: auto">Xoá vĩnh viễn?</span><button type="button" class="mini-btn danger-fill" data-purge>Xoá</button><button type="button" class="mini-btn" data-cancel>Huỷ</button></div></div></div>
+      <div class="card trash-card"><div class="frame"><div class="media" style="--r: 1.7778"><img src="samples/ong-lao-tho-moc.webp" alt=""></div><span class="media-label">Ảnh · 16:9</span></div><div class="card-body"><p class="card-title">Chân dung ông lão thợ mộc trong xưởng, ánh sáng cửa sổ ấm, ống kính 85mm</p><p class="trash-left">Tự xoá vĩnh viễn sau 1 ngày</p><div class="trash-actions" data-normal><button type="button" class="mini-btn" data-restore><svg width="14" height="14" aria-hidden="true"><use href="#i-undo"/></svg>Khôi phục</button><button type="button" class="mini-btn danger-ghost" data-ask><svg width="14" height="14" aria-hidden="true"><use href="#i-trash"/></svg>Xoá vĩnh viễn</button></div><div class="trash-actions" data-confirm hidden><span class="warn" style="margin-right: auto">Xoá vĩnh viễn?</span><button type="button" class="mini-btn danger-fill" data-purge>Xoá</button><button type="button" class="mini-btn" data-cancel>Huỷ</button></div></div></div>
+    </div>
+    <div id="trash-empty" hidden style="padding: 64px 0; text-align: center; color: #8C877D; font-size: 13px">Thùng rác trống.</div>
+  </main>
+
+  <div class="dock">
+    <section class="composer" aria-label="Tạo mới">
+      <div class="popover" id="picker" hidden style="left: 14px; bottom: calc(100% + 10px); width: 440px; max-width: calc(100% - 28px); padding: 6px; display: flex; flex-direction: column; gap: 2px">
+        <div data-show="video" style="display: flex; flex-direction: column; gap: 2px">
+          <button type="button" class="pick" aria-pressed="true">
+            <span class="check"><svg width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg></span>
+            <span class="body"><span style="font-weight: 600">VEO 3.1</span><span class="tags"><span class="tag">Text → Video</span><span class="tag">Image → Video</span><span class="tag">Start + End frame</span></span></span>
+            <span class="price"><span>từ 12</span><small>18/24 lượt hôm nay</small></span>
+          </button>
+          <button type="button" class="pick" aria-pressed="false">
+            <span class="check"></span>
+            <span class="body"><span style="font-weight: 600">Kling 2.5</span><span class="tags"><span class="tag">Text → Video</span><span class="tag">Image → Video</span></span></span>
+            <span class="price"><span>từ 12</span></span>
+          </button>
+          <button type="button" class="pick" aria-pressed="false">
+            <span class="check"></span>
+            <span class="body"><span style="font-weight: 600">WAN 3.0</span><span class="tags"><span class="tag">Text → Video</span><span class="tag">Image → Video</span></span></span>
+            <span class="price"><span>từ 50</span></span>
+          </button>
+          <button type="button" class="pick" aria-pressed="false" disabled>
+            <span class="check"></span>
+            <span class="body"><span style="font-weight: 600">Gemini Omni Flash 1.1</span><span class="tags"><span class="tag">Text → Video</span><span class="tag">Image → Video</span></span></span>
+            <span class="price" style="font-family: inherit"><span>Hết lượt hôm nay</span><small class="mono">24/24</small></span>
+          </button>
+        </div>
+        <div data-show="image" style="display: flex; flex-direction: column; gap: 2px">
+          <button type="button" class="pick" aria-pressed="true">
+            <span class="check"><svg width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg></span>
+            <span class="body"><span style="font-weight: 600">Nano Banana 2</span><span class="tags"><span class="tag">Text → Image</span><span class="tag">Reference</span></span></span>
+            <span class="price"><span>từ 6</span></span>
+          </button>
+          <button type="button" class="pick" aria-pressed="false">
+            <span class="check"></span>
+            <span class="body"><span style="font-weight: 600">Nano Banana Pro</span></span>
+            <span class="price"><span>từ 5</span></span>
+          </button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+        <div class="segwrap">
+          <button type="button" class="seg" data-mode="image" aria-pressed="false"><svg width="16" height="16" aria-hidden="true"><use href="#i-image"/></svg>Ảnh</button>
+          <button type="button" class="seg" data-mode="video" aria-pressed="true"><svg width="16" height="16" aria-hidden="true"><use href="#i-video"/></svg>Video</button>
+        </div>
+        <button type="button" class="model-btn" id="picker-btn" aria-expanded="false" aria-haspopup="true"><span id="model-name">VEO 3.1</span><svg width="16" height="16" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+        <div data-show="video" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
+          <button type="button" class="dashed" id="start-add"><svg width="16" height="16" aria-hidden="true"><use href="#i-plus"/></svg>Start frame</button>
+          <span class="frame-chip" id="start-chip" hidden><span class="thumb" style="background: #3B2F2A"></span>Start frame<button type="button" id="start-remove" aria-label="Bỏ Start frame"><svg width="14" height="14" aria-hidden="true"><use href="#i-x"/></svg></button></span>
+          <button type="button" class="dashed" id="end-add" disabled title="Thêm Start frame trước"><svg width="16" height="16" aria-hidden="true"><use href="#i-plus"/></svg>End frame</button>
+          <span class="frame-chip" id="end-chip" hidden><span class="thumb" style="background: #2D3142"></span>End frame<button type="button" id="end-remove" aria-label="Bỏ End frame"><svg width="14" height="14" aria-hidden="true"><use href="#i-x"/></svg></button></span>
+        </div>
+        <button type="button" class="dashed" data-show="image" hidden><svg width="16" height="16" aria-hidden="true"><use href="#i-plus"/></svg>Reference</button>
+      </div>
+
+      <label for="gaia-prompt" class="sr-only">Prompt</label>
+      <textarea id="gaia-prompt" rows="2" placeholder="Mô tả video bạn muốn tạo… (Enter để gửi)"></textarea>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <button type="button" class="chip" data-show="video"><span class="k">Ratio</span><span class="v">16:9</span></button>
+          <button type="button" class="chip" data-show="video"><span class="k">Resolution</span><span class="v">720p</span></button>
+          <button type="button" class="chip" data-show="video"><span class="k">Mode</span><span class="v">Fast</span></button>
+          <button type="button" class="chip" data-show="image" hidden><span class="k">Ratio</span><span class="v">1:1</span></button>
+          <button type="button" class="chip" data-show="image" hidden><span class="k">Resolution</span><span class="v">1K</span></button>
+          <button type="button" class="chip" data-show="image" hidden><span class="k">Số lượng</span><span class="v">2</span></button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px">
+          <span class="cost" data-show="video"><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>12 credit</span>
+          <span class="cost" data-show="image" hidden><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>12 credit (2 × 6)</span>
+          <a href="#credit" class="link-btn" id="topup-link" hidden>Nạp credit</a>
+          <button type="button" class="submit" id="submit" disabled><span id="submit-label">Tạo</span><svg width="16" height="16" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div style="height: 20px"></div>
+</div>
+</div>
+
+<!-- ═════════════ STUDIO LẦN ĐẦU ═════════════ -->
+<div class="screen" id="empty">
+<div class="page">
+  <header class="topbar">
+    <a href="#home" class="logo"><svg class="mark" aria-hidden="true"><use href="#i-gaia"/></svg>GAIA<span class="sub">Studio</span></a>
+    <div style="display: flex; align-items: center; gap: 12px">
+      <button type="button" class="credit-btn"><svg width="16" height="16" aria-hidden="true" style="color: var(--accent)"><use href="#i-coin"/></svg>2.026 <span style="color: #A8A399">credit</span><svg width="14" height="14" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+      <button type="button" class="avatar" aria-label="Tài khoản" style="background: #2D3142; color: #EDEBE6; font-weight: 600"><span aria-hidden="true">M</span></button>
+    </div>
+  </header>
+
+  <main style="flex: 1; width: 100%; max-width: 1080px; margin: 0 auto; padding: 56px 24px 48px">
+    <h1 style="margin: 0; font-size: 28px; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em">Ảnh và video bạn tạo sẽ hiện ở đây</h1>
+    <p style="margin: 10px 0 0; font-size: 16px; color: #A8A399">Viết prompt ở khung bên dưới, hoặc lấy một ý tưởng rồi sửa lại theo ý bạn.</p>
+    <div style="margin: 36px 0 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #A8A399">Ý tưởng để bắt đầu</h2>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 1px solid #2E2E29; border-radius: 10px; background: transparent; font-size: 13px"><svg width="16" height="16" aria-hidden="true"><use href="#i-refresh"/></svg>Gợi ý khác</button>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px">
+      <button type="button" class="suggest" data-prompt="Rừng tre mờ sương lúc bình minh, tia nắng xuyên qua lá, góc rộng điện ảnh"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/rung-tre.webp" alt="Rừng tre mờ sương lúc bình minh, tia nắng xuyên qua lá, góc rộng điện ảnh"></span></span><span class="b"><span class="k"><svg width="14" height="14" aria-hidden="true"><use href="#i-image"/></svg>Ảnh</span><span class="p">Rừng tre mờ sương lúc bình minh, tia nắng xuyên qua lá, góc rộng điện ảnh</span><span class="go"><svg width="14" height="14" aria-hidden="true"><use href="#i-pencil"/></svg>Dùng prompt này</span></span></button>
+      <button type="button" class="suggest" data-prompt="Chiếc thuyền giấy trôi trên con phố ngập nước mưa, chuyển động chậm, phản chiếu ánh đèn"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/thuyen-giay-poster.webp" alt="Chiếc thuyền giấy trôi trên con phố ngập nước mưa, chuyển động chậm, phản chiếu ánh đèn"></span><span class="media-label right">0:08</span></span><span class="b"><span class="k"><svg width="14" height="14" aria-hidden="true"><use href="#i-video"/></svg>Video</span><span class="p">Chiếc thuyền giấy trôi trên con phố ngập nước mưa, chuyển động chậm, phản chiếu ánh đèn</span><span class="go"><svg width="14" height="14" aria-hidden="true"><use href="#i-pencil"/></svg>Dùng prompt này</span></span></button>
+      <button type="button" class="suggest" data-prompt="Chân dung ông lão thợ mộc trong xưởng, ánh sáng cửa sổ ấm, ống kính 85mm"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/ong-lao-tho-moc.webp" alt="Chân dung ông lão thợ mộc trong xưởng, ánh sáng cửa sổ ấm, ống kính 85mm"></span></span><span class="b"><span class="k"><svg width="14" height="14" aria-hidden="true"><use href="#i-image"/></svg>Ảnh</span><span class="p">Chân dung ông lão thợ mộc trong xưởng, ánh sáng cửa sổ ấm, ống kính 85mm</span><span class="go"><svg width="14" height="14" aria-hidden="true"><use href="#i-pencil"/></svg>Dùng prompt này</span></span></button>
+      <button type="button" class="suggest" data-prompt="Đèn hoa đăng trôi trên sông Hoài về đêm, máy quay tiến chậm về phía trước"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/den-hoa-dang-poster.webp" alt="Đèn hoa đăng trôi trên sông Hoài về đêm, máy quay tiến chậm về phía trước"></span><span class="media-label right">0:08</span></span><span class="b"><span class="k"><svg width="14" height="14" aria-hidden="true"><use href="#i-video"/></svg>Video</span><span class="p">Đèn hoa đăng trôi trên sông Hoài về đêm, máy quay tiến chậm về phía trước</span><span class="go"><svg width="14" height="14" aria-hidden="true"><use href="#i-pencil"/></svg>Dùng prompt này</span></span></button>
+      <button type="button" class="suggest" data-prompt="Ảnh sản phẩm tối giản: chiếc cốc gốm đặt trên vải lanh, ánh sáng mềm từ trên, tông be"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/coc-gom.webp" alt="Ảnh sản phẩm tối giản: chiếc cốc gốm đặt trên vải lanh, ánh sáng mềm từ trên, tông be"></span></span><span class="b"><span class="k"><svg width="14" height="14" aria-hidden="true"><use href="#i-image"/></svg>Ảnh</span><span class="p">Ảnh sản phẩm tối giản: chiếc cốc gốm đặt trên vải lanh, ánh sáng mềm từ trên, tông be</span><span class="go"><svg width="14" height="14" aria-hidden="true"><use href="#i-pencil"/></svg>Dùng prompt này</span></span></button>
+      <button type="button" class="suggest" data-prompt="Sóng biển đánh vào ghềnh đá đen, flycam bay vòng chậm, giờ vàng"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/song-bien-poster.webp" alt="Sóng biển đánh vào ghềnh đá đen, flycam bay vòng chậm, giờ vàng"></span><span class="media-label right">0:08</span></span><span class="b"><span class="k"><svg width="14" height="14" aria-hidden="true"><use href="#i-video"/></svg>Video</span><span class="p">Sóng biển đánh vào ghềnh đá đen, flycam bay vòng chậm, giờ vàng</span><span class="go"><svg width="14" height="14" aria-hidden="true"><use href="#i-pencil"/></svg>Dùng prompt này</span></span></button>
+    </div>
+  </main>
+
+  <div class="dock">
+    <section class="composer" aria-label="Tạo mới">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+        <div class="segwrap">
+          <button type="button" class="seg" aria-pressed="false"><svg width="16" height="16" aria-hidden="true"><use href="#i-image"/></svg>Ảnh</button>
+          <button type="button" class="seg" aria-pressed="true"><svg width="16" height="16" aria-hidden="true"><use href="#i-video"/></svg>Video</button>
+        </div>
+        <button type="button" class="model-btn">VEO 3.1<svg width="16" height="16" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+        <button type="button" class="dashed"><svg width="16" height="16" aria-hidden="true"><use href="#i-plus"/></svg>Start frame</button>
+        <button type="button" class="dashed" disabled title="Thêm Start frame trước"><svg width="16" height="16" aria-hidden="true"><use href="#i-plus"/></svg>End frame</button>
+      </div>
+      <label for="empty-prompt" class="sr-only">Prompt</label>
+      <textarea id="empty-prompt" rows="2" placeholder="Mô tả video bạn muốn tạo… (Enter để gửi)"></textarea>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <button type="button" class="chip"><span class="k">Ratio</span><span class="v">16:9</span></button>
+          <button type="button" class="chip"><span class="k">Resolution</span><span class="v">720p</span></button>
+          <button type="button" class="chip"><span class="k">Mode</span><span class="v">Fast</span></button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px">
+          <span class="cost"><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>12 credit</span>
+          <button type="button" class="submit" id="empty-submit" disabled>Tạo<svg width="16" height="16" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div style="height: 20px"></div>
+</div>
+</div>
+
+<!-- ═════════════ CHI TIẾT ẢNH ═════════════ -->
+<div class="screen" id="edit">
+<div class="page">
+  <header class="detail-top">
+    <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 320px">
+      <a href="#studio" class="back"><svg width="18" height="18" aria-hidden="true"><use href="#i-arrow-left"/></svg>Studio</a>
+      <h1 class="detail-title">Một con mèo cam ngủ trên bậu cửa sổ</h1>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; position: relative">
+      <button type="button" class="btn" title="Tải phiên bản đang xem"><svg width="16" height="16" aria-hidden="true"><use href="#i-download"/></svg>Tải về</button>
+      <a href="#studio" class="btn"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil"/></svg>Dùng lại prompt</a>
+      <button type="button" class="icon-btn" id="edit-more" aria-label="Thêm thao tác" aria-expanded="false" aria-haspopup="true"><svg width="18" height="18" aria-hidden="true"><use href="#i-more"/></svg></button>
+      <div class="menu" id="edit-menu" hidden style="right: 0; top: calc(100% + 8px); width: 290px">
+        <button type="button" class="danger" id="del-version" data-close-menu><svg width="16" height="16" aria-hidden="true"><use href="#i-trash"/></svg>Xoá phiên bản này</button>
+        <button type="button" class="danger" data-close-menu><svg width="16" height="16" aria-hidden="true"><use href="#i-trash"/></svg>Chuyển cả ảnh vào thùng rác (3 phiên bản)</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="split">
+    <div class="stage">
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 420px">
+        <div id="edit-stage" style="height: 560px; max-height: 70vh; aspect-ratio: 3 / 4; max-width: 100%; border-radius: 14px; background: #2C2A33; position: relative; box-shadow: 0 30px 80px rgba(0,0,0,0.5)">
+          <span class="media-label" style="left: 12px; bottom: 12px; padding: 3px 8px">Ảnh · 3:4 · <span data-active-label>Chỉnh sửa 2</span></span>
+        </div>
+      </div>
+      <section class="edit-box" aria-label="Chỉnh sửa ảnh">
+        <label for="gaia-edit" class="sr-only">Bạn muốn thay đổi điều gì?</label>
+        <textarea id="gaia-edit" rows="2" placeholder="Bạn muốn thay đổi điều gì? (Enter để gửi)"></textarea>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px">
+            <button type="button" class="chip" style="font-weight: 600">Nano Banana 2<svg width="14" height="14" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+            <button type="button" class="chip"><span class="k">Số lượng</span><span class="v">1</span></button>
+            <span style="color: #8C877D">Sửa từ</span>
+            <span style="font-weight: 500" data-active-label>Chỉnh sửa 2</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 14px">
+            <span class="cost"><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>6 credit</span>
+            <button type="button" class="submit" id="edit-submit" disabled style="padding: 0 18px">Tạo bản sửa<svg width="16" height="16" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="side">
+      <section>
+        <h2>Phiên bản</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <button type="button" class="ver" aria-pressed="true" data-tone="#2C2A33" data-label="Chỉnh sửa 2"><span class="thumb" style="background: #2C2A33"></span><span class="txt"><span class="l">Chỉnh sửa 2</span><span class="p">Chuyển sang buổi tối, đèn bàn vàng ấm</span><span class="t">14:20</span></span></button>
+          <button type="button" class="ver" aria-pressed="false" data-tone="#3A3327" data-label="Chỉnh sửa 1"><span class="thumb" style="background: #3A3327"></span><span class="txt"><span class="l">Chỉnh sửa 1</span><span class="p">Thêm một chậu cây nhỏ cạnh con mèo</span><span class="t">14:12</span></span></button>
+          <button type="button" class="ver" aria-pressed="false" data-tone="#3D3129" data-label="Bản gốc" data-original><span class="thumb" style="background: #3D3129"></span><span class="txt"><span class="l">Bản gốc</span><span class="p">Một con mèo cam ngủ trên bậu cửa sổ, nắng chiều, phong cách phim 35mm</span><span class="t">14:05</span></span></button>
+        </div>
+      </section>
+      <section>
+        <h2>Thông tin</h2>
+        <dl class="info">
+          <div><dt>Model</dt><dd>Nano Banana 2</dd></div>
+          <div><dt>Ratio</dt><dd class="mono">3:4</dd></div>
+          <div><dt>Resolution</dt><dd class="mono">1K</dd></div>
+          <div><dt>Credit</dt><dd class="mono">6 · tổng 18</dd></div>
+          <div><dt>Tạo lúc</dt><dd class="mono">06/10 · 14:05</dd></div>
+        </dl>
+        <div class="prompt-box" style="margin-top: 16px">
+          <div class="head"><span>Prompt gốc</span><button type="button" class="ghost-icon" aria-label="Sao chép prompt" title="Sao chép prompt"><svg width="16" height="16" aria-hidden="true"><use href="#i-copy"/></svg></button></div>
+          <p>Một con mèo cam ngủ trên bậu cửa sổ, nắng chiều, phong cách phim 35mm</p>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+</div>
+
+<!-- ═════════════ CHI TIẾT VIDEO ═════════════ -->
+<div class="screen" id="video">
+<div class="page">
+  <header class="detail-top">
+    <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 320px">
+      <a href="#studio" class="back"><svg width="18" height="18" aria-hidden="true"><use href="#i-arrow-left"/></svg>Studio</a>
+      <h1 class="detail-title">Thuyền thúng trôi trên sông lúc hoàng hôn</h1>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; position: relative">
+      <button type="button" class="btn"><svg width="16" height="16" aria-hidden="true"><use href="#i-refresh"/></svg>Tạo lại <span class="c">· 12 credit</span></button>
+      <button type="button" class="btn"><svg width="16" height="16" aria-hidden="true"><use href="#i-download"/></svg>Tải về</button>
+      <a href="#studio" class="btn"><svg width="16" height="16" aria-hidden="true"><use href="#i-pencil"/></svg>Dùng lại prompt</a>
+      <button type="button" class="icon-btn" id="video-more" aria-label="Thêm thao tác" aria-expanded="false" aria-haspopup="true"><svg width="18" height="18" aria-hidden="true"><use href="#i-more"/></svg></button>
+      <div class="menu" id="video-menu" hidden style="right: 0; top: calc(100% + 8px); width: 220px">
+        <button type="button" class="danger" data-close-menu><svg width="16" height="16" aria-hidden="true"><use href="#i-trash"/></svg>Chuyển vào thùng rác</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="split">
+    <div class="stage player" id="player" data-playing="false" style="justify-content: center; gap: 14px; padding: 32px">
+      <div style="width: 100%; max-width: 1000px; margin: 0 auto; aspect-ratio: 16 / 9; border-radius: 14px; background: #2E3B36; position: relative; display: flex; align-items: center; justify-content: center; box-shadow: 0 30px 80px rgba(0,0,0,0.5)">
+        <button type="button" data-play aria-label="Phát video" style="width: 72px; height: 72px; border-radius: 50%; border: 0; background: rgba(15,15,14,0.6); display: flex; align-items: center; justify-content: center">
+          <svg class="ico-pause" width="26" height="26" aria-hidden="true"><use href="#i-pause"/></svg><svg class="ico-play" width="26" height="26" aria-hidden="true"><use href="#i-play"/></svg>
+        </button>
+        <span class="media-label" style="left: 12px; top: 12px; bottom: auto; padding: 3px 8px">Video · 16:9</span>
+      </div>
+      <div style="width: 100%; max-width: 1000px; margin: 0 auto; display: flex; align-items: center; gap: 12px">
+        <button type="button" data-play aria-label="Phát video" style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; border: 0; background: #EDEBE6; color: #0F0F0E; display: flex; align-items: center; justify-content: center">
+          <svg class="ico-pause" width="18" height="18" aria-hidden="true"><use href="#i-pause"/></svg><svg class="ico-play" width="18" height="18" aria-hidden="true"><use href="#i-play"/></svg>
+        </button>
+        <span class="mono" style="font-size: 12px; color: #A8A399; white-space: nowrap">00:03 / 00:08</span>
+        <label for="gaia-seek" class="sr-only">Tua video</label>
+        <input id="gaia-seek" type="range" min="0" max="8" step="0.1" value="3" style="flex: 1; min-width: 80px; accent-color: var(--accent)">
+        <button type="button" class="ctl" aria-label="Tắt tiếng"><svg width="18" height="18" aria-hidden="true"><use href="#i-volume"/></svg></button>
+        <button type="button" class="ctl" aria-label="Toàn màn hình"><svg width="18" height="18" aria-hidden="true"><use href="#i-max"/></svg></button>
+      </div>
+    </div>
+
+    <aside class="side">
+      <section>
+        <h2>Thông tin</h2>
+        <dl class="info">
+          <div><dt>Model</dt><dd>VEO 3.1</dd></div>
+          <div><dt>Mode</dt><dd>Fast</dd></div>
+          <div><dt>Ratio</dt><dd class="mono">16:9</dd></div>
+          <div><dt>Resolution</dt><dd class="mono">720p</dd></div>
+          <div><dt>Credit</dt><dd class="mono">12</dd></div>
+          <div><dt>Tạo lúc</dt><dd class="mono">05/10 · 18:42</dd></div>
+        </dl>
+      </section>
+      <section class="prompt-box">
+        <div class="head"><span>Prompt</span><button type="button" class="ghost-icon" aria-label="Sao chép prompt" title="Sao chép prompt"><svg width="16" height="16" aria-hidden="true"><use href="#i-copy"/></svg></button></div>
+        <p>Thuyền thúng trôi trên sông lúc hoàng hôn, máy quay lia chậm từ trái sang phải, mặt nước phản chiếu ánh cam</p>
+      </section>
+      <section>
+        <h2>Input frames</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <figure style="margin: 0"><div style="aspect-ratio: 16 / 9; border-radius: 10px; background: #3B2F2A"></div><figcaption style="margin-top: 6px; font-size: 12px; color: #A8A399">Start frame</figcaption></figure>
+          <figure style="margin: 0"><div style="aspect-ratio: 16 / 9; border-radius: 10px; background: #2D3142"></div><figcaption style="margin-top: 6px; font-size: 12px; color: #A8A399">End frame</figcaption></figure>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+</div>
+
+<!-- ═════════════ TRANG CHỦ ═════════════ -->
+<div class="screen" id="home">
+<div style="min-height: 100vh; background: #0F0F0E; color: #EDEBE6; font-size: 16px; line-height: 1.6">
+  <header class="home-wrap" style="padding-top: 16px; padding-bottom: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+    <a href="#home" class="logo" style="font-size: 16px"><svg class="mark" style="width: 22px; height: 22px" aria-hidden="true"><use href="#i-gaia"/></svg>GAIA</a>
+    <nav aria-label="Điều hướng chính" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px">
+      <a href="#home" class="home-nav-link" data-scroll="models">Model và giá</a>
+      <a href="#auth" class="home-login">Đăng nhập</a>
+    </nav>
+  </header>
+
+  <section class="home-wrap home-hero">
+    <div class="hero-grid">
+      <div class="hero-main">
+        <h1>Tạo ảnh và video từ một câu mô&nbsp;tả tiếng&nbsp;Việt</h1>
+        <p class="home-lede">VEO 3.1, Kling 2.5, WAN 3.0 và 45 model khác. Giá credit hiện ngay cạnh nút Tạo, trước khi bạn bấm.</p>
+        <form class="composer home-prompt" id="home-form">
+          <label for="home-prompt" class="sr-only">Mô tả ảnh hoặc video bạn muốn tạo</label>
+          <textarea id="home-prompt" rows="3" placeholder="Mô tả video bạn muốn tạo…"></textarea>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+            <div class="segwrap" role="group" aria-label="Loại nội dung">
+              <button type="button" class="seg" data-home-kind="image" aria-pressed="false"><svg width="16" height="16" aria-hidden="true"><use href="#i-image"/></svg>Ảnh</button>
+              <button type="button" class="seg" data-home-kind="video" aria-pressed="true"><svg width="16" height="16" aria-hidden="true"><use href="#i-video"/></svg>Video</button>
+            </div>
+            <button type="submit" class="submit" id="home-submit" disabled>Tạo<svg width="16" height="16" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          </div>
+        </form>
+        <p class="home-prompt-note">Cần đăng nhập Google để tạo. Prompt bạn viết sẽ được giữ lại.</p>
+      </div>
+      <aside class="hero-ideas" aria-labelledby="hero-ideas-title">
+        <h2 id="hero-ideas-title">Thử một ý tưởng</h2>
+        <ul>
+            <li><button type="button" class="idea" data-kind="video" data-prompt="Sóng biển đánh vào ghềnh đá đen, flycam bay vòng chậm, giờ vàng"><img class="idea-thumb" src="samples/song-bien-poster.webp" alt=""><span class="idea-text"><span class="k"><svg width="14" height="14" aria-hidden="true"><use href="#i-video"/></svg>Video</span><span class="p">Sóng biển đánh vào ghềnh đá đen, flycam bay vòng chậm, giờ vàng</span></span></button></li>
+            <li><button type="button" class="idea" data-kind="image" data-prompt="Một tô phở bò bốc khói trên bàn gỗ, ánh sáng studio, cận cảnh, chi tiết sắc nét"><img class="idea-thumb" src="samples/pho-bo.webp" alt=""><span class="idea-text"><span class="k"><svg width="14" height="14" aria-hidden="true"><use href="#i-image"/></svg>Ảnh</span><span class="p">Một tô phở bò bốc khói trên bàn gỗ, ánh sáng studio, cận cảnh, chi tiết sắc nét</span></span></button></li>
+            <li><button type="button" class="idea" data-kind="video" data-prompt="Ly cà phê sữa đá, sữa đặc chảy chậm hoà vào cà phê, cận cảnh, chuyển động chậm"><img class="idea-thumb" src="samples/ca-phe-sua-da-poster.webp" alt=""><span class="idea-text"><span class="k"><svg width="14" height="14" aria-hidden="true"><use href="#i-video"/></svg>Video</span><span class="p">Ly cà phê sữa đá, sữa đặc chảy chậm hoà vào cà phê, cận cảnh, chuyển động chậm</span></span></button></li>
+            <li><button type="button" class="idea" data-kind="image" data-prompt="Phố cổ Hội An về đêm, đèn lồng đỏ, mưa phùn, góc máy thấp, phong cách phim 35mm"><img class="idea-thumb" src="samples/hoi-an.webp" alt=""><span class="idea-text"><span class="k"><svg width="14" height="14" aria-hidden="true"><use href="#i-image"/></svg>Ảnh</span><span class="p">Phố cổ Hội An về đêm, đèn lồng đỏ, mưa phùn, góc máy thấp, phong cách phim 35mm</span></span></button></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+
+  <section class="home-section">
+    <div class="home-wrap">
+      <h2 class="h2">Tạo bằng GAIA</h2>
+      <p class="home-section-lede">Mỗi ảnh và video dưới đây được tạo bằng GAIA, từ đúng prompt ghi bên dưới. Video trong bản mockup chỉ hiện ảnh đại diện.</p>
+      <div class="sample-grid">
+          <article class="card sample-card"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/rung-tre.webp" alt="Rừng tre mờ sương lúc bình minh, tia nắng xuyên qua lá, góc rộng điện ảnh"></span><span class="media-label">Ảnh · 16:9</span></span><div class="card-body"><p class="card-title">Rừng tre mờ sương lúc bình minh, tia nắng xuyên qua lá, góc rộng điện ảnh</p><div class="meta-row" style="margin-top: 8px; align-items: center"><span class="card-meta" style="margin: 0">Nano Banana 2</span><a href="#auth" class="link-btn">Dùng prompt này</a></div></div></article>
+          <article class="card sample-card"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/thuyen-giay-poster.webp" alt="Chiếc thuyền giấy trôi trên con phố ngập nước mưa, chuyển động chậm, phản chiếu ánh đèn"></span><span class="media-label">Video · 16:9</span><span class="media-label right">0:08</span></span><div class="card-body"><p class="card-title">Chiếc thuyền giấy trôi trên con phố ngập nước mưa, chuyển động chậm, phản chiếu ánh đèn</p><div class="meta-row" style="margin-top: 8px; align-items: center"><span class="card-meta" style="margin: 0">VEO 3.1</span><a href="#auth" class="link-btn">Dùng prompt này</a></div></div></article>
+          <article class="card sample-card"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/ong-lao-tho-moc.webp" alt="Chân dung ông lão thợ mộc trong xưởng, ánh sáng cửa sổ ấm, ống kính 85mm"></span><span class="media-label">Ảnh · 16:9</span></span><div class="card-body"><p class="card-title">Chân dung ông lão thợ mộc trong xưởng, ánh sáng cửa sổ ấm, ống kính 85mm</p><div class="meta-row" style="margin-top: 8px; align-items: center"><span class="card-meta" style="margin: 0">Nano Banana 2</span><a href="#auth" class="link-btn">Dùng prompt này</a></div></div></article>
+          <article class="card sample-card"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/den-hoa-dang-poster.webp" alt="Đèn hoa đăng trôi trên sông Hoài về đêm, máy quay tiến chậm về phía trước"></span><span class="media-label">Video · 16:9</span><span class="media-label right">0:08</span></span><div class="card-body"><p class="card-title">Đèn hoa đăng trôi trên sông Hoài về đêm, máy quay tiến chậm về phía trước</p><div class="meta-row" style="margin-top: 8px; align-items: center"><span class="card-meta" style="margin: 0">VEO 3.1</span><a href="#auth" class="link-btn">Dùng prompt này</a></div></div></article>
+          <article class="card sample-card"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/coc-gom.webp" alt="Ảnh sản phẩm tối giản: chiếc cốc gốm đặt trên vải lanh, ánh sáng mềm từ trên, tông be"></span><span class="media-label">Ảnh · 16:9</span></span><div class="card-body"><p class="card-title">Ảnh sản phẩm tối giản: chiếc cốc gốm đặt trên vải lanh, ánh sáng mềm từ trên, tông be</p><div class="meta-row" style="margin-top: 8px; align-items: center"><span class="card-meta" style="margin: 0">Nano Banana 2</span><a href="#auth" class="link-btn">Dùng prompt này</a></div></div></article>
+          <article class="card sample-card"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/song-bien-poster.webp" alt="Sóng biển đánh vào ghềnh đá đen, flycam bay vòng chậm, giờ vàng"></span><span class="media-label">Video · 16:9</span><span class="media-label right">0:08</span></span><div class="card-body"><p class="card-title">Sóng biển đánh vào ghềnh đá đen, flycam bay vòng chậm, giờ vàng</p><div class="meta-row" style="margin-top: 8px; align-items: center"><span class="card-meta" style="margin: 0">VEO 3.1</span><a href="#auth" class="link-btn">Dùng prompt này</a></div></div></article>
+          <article class="card sample-card"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/hoi-an.webp" alt="Phố cổ Hội An về đêm, đèn lồng đỏ, mưa phùn, góc máy thấp, phong cách phim 35mm"></span><span class="media-label">Ảnh · 16:9</span></span><div class="card-body"><p class="card-title">Phố cổ Hội An về đêm, đèn lồng đỏ, mưa phùn, góc máy thấp, phong cách phim 35mm</p><div class="meta-row" style="margin-top: 8px; align-items: center"><span class="card-meta" style="margin: 0">Nano Banana 2</span><a href="#auth" class="link-btn">Dùng prompt này</a></div></div></article>
+          <article class="card sample-card"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/pho-bo.webp" alt="Một tô phở bò bốc khói trên bàn gỗ, ánh sáng studio, cận cảnh, chi tiết sắc nét"></span><span class="media-label">Ảnh · 16:9</span></span><div class="card-body"><p class="card-title">Một tô phở bò bốc khói trên bàn gỗ, ánh sáng studio, cận cảnh, chi tiết sắc nét</p><div class="meta-row" style="margin-top: 8px; align-items: center"><span class="card-meta" style="margin: 0">Nano Banana 2</span><a href="#auth" class="link-btn">Dùng prompt này</a></div></div></article>
+          <article class="card sample-card"><span class="frame"><span class="media" style="--r: 1.7778"><img src="samples/ca-phe-sua-da-poster.webp" alt="Ly cà phê sữa đá, sữa đặc chảy chậm hoà vào cà phê, cận cảnh, chuyển động chậm"></span><span class="media-label">Video · 16:9</span><span class="media-label right">0:08</span></span><div class="card-body"><p class="card-title">Ly cà phê sữa đá, sữa đặc chảy chậm hoà vào cà phê, cận cảnh, chuyển động chậm</p><div class="meta-row" style="margin-top: 8px; align-items: center"><span class="card-meta" style="margin: 0">VEO 3.1</span><a href="#auth" class="link-btn">Dùng prompt này</a></div></div></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section" id="models">
+    <div class="home-wrap price-layout">
+      <div class="price-intro">
+        <h2 class="h2">Model và giá</h2>
+        <p class="home-section-lede">Danh sách lấy trực tiếp từ các model đang chạy. Mỗi ratio, resolution, duration có giá riêng; cột bên phải là mức thấp nhất.</p>
+        <dl class="facts">
+          <div><dt>1.000đ = 10 credit</dt><dd>Nạp tối thiểu 20.000đ, quét mã QR bằng app ngân hàng.</dd></div>
+          <div><dt>Dùng trong 90 ngày</dt><dd>Tính từ ngày nạp. Credit sắp hết hạn được dùng trước.</dd></div>
+          <div><dt>Lỗi thì hoàn credit</dt><dd>Ảnh hoặc video tạo không thành công được hoàn đủ credit, tự động.</dd></div>
+        </dl>
+      </div>
+      <div class="price-table">
+        <div class="price-row price-head" aria-hidden="true"><span>Model</span><span>Làm được</span><span>Giá từ</span></div>
+        <ul>
+            <li class="price-row"><span class="name">VEO 3.1<small>Video</small></span><span class="tags"><span class="tag">Text → Video</span><span class="tag">Image → Video</span><span class="tag">Start + End frame</span></span><span class="price"><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>12</span></li>
+            <li class="price-row"><span class="name">Kling 2.5<small>Video</small></span><span class="tags"><span class="tag">Text → Video</span><span class="tag">Image → Video</span><span class="tag">Start + End frame</span></span><span class="price"><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>12</span></li>
+            <li class="price-row"><span class="name">WAN 3.0<small>Video</small></span><span class="tags"><span class="tag">Text → Video</span><span class="tag">Image → Video</span><span class="tag">Start + End frame</span></span><span class="price"><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>50</span></li>
+            <li class="price-row"><span class="name">Nano Banana 2<small>Ảnh</small></span><span class="tags"><span class="tag">Text → Image</span><span class="tag">Reference</span></span><span class="price"><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>6</span></li>
+            <li class="price-row"><span class="name">Kling 3.0 Omni<small>Video</small></span><span class="tags"><span class="tag">Text → Video</span><span class="tag">Image → Video</span><span class="tag">Start + End frame</span></span><span class="price"><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>44</span></li>
+            <li class="price-row"><span class="name">Kling 2.6<small>Video</small></span><span class="tags"><span class="tag">Text → Video</span><span class="tag">Image → Video</span></span><span class="price"><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>38</span></li>
+            <li class="price-row"><span class="name">Kling O1<small>Video</small></span><span class="tags"><span class="tag">Text → Video</span><span class="tag">Image → Video</span><span class="tag">Start + End frame</span></span><span class="price"><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>38</span></li>
+            <li class="price-row"><span class="name">Hailuo 2.3<small>Video</small></span><span class="tags"><span class="tag">Text → Video</span><span class="tag">Image → Video</span></span><span class="price"><svg width="14" height="14" aria-hidden="true"><use href="#i-coin"/></svg>12</span></li>
+        </ul>
+        <div class="price-more">Xem thêm 40 model<svg width="16" height="16" aria-hidden="true"><use href="#i-chevron"/></svg></div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="border-top: 1px solid #262622"><div class="home-wrap" style="padding-top: 28px; padding-bottom: 28px; font-size: 13px; color: #8C877D; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between"><span>© 2026 GAIA AI</span><span style="display: flex; gap: 20px"><a href="#auth" style="color: #8C877D">Điều khoản sử dụng</a><a href="#auth" style="color: #8C877D">Chính sách bảo mật</a></span></div></footer>
+</div>
+</div>
+
+<!-- ═════════════ ĐĂNG NHẬP ═════════════ -->
+<div class="screen" id="auth">
+<div class="page">
+  <header style="padding: 12px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+    <a href="#home" class="logo"><svg class="mark" aria-hidden="true"><use href="#i-gaia"/></svg>GAIA</a>
+    <a href="#home" class="back"><svg width="18" height="18" aria-hidden="true"><use href="#i-arrow-left"/></svg>Trang chủ</a>
+  </header>
+  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px 16px 96px">
+    <div class="panel" style="width: 100%; max-width: 400px; padding: 32px 28px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px">
+      <svg width="48" height="48" aria-hidden="true" style="display: block"><use href="#i-gaia"/></svg>
+      <div>
+        <h1 style="margin: 0; font-size: 24px; line-height: 1.25; font-weight: 700">Đăng nhập vào GAIA</h1>
+        <p style="margin: 8px 0 0; color: #A8A399">Dùng tài khoản Google của bạn. Lần đầu đăng nhập, GAIA sẽ tự tạo tài khoản.</p>
+      </div>
+      <div class="carried" id="auth-carried" hidden><span>Prompt của bạn sẽ được giữ lại sau khi đăng nhập</span><p id="auth-carried-text"></p></div>
+      <a href="#studio" class="google-btn"><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true" style="flex: none"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Tiếp tục với Google</a>
+      <p style="margin: 0; font-size: 12px; color: #8C877D">Bằng việc tiếp tục, bạn đồng ý với <a href="#auth" style="color: #A8A399; text-decoration: underline">Điều khoản sử dụng</a> và <a href="#auth" style="color: #A8A399; text-decoration: underline">Chính sách bảo mật</a> của GAIA.</p>
+    </div>
+  </main>
+</div>
+</div>
+<!-- ═════════════ CREDIT & GIAO DỊCH ═════════════ -->
+<div class="screen" id="credit">
+<div class="page">
+  <header class="topbar">
+    <a href="#studio" class="back"><svg width="18" height="18" aria-hidden="true"><use href="#i-arrow-left"/></svg>Studio</a>
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span class="credit-btn" style="padding: 0 14px"><svg width="16" height="16" aria-hidden="true" style="color: var(--accent)"><use href="#i-coin"/></svg>2.026 <span style="color: #A8A399">credit</span></span>
+      <button type="button" class="avatar" aria-label="Tài khoản" style="background: #2D3142; color: #EDEBE6; font-weight: 600"><span aria-hidden="true">M</span></button>
+    </div>
+  </header>
+  <main style="flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px">
+    <h1 style="margin: 0; font-size: 28px; line-height: 1.2; font-weight: 700">Credit</h1>
+    <p style="margin: 6px 0 0; color: #A8A399">Nạp credit và xem lại mọi giao dịch của bạn.</p>
+    <div style="margin-top: 28px; display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+      <section class="panel" aria-label="Nạp credit" style="flex: 1 1 380px; min-width: 0; padding: 24px">
+        <div id="pay-choose" style="display: flex; flex-direction: column; gap: 18px">
+          <div><h2 style="margin: 0; font-size: 18px; font-weight: 600">Nạp credit</h2><p style="margin: 4px 0 0; color: #A8A399">Chọn số tiền muốn nạp.</p></div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+            <button type="button" class="amount" aria-pressed="false" data-label="50.000đ" data-receive="500" data-bonus="Không có" style="position: relative; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px"><span>50.000đ</span><span style="font-family: 'Be Vietnam Pro', system-ui, sans-serif; font-size: 12px; font-weight: 400; color: #A8A399">500 credit</span></button>
+            <button type="button" class="amount" aria-pressed="true" data-label="100.000đ" data-receive="1.000" data-bonus="Không có" style="position: relative; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px"><span>100.000đ</span><span style="font-family: 'Be Vietnam Pro', system-ui, sans-serif; font-size: 12px; font-weight: 400; color: #A8A399">1.000 credit</span></button>
+            <button type="button" class="amount" aria-pressed="false" data-label="200.000đ" data-receive="2.100" data-bonus="+100 credit (5%)" style="position: relative; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px"><span>200.000đ</span><span style="font-family: 'Be Vietnam Pro', system-ui, sans-serif; font-size: 12px; font-weight: 400; color: #A8A399">2.100 credit</span><span style="position: absolute; top: -9px; right: 8px; padding: 0 7px; border-radius: 999px; background: var(--accent); color: #1A1206; font-family: 'Be Vietnam Pro', system-ui, sans-serif; font-size: 11px; font-weight: 700; line-height: 18px">+5%</span></button>
+            <button type="button" class="amount" aria-pressed="false" data-label="500.000đ" data-receive="5.500" data-bonus="+500 credit (10%)" style="position: relative; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px"><span>500.000đ</span><span style="font-family: 'Be Vietnam Pro', system-ui, sans-serif; font-size: 12px; font-weight: 400; color: #A8A399">5.500 credit</span><span style="position: absolute; top: -9px; right: 8px; padding: 0 7px; border-radius: 999px; background: var(--accent); color: #1A1206; font-family: 'Be Vietnam Pro', system-ui, sans-serif; font-size: 11px; font-weight: 700; line-height: 18px">+10%</span></button>
+          </div>
+          <p style="margin: -8px 0 0; font-size: 12px; color: #8C877D">Nạp từ 200.000đ được thưởng thêm 5% credit, từ 500.000đ được thưởng 10%.</p>
+          <div>
+            <label for="topup-custom" class="flabel">Hoặc nhập số tiền khác</label>
+            <div style="position: relative"><input id="topup-custom" class="field mono" type="text" inputmode="numeric" placeholder="Tối thiểu 20.000" style="padding-right: 40px"><span style="position: absolute; right: 14px; top: 13px; color: #8C877D">đ</span></div>
+          </div>
+          <div style="padding: 14px; border-radius: 12px; background: #0F0F0E; border: 1px solid #262622; display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px"><span style="color: #A8A399">Tỉ giá</span><span class="mono">1.000đ = 10 credit</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px"><span style="color: #A8A399">Thưởng</span><span class="mono" id="bonus-line" style="color: #8C877D">Không có</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px"><span style="color: #A8A399">Hạn dùng</span><span>90 ngày kể từ ngày nạp</span></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px"><span style="color: #A8A399; font-size: 13px">Bạn nhận được</span><span class="mono" style="display: inline-flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 500"><svg width="16" height="16" aria-hidden="true" style="color: var(--accent)"><use href="#i-coin"/></svg><span data-receive>1.000</span> credit</span></div>
+          </div>
+          <div>
+            <span class="flabel">Phương thức thanh toán</span>
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--accent); border-radius: 12px; background: #1F1F1C">
+              <span style="width: 36px; height: 36px; border-radius: 10px; background: #2A2A26; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="20" height="20" aria-hidden="true"><use href="#i-qr"/></svg></span>
+              <span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 600">Chuyển khoản ngân hàng</span><span style="font-size: 12px; color: #A8A399">Quét mã QR bằng app ngân hàng</span></span>
+              <span style="color: var(--accent); display: flex"><svg width="18" height="18" aria-hidden="true"><use href="#i-check"/></svg></span>
+            </div>
+          </div>
+          <button type="button" class="primary" id="pay-go">Tiếp tục · <span data-amount-label>100.000đ</span><svg width="16" height="16" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        </div>
+
+        <div id="pay-wait" hidden style="display: flex; flex-direction: column; gap: 18px">
+          <div>
+            <button type="button" data-pay-back style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 8px 0 0; border: 0; background: transparent; color: #A8A399; font-weight: 500"><svg width="16" height="16" aria-hidden="true"><use href="#i-arrow-left"/></svg>Đổi số tiền</button>
+            <h2 style="margin: 4px 0 0; font-size: 18px; font-weight: 600">Thanh toán <span data-amount-label>100.000đ</span></h2>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+            <div class="mono" style="width: 180px; height: 180px; flex-shrink: 0; border-radius: 14px; background: #EDEBE6; color: #3A3A34; display: flex; align-items: center; justify-content: center; font-size: 12px">MÃ QR</div>
+            <dl style="flex: 1 1 200px; margin: 0; display: flex; flex-direction: column; gap: 10px; font-size: 13px">
+              <div><dt style="color: #8C877D">Ngân hàng</dt><dd style="margin: 2px 0 0">[Tên ngân hàng]</dd></div>
+              <div><dt style="color: #8C877D">Số tài khoản</dt><dd class="mono" style="margin: 2px 0 0">[Số tài khoản]</dd></div>
+              <div><dt style="color: #8C877D">Chủ tài khoản</dt><dd style="margin: 2px 0 0">[Tên chủ tài khoản]</dd></div>
+              <div><dt style="color: #8C877D">Nội dung chuyển khoản</dt><dd class="mono" style="margin: 2px 0 0; display: flex; align-items: center; gap: 6px">GAIA [mã đơn]<button type="button" class="ghost-icon" aria-label="Sao chép nội dung chuyển khoản" style="width: 32px; height: 32px"><svg width="15" height="15" aria-hidden="true"><use href="#i-copy"/></svg></button></dd></div>
+            </dl>
+          </div>
+          <div aria-live="polite" style="display: flex; gap: 12px; padding: 14px; border-radius: 12px; background: #2A2112">
+            <span style="width: 9px; height: 9px; margin-top: 6px; flex-shrink: 0; border-radius: 50%; background: var(--accent); animation: gaia-pulse 1.6s ease-in-out infinite"></span>
+            <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600; color: var(--accent)">Đang chờ thanh toán</span><span style="font-size: 13px; color: #D8D3C8">Credit được cộng tự động ngay khi GAIA nhận được tiền. Bạn có thể đóng trang này.</span></span>
+          </div>
+          <button type="button" class="ghost" data-pay-back>Huỷ giao dịch</button>
+        </div>
+
+        <div id="pay-done" hidden style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 12px 0">
+          <span style="width: 56px; height: 56px; border-radius: 50%; background: #2A2112; color: var(--accent); display: flex; align-items: center; justify-content: center"><svg width="28" height="28" aria-hidden="true"><use href="#i-check"/></svg></span>
+          <h2 style="margin: 0; font-size: 20px; font-weight: 700">Nạp credit thành công</h2>
+          <p style="margin: 0; color: #A8A399">Đã cộng <span class="mono" style="color: #EDEBE6"><span data-receive>1.000</span> credit</span> vào tài khoản của bạn.</p>
+          <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px">
+            <a href="#studio" class="primary" style="width: auto; height: 44px; padding: 0 20px">Về Studio</a>
+            <button type="button" class="ghost" data-pay-back style="width: auto; padding: 0 18px">Nạp thêm</button>
+          </div>
+        </div>
+      </section>
+
+      <div style="flex: 1.6 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+        <section class="panel" aria-label="Số dư" style="padding: 24px">
+          <span style="font-size: 13px; color: #A8A399">Số dư hiện tại</span>
+          <div style="margin-top: 6px; display: flex; align-items: center; gap: 10px"><svg width="28" height="28" aria-hidden="true" style="color: var(--accent)"><use href="#i-coin"/></svg><span class="mono" style="font-size: 40px; line-height: 1; font-weight: 500">2.026</span><span style="color: #A8A399; font-size: 15px">credit</span></div>
+          <p style="margin: 12px 0 0; font-size: 13px; color: #A8A399">Credit có hạn 90 ngày kể từ ngày nạp. <span class="mono" style="color: #EDEBE6">2.026 credit</span> sẽ hết hạn vào <span class="mono" style="color: #EDEBE6">03/01/2027</span>.</p>
+        </section>
+        <section class="panel" aria-label="Lịch sử giao dịch" style="padding: 8px 24px 16px">
+          <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 24px; border-bottom: 1px solid #262622">
+            <h2 style="margin: 0; padding: 12px 0; font-size: 18px; font-weight: 600">Lịch sử giao dịch</h2>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px">
+            <nav aria-label="Lọc giao dịch" style="display: flex; gap: 20px">
+              <button type="button" class="tab" data-filter="all" aria-pressed="true">Tất cả</button>
+              <button type="button" class="tab" data-filter="topup" aria-pressed="false">Nạp</button>
+              <button type="button" class="tab" data-filter="use" aria-pressed="false">Sử dụng</button>
+              <button type="button" class="tab" data-filter="refund" aria-pressed="false">Hoàn credit</button>
+            </nav>
+            <div class="mini-toggle" role="group" aria-label="Sắp xếp giao dịch"><button type="button" data-order="desc" aria-pressed="true">Mới nhất</button><button type="button" data-order="asc" aria-pressed="false">Cũ nhất</button></div>
+            </div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 10px 0 6px; font-size: 12px; color: #8C877D"><span style="width: 110px">Thời gian</span><span style="flex: 1 1 200px">Nội dung</span><span style="width: 90px; text-align: right">Thay đổi</span><span style="width: 90px; text-align: right">Số dư sau</span></div>
+          <ul class="ledger" style="list-style: none; margin: 0; padding: 0">
+            <li data-type="use"><span class="t">06/10 · 14:32</span><span class="c"><span style="font-weight: 500">Tạo video</span><small>WAN 3.0 · 5s</small></span><span class="d">−50</span><span class="a">2.026</span></li>
+            <li data-type="refund"><span class="t">06/10 · 14:10</span><span class="c"><span style="font-weight: 500">Hoàn credit</span><small>Video lỗi · WAN 3.0</small></span><span class="d plus">+50</span><span class="a">2.076</span></li>
+            <li data-type="use"><span class="t">06/10 · 14:05</span><span class="c"><span style="font-weight: 500">Tạo video</span><small>WAN 3.0 · 5s</small></span><span class="d">−50</span><span class="a">2.026</span></li>
+            <li data-type="use"><span class="t">06/10 · 13:40</span><span class="c"><span style="font-weight: 500">Tạo video</span><small>VEO 3.1 · Fast</small></span><span class="d">−12</span><span class="a">2.076</span></li>
+            <li data-type="use"><span class="t">05/10 · 18:42</span><span class="c"><span style="font-weight: 500">Tạo video</span><small>VEO 3.1 · Fast</small></span><span class="d">−12</span><span class="a">2.088</span></li>
+            <li data-type="topup"><span class="t">05/10 · 18:30</span><span class="c"><span style="font-weight: 500">Nạp credit</span><small>Chuyển khoản 200.000đ · gồm 100 credit thưởng</small></span><span class="d plus">+2.100</span><span class="a">2.100</span></li>
+          </ul>
+          <button type="button" class="ghost" style="margin-top: 8px">Xem thêm</button>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+</div>
+
+<script>
+(function () {
+  var screens = ['studio', 'empty', 'edit', 'video', 'home', 'auth', 'credit'];
+  var png = location.search.indexOf('png') > -1;
+  if (png) document.body.classList.add('png');
+  function $(id) { return document.getElementById(id); }
+  function all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+  // Menu và popover: bấm nút để mở/đóng, Esc để đóng hết.
+  var toggles = [['credit-btn', 'credit-pop'], ['account-btn', 'account-menu'], ['picker-btn', 'picker'], ['cat-more', 'cat-menu'], ['edit-more', 'edit-menu'], ['video-more', 'video-menu']];
+  function closeAll() {
+    toggles.forEach(function (t) { $(t[1]).hidden = true; $(t[0]).setAttribute('aria-expanded', 'false'); });
+  }
+  toggles.forEach(function (t) {
+    $(t[0]).addEventListener('click', function () {
+      var open = $(t[1]).hidden;
+      closeAll();
+      $(t[1]).hidden = !open;
+      $(t[0]).setAttribute('aria-expanded', String(open));
+    });
+  });
+  all('[data-close-menu]').forEach(function (b) { b.addEventListener('click', closeAll); });
+  all('#picker .pick').forEach(function (b) { b.addEventListener('click', closeAll); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+
+  // Chuyển màn theo #hash; #model, #cach-hoat-dong mở Trang chủ rồi cuộn tới mục đó.
+  function route() {
+    var h = (location.hash || '#studio').slice(1);
+    var target = document.getElementById(h);
+    var screen = screens.indexOf(h) > -1 ? h
+      : (target && target.closest('.screen') ? target.closest('.screen').id : 'studio');
+    screens.forEach(function (s) {
+      $(s).classList.toggle('active', s === screen);
+      var tab = document.querySelector('[data-tab="' + s + '"]');
+      if (tab) { if (s === screen) tab.setAttribute('aria-current', 'page'); else tab.removeAttribute('aria-current'); }
+    });
+    closeAll();
+    if (screen === 'studio') setLib(h === 'trash' ? 'trash' : 'all');
+    var trashTab = document.querySelector('[data-tab="trash"]');
+    if (trashTab) { if (h === 'trash') trashTab.setAttribute('aria-current', 'page'); else trashTab.removeAttribute('aria-current'); }
+    if (h === 'trash') { document.querySelector('[data-tab="studio"]').removeAttribute('aria-current'); window.scrollTo(0, 0); return; }
+    if (screens.indexOf(h) > -1) window.scrollTo(0, 0);
+    else if (target) target.scrollIntoView();
+  }
+
+  // Studio
+  var studio = $('studio');
+  var sim = $('sim-credit');
+  var st = { mode: 'video', start: false, end: false, hasText: false };
+  function renderStudio() {
+    all('[data-mode]', studio).forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === st.mode)); });
+    all('[data-show]', studio).forEach(function (el) { el.hidden = el.dataset.show !== st.mode; });
+    $('model-name').textContent = st.mode === 'video' ? 'VEO 3.1' : 'Nano Banana 2';
+    $('gaia-prompt').placeholder = st.mode === 'video' ? 'Mô tả video bạn muốn tạo… (Enter để gửi)' : 'Mô tả ảnh bạn muốn tạo… (Enter để gửi)';
+    $('start-add').hidden = st.start;
+    $('start-chip').hidden = !st.start;
+    $('end-add').hidden = st.start && st.end;
+    $('end-add').disabled = !st.start;
+    $('end-add').title = st.start ? '' : 'Thêm Start frame trước';
+    $('end-chip').hidden = !(st.start && st.end);
+    var lacking = sim.checked;
+    $('submit').disabled = !st.hasText || lacking;
+    $('submit-label').textContent = lacking ? 'Không đủ credit' : 'Tạo';
+    $('topup-link').hidden = !lacking;
+    all('.cost', studio).forEach(function (el) { el.style.color = lacking ? '#EE7A63' : ''; });
+  }
+  all('[data-mode]', studio).forEach(function (b) {
+    b.addEventListener('click', function () { st.mode = b.dataset.mode; closeAll(); renderStudio(); });
+  });
+  $('start-add').addEventListener('click', function () { st.start = true; renderStudio(); });
+  $('start-remove').addEventListener('click', function () { st.start = false; st.end = false; renderStudio(); });
+  $('end-add').addEventListener('click', function () { st.end = true; renderStudio(); });
+  $('end-remove').addEventListener('click', function () { st.end = false; renderStudio(); });
+  $('gaia-prompt').addEventListener('input', function (e) { st.hasText = e.target.value.trim().length > 0; renderStudio(); });
+  $('gaia-prompt').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) e.preventDefault(); });
+  sim.addEventListener('change', renderStudio);
+  // Thư viện ↔ Thùng rác
+  function setLib(tab) {
+    all('[data-lib]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lib === tab)); });
+    var trash = tab === 'trash';
+    $('library').hidden = trash; $('trash').hidden = !trash;
+    $('trash-tools').hidden = !trash; $('lib-running').hidden = trash;
+  }
+  all('[data-lib]').forEach(function (b) { b.addEventListener('click', function () { setLib(b.dataset.lib); }); });
+  function trashLeft() {
+    var n = all('#trash-grid .trash-card').filter(function (c) { return !c.hidden; }).length;
+    $('trash-count').textContent = n ? String(n) : '';
+    $('trash-empty').hidden = n > 0; $('trash-grid').hidden = n === 0;
+    if (!n) $('trash-tools').hidden = true;
+  }
+  $('trash-grid').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var card = b.closest('.trash-card');
+    var normal = card.querySelector('[data-normal]'), confirmRow = card.querySelector('[data-confirm]');
+    if (b.hasAttribute('data-ask')) { normal.hidden = true; confirmRow.hidden = false; }
+    if (b.hasAttribute('data-cancel')) { normal.hidden = false; confirmRow.hidden = true; }
+    if (b.hasAttribute('data-restore') || b.hasAttribute('data-purge')) { card.hidden = true; trashLeft(); }
+  });
+  $('empty-trash').addEventListener('click', function () { $('empty-trash').hidden = true; $('empty-confirm').hidden = false; });
+  $('empty-no').addEventListener('click', function () { $('empty-trash').hidden = false; $('empty-confirm').hidden = true; });
+  $('empty-yes').addEventListener('click', function () { all('#trash-grid .trash-card').forEach(function (c) { c.hidden = true; }); trashLeft(); });
+  all('[data-order]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      all('[data-order]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      var list = document.querySelector('#credit .ledger');
+      Array.prototype.slice.call(list.children).reverse().forEach(function (li) { list.appendChild(li); });
+    });
+  });
+
+  $('done-close').addEventListener('click', function () { $('done-toast').hidden = true; });
+  $('cat-delete').addEventListener('click', function () { closeAll(); $('cat-card').hidden = true; $('undo-toast').hidden = false; });
+  $('undo-btn').addEventListener('click', function () { $('cat-card').hidden = false; $('undo-toast').hidden = true; });
+
+  // Trang chủ: khung prompt và ý tưởng; bấm Tạo → trang đăng nhập, prompt được giữ lại
+  function setHomeKind(k) {
+    all('[data-home-kind]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.homeKind === k)); });
+    $('home-prompt').placeholder = k === 'video' ? 'Mô tả video bạn muốn tạo…' : 'Mô tả ảnh bạn muốn tạo…';
+  }
+  all('[data-home-kind]').forEach(function (b) { b.addEventListener('click', function () { setHomeKind(b.dataset.homeKind); }); });
+  $('home-prompt').addEventListener('input', function (e) { $('home-submit').disabled = e.target.value.trim().length === 0; });
+  all('.idea').forEach(function (b) {
+    b.addEventListener('click', function () {
+      setHomeKind(b.dataset.kind);
+      $('home-prompt').value = b.dataset.prompt;
+      $('home-submit').disabled = false;
+      $('home-prompt').focus();
+    });
+  });
+  $('home-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = $('home-prompt').value.trim();
+    if (!text) return;
+    $('auth-carried-text').textContent = text;
+    $('auth-carried').hidden = false;
+    location.hash = '#auth';
+  });
+  all('[data-scroll]').forEach(function (a) {
+    a.addEventListener('click', function (e) { e.preventDefault(); $(a.dataset.scroll).scrollIntoView({ behavior: 'smooth' }); });
+  });
+
+  // Studio lần đầu: bấm gợi ý là điền prompt
+  all('.suggest').forEach(function (b) {
+    b.addEventListener('click', function () {
+      $('empty-prompt').value = b.dataset.prompt;
+      $('empty-submit').disabled = false;
+      $('empty-prompt').focus();
+    });
+  });
+  $('empty-prompt').addEventListener('input', function (e) { $('empty-submit').disabled = e.target.value.trim().length === 0; });
+
+  // Chi tiết ảnh: chọn phiên bản, bật nút khi có nội dung sửa
+  var vers = all('.ver');
+  vers.forEach(function (b) {
+    b.addEventListener('click', function () {
+      vers.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      $('edit-stage').style.background = b.dataset.tone;
+      all('[data-active-label]').forEach(function (l) { l.textContent = b.dataset.label; });
+      $('del-version').hidden = b.hasAttribute('data-original');
+    });
+  });
+  $('gaia-edit').addEventListener('input', function (e) { $('edit-submit').disabled = e.target.value.trim().length === 0; });
+
+  // Chi tiết video: phát / tạm dừng
+  var player = $('player');
+  all('[data-play]', player).forEach(function (b) {
+    b.addEventListener('click', function () {
+      var on = player.dataset.playing !== 'true';
+      player.dataset.playing = String(on);
+      all('[data-play]', player).forEach(function (x) { x.setAttribute('aria-label', on ? 'Tạm dừng' : 'Phát video'); });
+    });
+  });
+
+  // Credit: chọn số tiền, các bước thanh toán, lọc lịch sử
+  var amountBtns = all('.amount');
+  function selectAmount(b) {
+    amountBtns.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    all('[data-amount-label]').forEach(function (el) { el.textContent = b.dataset.label; });
+    all('[data-receive]').forEach(function (el) { if (!el.classList.contains('amount')) el.textContent = b.dataset.receive; });
+    $('bonus-line').textContent = b.dataset.bonus;
+    $('bonus-line').style.color = b.dataset.bonus === 'Không có' ? '#8C877D' : 'var(--accent)';
+  }
+  amountBtns.forEach(function (b) { b.addEventListener('click', function () { selectAmount(b); }); });
+  function payStep(step) {
+    $('pay-choose').hidden = step !== 'chon';
+    $('pay-wait').hidden = step !== 'cho';
+    $('pay-done').hidden = step !== 'xong';
+  }
+  $('pay-go').addEventListener('click', function () { payStep('cho'); });
+  all('[data-pay-back]').forEach(function (b) { b.addEventListener('click', function () { payStep('chon'); }); });
+  all('[data-filter]').forEach(function (t) {
+    t.addEventListener('click', function () {
+      all('[data-filter]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === t)); });
+      all('.ledger li').forEach(function (li) { li.hidden = t.dataset.filter !== 'all' && li.dataset.type !== t.dataset.filter; });
+    });
+  });
+
+  window.addEventListener('hashchange', route);
+  route();
+  renderStudio();
+
+  // Trạng thái dựng sẵn cho ảnh chụp PNG
+  if (png) {
+    var h = (location.hash || '#studio').slice(1);
+    if (h === 'studio') {
+      $('gaia-prompt').value = 'Thuyền thúng trôi trên sông lúc hoàng hôn, máy quay lia chậm';
+      st.hasText = true; st.start = true; renderStudio();
+      $('cat-menu').hidden = false;
+    }
+    if (h === 'edit') $('edit-menu').hidden = false;
+    if (h === 'trash') { $('done-toast').hidden = true; all('#trash-grid .trash-card')[0].querySelector('[data-ask]').click(); }
+  }
+})();
+</script>
+</body>
+</html>
