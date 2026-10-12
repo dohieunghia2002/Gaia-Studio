@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useCallback, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import { Icon } from '../Icon';
 import { useDismiss } from '../useDismiss';
-import { FIELD_LABEL, priceFor, resolveSelection, selectionFields } from '@/lib/catalog';
+import { FIELD_LABEL, modeLabels, priceFor, resolveSelection, selectionFields } from '@/lib/catalog';
 import { aspectOf } from '@/lib/client/upload';
 import { fmtNumber } from '@/lib/format';
 import type { CatalogModel, Kind, MediaRef, Selection } from '@/lib/types';
@@ -256,6 +256,9 @@ export function Composer({
   const lacking = total != null && total > balance;
   const uploading = Boolean(draft.start?.uploading || draft.end?.uploading || draft.refs.some((r) => r.uploading));
   const needsStart = kind === 'video' && Boolean(model?.frames.startRequired) && !draft.start;
+  // Có model chỉ nhận Start + End frame ở một số mode (vd. Kling 2.5: Professional).
+  const endModes = kind === 'video' ? model?.frames.endModes : undefined;
+  const endModeBlocked = Boolean(draft.end && endModes && !endModes.includes(sel.mode ?? ''));
   const canSubmit =
     Boolean(draft.prompt.trim()) &&
     Boolean(model?.available) &&
@@ -263,7 +266,8 @@ export function Composer({
     !lacking &&
     !submitting &&
     !uploading &&
-    !needsStart;
+    !needsStart &&
+    !endModeBlocked;
 
   const fields = model ? selectionFields(model) : [];
   const fieldOptions = {} as Record<keyof Selection, { value: string; label: string; price?: string }[]>;
@@ -485,6 +489,11 @@ export function Composer({
         {model && !model.available && (
           <div className="notice">
             {model.name}: {model.unavailableReason ?? 'tạm ngưng'}. Bạn chọn model khác nhé.
+          </div>
+        )}
+        {model?.available && endModeBlocked && endModes && (
+          <div className="notice hint">
+            {model.name} chỉ tạo được Start + End frame ở Mode {modeLabels(model, endModes)}. Bạn đổi Mode hoặc bỏ End frame.
           </div>
         )}
         {model?.available && needsStart && (

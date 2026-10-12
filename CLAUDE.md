@@ -169,6 +169,8 @@ Prompt translation sits behind `preparePrompt()` (`lib/prompt.server.ts`). For n
   - The frame chip shows "đã cắt 16:9", and its thumbnail opens a preview of exactly what will be sent.
 - Gommo's capability flags can be wrong. `START_FRAME_REQUIRED` in `lib/models.server.ts` lists video models that need a Start frame despite `startText: true`. The composer blocks Tạo with a hint, and `cleanInputs` rejects such requests on the server.
   - No free API field reveals this. A wrong entry only shows up as an instant, uncharged Gommo rejection.
+- `END_FRAME_MODES` (same file) lists models whose Start + End frame only works in some modes. `kling_video_2_5` needs `professional`; Gommo rejected relax instantly on 2026-10-12. The composer shows a hint and blocks Tạo, and `createGenerations` rejects it on the server.
+- The Studio library tracks which tab `items` belong to (`itemsFor`). While a tab switch is loading it shows a spinner and drops stale responses. Before this, library items briefly rendered as Trash cards, and clicking Khôi phục on them returned 404.
 - Elapsed timers and dates use the Asia/Ho_Chi_Minh time zone (`lib/format.ts`), and clocks only start after mount, to avoid hydration mismatches.
 - Gommo's suggestion feeds (`midjourney/kling/sora_feed_suggested`) returned nothing on 2026-10-08, so first-run ideas are GAIA's own (`lib/suggestions.ts`).
 - The landing page (`app/page.tsx`, reworked 2026-10-10 to look less templated) is product-led:

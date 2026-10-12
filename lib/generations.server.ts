@@ -4,7 +4,7 @@ import { ApiError, isUuid } from './api.server';
 import { GommoError, gommoPost, toGommoImageRefs, VIDEO_STATUS, type GommoImageInfo, type GommoVideoInfo } from './gommo';
 import { gaiaCredits, getModel } from './models.server';
 import { preparePrompt } from './prompt.server';
-import { priceFor, resolveSelection, selectionFields } from './catalog';
+import { modeLabels, priceFor, resolveSelection, selectionFields } from './catalog';
 import { getBalance } from './credits.server';
 import { TRASH_DAYS } from './trash';
 import type {
@@ -311,6 +311,10 @@ export async function createGenerations(userId: string, req: CreateRequest): Pro
   const model = await loadModel(kind, String(req.model ?? ''));
   const { params, credits } = checkSelection(model, req.params, Number(req.expectedCredits));
   const inputs = cleanInputs(model, req.inputs);
+  const endModes = model.frames.endModes;
+  if (inputs.end && endModes && !endModes.includes(String(params.mode ?? ''))) {
+    throw new ApiError(400, 'bad_input', `${model.name} chỉ tạo được Start + End frame ở Mode ${modeLabels(model, endModes)}.`);
+  }
   const quantity = kind === 'image' ? Math.min(Math.max(Math.floor(Number(req.quantity) || 1), 1), MAX_QUANTITY) : 1;
 
   if ((await getBalance(userId)) < credits * quantity) {

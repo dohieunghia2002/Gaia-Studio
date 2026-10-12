@@ -145,6 +145,10 @@ export function StudioApp({
   const [items, setItems] = useState<LibraryItem[]>(initialItems);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [filter, setFilter] = useState<Filter>('all');
+  // Tab mà `items` đang thuộc về. Vừa bấm sang tab khác thì hai giá trị lệch nhau cho tới khi tải xong:
+  // lúc đó hiện vòng xoay, không vẽ mục của tab cũ (vd. mục thư viện thành thẻ Thùng rác có nút Khôi phục).
+  const [itemsFor, setItemsFor] = useState<Filter>('all');
+  const listReq = useRef(0);
   const [loadingList, setLoadingList] = useState(false);
   const [hasAny, setHasAny] = useState(initialItems.length > 0);
   const [trashCount, setTrashCount] = useState(initialTrashCount);
@@ -252,6 +256,7 @@ export function StudioApp({
 
   const loadList = useCallback(
     async (f: Filter, before?: string) => {
+      const req = ++listReq.current;
       setLoadingList(true);
       try {
         const qs = new URLSearchParams();
@@ -259,13 +264,16 @@ export function StudioApp({
         else if (f !== 'all') qs.set('kind', f);
         if (before) qs.set('before', before);
         const res = await api<{ items: LibraryItem[]; nextCursor: string | null; trashCount: number }>(`/api/generations?${qs}`);
+        // Đã chuyển tab (hoặc tải lại) trong lúc chờ: bỏ kết quả cũ, không để nó ghi đè tab hiện tại.
+        if (req !== listReq.current) return;
         setItems((prev) => (before ? [...prev, ...res.items] : res.items));
+        setItemsFor(f);
         setCursor(res.nextCursor);
         setTrashCount(res.trashCount);
       } catch (err) {
-        push({ kind: 'error', title: err instanceof Error ? err.message : 'Không tải được thư viện' });
+        if (req === listReq.current) push({ kind: 'error', title: err instanceof Error ? err.message : 'Không tải được thư viện' });
       } finally {
-        setLoadingList(false);
+        if (req === listReq.current) setLoadingList(false);
       }
     },
     [push],
@@ -581,6 +589,7 @@ export function StudioApp({
 
   const firstRun = !hasAny && filter === 'all' && items.length === 0 && trashCount === 0;
   const inTrash = filter === 'trash';
+  const stale = itemsFor !== filter;
   const model = currentModel(catalog, draft);
 
   return (
@@ -607,7 +616,7 @@ export function StudioApp({
                   {runningCount} đang chạy
                 </div>
               )}
-              {inTrash && items.length > 0 && (
+              {inTrash && !stale && items.length > 0 && (
                 <div className="row trash-tools">
                   {confirmEmpty ? (
                     <>
@@ -638,7 +647,13 @@ export function StudioApp({
                 Ảnh và video trong thùng rác tự xoá vĩnh viễn sau {TRASH_DAYS} ngày. Khôi phục để đưa lại vào thư viện.
               </p>
             )}
-            {items.length === 0 && !loadingList && (
+            {stale && (
+              <div className="list-loading" role="status">
+                <span className="spinner" aria-hidden="true" />
+                <span className="sr-only">Đang tải…</span>
+              </div>
+            )}
+            {!stale && items.length === 0 && !loadingList && (
               <div className="empty-note" style={{ padding: '64px 0' }}>
                 {inTrash
                   ? 'Thùng rác trống.'
@@ -649,14 +664,14 @@ export function StudioApp({
                       : 'Thư viện đang trống.'}
               </div>
             )}
-            {inTrash && items.length > 0 && (
+            {inTrash && !stale && items.length > 0 && (
               <div className="lib-grid" style={{ marginTop: 16 }}>
                 {items.map((it) => (
                   <TrashCard key={it.id} item={it} now={now} onRestore={restoreItem} onPurge={purgeItem} />
                 ))}
               </div>
             )}
-            {!inTrash && groups.map((g) => (
+            {!inTrash && !stale && groups.map((g) => (
               <section key={g.key} aria-label={g.label}>
                 <h2 className="group-title">{g.label}</h2>
                 <div className="lib-grid">
@@ -675,7 +690,7 @@ export function StudioApp({
                 </div>
               </section>
             ))}
-            {cursor && (
+            {!stale && cursor && (
               <button type="button" className="more-btn" disabled={loadingList} onClick={() => loadList(filter, cursor)}>
                 {loadingList ? 'Đang tải…' : 'Xem thêm'}
               </button>

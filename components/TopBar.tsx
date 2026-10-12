@@ -57,7 +57,7 @@ function AccountMenu({ profile }: { profile: Profile }) {
             Credit &amp; giao dịch
           </Link>
           <form action="/auth/signout" method="post">
-            <button type="submit">
+            <button type="submit" className="danger">
               <Icon name="logout" />
               Đăng xuất
             </button>

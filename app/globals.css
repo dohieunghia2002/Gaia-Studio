@@ -33,6 +33,8 @@ img, video { display: block; }
 /* ── Khung trang ── */
 .page { min-height: 100vh; background: #0f0f0e; color: #edebe6; font-size: 14px; line-height: 1.5; display: flex; flex-direction: column; position: relative; }
 .page-loading { align-items: center; justify-content: center; }
+.list-loading { display: flex; justify-content: center; padding: 64px 0; }
+.list-loading .spinner { width: 20px; height: 20px; animation: gaia-spin .8s linear infinite, gaia-fade .2s ease-out .15s both; }
 .page-loading .spinner { width: 22px; height: 22px; animation: gaia-spin .8s linear infinite, gaia-fade .2s ease-out .15s both; }
 .topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 12px 32px; border-bottom: 1px solid #262622; }
 .topbar-right { display: flex; align-items: center; gap: 12px; position: relative; }

@@ -34,6 +34,13 @@ export const HIDDEN_MODELS: string[] = [];
  */
 export const START_FRAME_REQUIRED: string[] = ['kling_video_2_5'];
 
+/**
+ * Model chỉ nhận Start + End frame ở một số mode, dù Gommo báo `startImageAndEnd: true` và không ghi giới hạn này.
+ * kling_video_2_5 mode relax bị từ chối ngay, không trừ tiền: "Tạo video từ khung hình đầu và cuối chỉ hoạt động ở
+ * chế độ Professional" (2026-10-12).
+ */
+export const END_FRAME_MODES: Record<string, string[]> = { kling_video_2_5: ['professional'] };
+
 /** Model hiện trên trang chủ, theo thứ tự. Model nào không còn thì bỏ qua. */
 export const FEATURED_MODELS = ['veo_3_1', 'kling_video_2_5', 'wan_3_0', 'google_image_gen_banana_2'];
 
@@ -178,6 +185,9 @@ function normalize(kind: Kind, m: RawModel): CatalogModel | null {
       start: kind === 'video' && Boolean(m.startImage),
       end: kind === 'video' && Boolean(m.startImageAndEnd),
       startRequired,
+      ...(kind === 'video' && m.startImageAndEnd && END_FRAME_MODES[m.model]
+        ? { endModes: END_FRAME_MODES[m.model].filter((v) => modes.some((o) => o.value === v)) }
+        : {}),
     },
     maxReferences: kind === 'image' && m.withSubject ? Math.max(0, Number(m.maxSubject) || 0) : 0,
     daily,

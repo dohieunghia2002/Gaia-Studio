@@ -33,8 +33,11 @@ export interface CatalogModel {
   modeCredits: Record<string, number>;
   fromCredits: number;
   tags: string[];
-  /** `startRequired`: model không tạo được video chỉ từ prompt, phải có Start frame. */
-  frames: { start: boolean; end: boolean; startRequired: boolean };
+  /**
+   * `startRequired`: model không tạo được video chỉ từ prompt, phải có Start frame.
+   * `endModes`: End frame chỉ chạy ở các mode này (không có = mọi mode).
+   */
+  frames: { start: boolean; end: boolean; startRequired: boolean; endModes?: string[] };
   maxReferences: number;
   daily?: { used: number; max: number };
 }

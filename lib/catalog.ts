@@ -138,3 +138,8 @@ export function paramSummary(kind: 'image' | 'video', modelName: string, params:
   }
   return parts.join(' · ');
 }
+
+/** Tên hiển thị của các mode (vd. "Professional"), nối bằng dấu phẩy. */
+export function modeLabels(model: CatalogModel, values: string[]): string {
+  return values.map((v) => model.modes.find((o) => o.value === v)?.label ?? v).join(', ');
+}
