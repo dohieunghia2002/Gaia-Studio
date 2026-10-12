@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getProfile, requireUserPage } from '@/lib/auth.server';
+import { getProfileRow, pageSession, toProfile } from '@/lib/auth.server';
 import { getCreditSummary, getLedger } from '@/lib/credits.server';
 import { getTopup } from '@/lib/payments.server';
 import { isPayosConfigured } from '@/lib/env';
@@ -10,17 +10,23 @@ import { CreditPage } from '@/components/credit/CreditPage';
 export const metadata: Metadata = { title: 'Credit' };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ order?: string }> }) {
-  const user = await requireUserPage('/credit');
+  const { userId, verified } = await pageSession('/credit');
   const { order } = await searchParams;
-
-  const [profile, summary, ledger] = await Promise.all([getProfile(user), getCreditSummary(user.id), getLedger(user.id)]);
-
   // Quay lại từ trang PayOS (?order=...) hoặc tải lại trang khi đang chờ chuyển khoản.
   const orderCode = Number(order);
-  const resume = Number.isSafeInteger(orderCode) && orderCode > 0 ? await getTopup(user.id, orderCode).catch(() => null) : null;
+
+  // Xác thực và tải dữ liệu cùng lúc (xem pageSession).
+  const [user, profileRow, summary, ledger, resume] = await Promise.all([
+    verified,
+    getProfileRow(userId),
+    getCreditSummary(userId),
+    getLedger(userId),
+    Number.isSafeInteger(orderCode) && orderCode > 0 ? getTopup(userId, orderCode).catch(() => null) : null,
+  ]);
+  const profile = toProfile(user, profileRow);
   // Đã trả xong thì số dư có thể vừa đổi trong lúc hỏi PayOS.
-  const finalSummary = resume?.status === 'paid' ? await getCreditSummary(user.id) : summary;
-  const finalLedger = resume?.status === 'paid' ? await getLedger(user.id) : ledger;
+  const [finalSummary, finalLedger] =
+    resume?.status === 'paid' ? await Promise.all([getCreditSummary(userId), getLedger(userId)]) : [summary, ledger];
 
   return (
     <CreditProvider initial={finalSummary.balance}>

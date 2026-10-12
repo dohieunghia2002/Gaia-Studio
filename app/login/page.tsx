@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Icon, LogoMark } from '@/components/Icon';
 import { GoogleButton } from '@/components/GoogleButton';
 import { isSupabaseConfigured } from '@/lib/env';
+import { AUTH_UNAVAILABLE_MESSAGE } from '@/lib/auth-unavailable';
 
 export const metadata: Metadata = { title: 'Đăng nhập' };
 
@@ -42,7 +43,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           )}
           {error && (
             <p className="danger-text" style={{ margin: 0, fontSize: 13 }}>
-              Đăng nhập chưa thành công. Bạn thử lại nhé.
+              {error === 'network' ? AUTH_UNAVAILABLE_MESSAGE : 'Đăng nhập chưa thành công. Bạn thử lại nhé.'}
             </p>
           )}
           {configured ? (

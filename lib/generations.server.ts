@@ -1,6 +1,6 @@
 import 'server-only';
 import { supabaseAdmin } from './supabase/admin';
-import { ApiError } from './api.server';
+import { ApiError, isUuid } from './api.server';
 import { GommoError, gommoPost, toGommoImageRefs, VIDEO_STATUS, type GommoImageInfo, type GommoVideoInfo } from './gommo';
 import { gaiaCredits, getModel } from './models.server';
 import { preparePrompt } from './prompt.server';
@@ -111,21 +111,23 @@ export async function listLibrary(
   // Thư viện xếp theo ngày tạo; Thùng rác xếp theo lúc xoá (mới xoá lên đầu).
   const sortKey = opts.trash ? 'deleted_at' : 'created_at';
   if (opts.trash) await purgeExpired(userId);
+  // Lấy kèm các phiên bản của từng mục trong cùng một lần gọi (mỗi lần gọi Supabase ~250 ms từ máy dev).
   let q = db()
     .from('generations')
-    .select(COLS)
+    .select(`${COLS}, versions:generations!root_id(${COLS})`)
     .eq('user_id', userId)
     .is('root_id', null)
     .order(sortKey, { ascending: false })
+    .order('created_at', { ascending: true, referencedTable: 'versions' })
     .limit(limit + 1);
   q = opts.trash ? q.not('deleted_at', 'is', null) : q.is('deleted_at', null);
   if (opts.kind) q = q.eq('kind', opts.kind);
   if (opts.before) q = q.lt(sortKey, opts.before);
   const { data, error } = await q;
   if (error) throw error;
-  const rows = (data ?? []) as GenRow[];
+  const rows = (data ?? []) as RootWithVersions[];
   const page = rows.slice(0, limit);
-  const items = await withVersionSummary(page);
+  const items = withVersionSummary(page);
   const last = page[page.length - 1];
   return { items, nextCursor: rows.length > limit ? (opts.trash ? last.deleted_at : last.created_at) : null };
 }
@@ -142,28 +144,15 @@ export async function trashCount(userId: string): Promise<number> {
   return count ?? 0;
 }
 
-async function withVersionSummary(roots: GenRow[]): Promise<LibraryItem[]> {
-  const imageRootIds = roots.filter((r) => r.kind === 'image').map((r) => r.id);
-  const rootDeletedAt = new Map(roots.map((r) => [r.id, r.deleted_at]));
-  const versionsByRoot = new Map<string, GenRow[]>();
-  if (imageRootIds.length) {
-    const { data, error } = await db()
-      .from('generations')
-      .select(COLS)
-      .in('root_id', imageRootIds)
-      .neq('op', 'upscale')
-      .order('created_at', { ascending: true });
-    if (error) throw error;
-    for (const v of (data ?? []) as GenRow[]) {
-      // Mục trong thư viện: các phiên bản chưa xoá. Mục trong Thùng rác: các phiên bản bị xoá cùng lúc với nó.
-      if (v.deleted_at !== rootDeletedAt.get(v.root_id!)) continue;
-      const list = versionsByRoot.get(v.root_id!) ?? [];
-      list.push(v);
-      versionsByRoot.set(v.root_id!, list);
-    }
-  }
-  return roots.map((root) => {
-    const versions = versionsByRoot.get(root.id) ?? [];
+type RootWithVersions = GenRow & { versions?: GenRow[] };
+
+function withVersionSummary(roots: RootWithVersions[]): LibraryItem[] {
+  return roots.map(({ versions: embedded, ...root }) => {
+    // Mục trong thư viện: các phiên bản chưa xoá. Mục trong Thùng rác: các phiên bản bị xoá cùng lúc với nó.
+    const versions =
+      root.kind === 'image'
+        ? (embedded ?? []).filter((v) => v.op !== 'upscale' && v.deleted_at === root.deleted_at)
+        : [];
     const all = [root, ...versions];
     const latestDone = [...all].reverse().find((v) => v.status === 'success' && v.url);
     return {
@@ -179,18 +168,22 @@ async function withVersionSummary(roots: GenRow[]): Promise<LibraryItem[]> {
 
 /** Một mục và (nếu là ảnh) toàn bộ phiên bản, từ bản gốc đến bản mới nhất. */
 export async function getDetail(userId: string, id: string): Promise<{ root: GenerationItem; versions: GenerationItem[] }> {
-  const row = await getRow(userId, id);
-  const root = row.root_id ? await getRow(userId, row.root_id) : row;
+  if (!isUuid(id)) throw new ApiError(404, 'not_found', 'Không tìm thấy mục này trong thư viện.');
+  // Thường `id` là bản gốc: lấy bản gốc và các phiên bản của nó trong một lần gọi.
   const { data, error } = await db()
     .from('generations')
     .select(COLS)
-    .eq('root_id', root.id)
     .eq('user_id', userId)
-    .is('deleted_at', null)
-    .neq('op', 'upscale')
+    .or(`id.eq.${id},root_id.eq.${id}`)
     .order('created_at', { ascending: true });
   if (error) throw error;
-  return { root: toItem(root), versions: [root, ...((data ?? []) as GenRow[])].map(toItem) };
+  const rows = (data ?? []) as GenRow[];
+  const root = rows.find((r) => r.id === id);
+  if (!root || root.deleted_at) throw new ApiError(404, 'not_found', 'Không tìm thấy mục này trong thư viện.');
+  // `id` là một phiên bản: mở theo bản gốc của nó.
+  if (root.root_id) return getDetail(userId, root.root_id);
+  const versions = rows.filter((r) => r.id !== id && !r.deleted_at && r.op !== 'upscale');
+  return { root: toItem(root), versions: [root, ...versions].map(toItem) };
 }
 
 // ───────────────────────── Tạo mới ─────────────────────────
@@ -222,13 +215,15 @@ function cleanRef(ref: unknown): MediaRef | undefined {
   return { id, url };
 }
 
-function cleanInputs(model: CatalogModel, inputs: GenerationInputs | undefined): GenerationInputs {
+function cleanInputs(model: CatalogModel, inputs: GenerationInputs = {}): GenerationInputs {
   const out: GenerationInputs = {};
-  if (!inputs) return out;
   if (model.kind === 'video') {
     const start = cleanRef(inputs.start);
     const end = cleanRef(inputs.end);
     if (start && !model.frames.start) throw new ApiError(400, 'bad_input', `${model.name} không hỗ trợ Start frame.`);
+    if (!start && model.frames.startRequired) {
+      throw new ApiError(400, 'bad_input', `${model.name} cần Start frame. Bạn thêm ảnh rồi tạo lại nhé.`);
+    }
     if (end && (!model.frames.end || !start)) throw new ApiError(400, 'bad_input', 'End frame cần có Start frame trước.');
     if (start) out.start = start;
     if (end) out.end = end;

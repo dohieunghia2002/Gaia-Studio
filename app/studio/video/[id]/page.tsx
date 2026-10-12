@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { requireUserPage } from '@/lib/auth.server';
-import { getModel } from '@/lib/models.server';
+import { pageSession } from '@/lib/auth.server';
+import { getCatalog } from '@/lib/models.server';
 import { getBalance } from '@/lib/credits.server';
 import { getDetail } from '@/lib/generations.server';
 import { isUuid } from '@/lib/api.server';
@@ -14,14 +14,20 @@ export const metadata: Metadata = { title: 'Chi tiết video' };
 
 export default async function VideoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const user = await requireUserPage(`/studio/video/${id}`);
+  const { userId, verified } = await pageSession(`/studio/video/${id}`);
   if (!isUuid(id)) notFound();
-  const detail = await getDetail(user.id, id).catch(() => null);
+  // Xác thực và tải dữ liệu cùng lúc (xem pageSession).
+  const [, detail, balance, catalog] = await Promise.all([
+    verified,
+    getDetail(userId, id).catch(() => null),
+    getBalance(userId),
+    getCatalog().catch(() => null),
+  ]);
   if (!detail) notFound();
   if (detail.root.kind === 'image') redirect(`/studio/image/${detail.root.id}`);
 
   const item = detail.root;
-  const [balance, model] = await Promise.all([getBalance(user.id), getModel('video', item.model).catch(() => undefined)]);
+  const model = catalog?.video.find((m) => m.id === item.model);
 
   // "Tạo lại" chỉ hiện khi model còn bán đúng tổ hợp thông số cũ.
   let rerunCredits: number | null = null;

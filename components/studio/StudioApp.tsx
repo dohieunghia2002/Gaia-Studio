@@ -9,7 +9,7 @@ import { Composer, currentModel, draftCost, emptyDraft, type Catalog, type Draft
 import { detailHref, LibraryCard, TrashCard } from './LibraryCard';
 import { SampleMedia } from '../SampleMedia';
 import { api, ClientError } from '@/lib/client/api';
-import { uploadImage } from '@/lib/client/upload';
+import { aspectOf, assertImageFile, fetchImage, prepareImage, uploadDataUrl, uploadImage } from '@/lib/client/upload';
 import { priceFor, resolveSelection, selectionFields } from '@/lib/catalog';
 import { dayKey, dayLabel, fmtClock, fmtNumber } from '@/lib/format';
 import { TRASH_DAYS } from '@/lib/trash';
@@ -31,8 +31,15 @@ function toLibraryItem(g: GenerationItem): LibraryItem {
   };
 }
 
+const newKey = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
 function uploadFrom(ref: { id: string; url: string } | undefined): Upload | null {
   return ref ? { key: ref.id, preview: ref.url, ref, uploading: false } : null;
+}
+
+/** Frame của lần tạo trước: giữ URL gốc để kiểm tra (và cắt lại nếu cần) theo tỉ lệ video đang chọn. */
+function frameFrom(ref: { id: string; url: string } | undefined): Upload | null {
+  return ref ? { key: ref.id, preview: ref.url, ref, uploading: false, source: ref.url } : null;
 }
 
 function draftFromItem(catalog: Catalog, base: Draft, item: GenerationItem): Draft {
@@ -43,8 +50,8 @@ function draftFromItem(catalog: Catalog, base: Draft, item: GenerationItem): Dra
     prompt: item.prompt,
     modelId: model ? { ...base.modelId, [item.kind]: model.id } : base.modelId,
     sel: model ? { ...base.sel, [item.kind]: resolveSelection(model, item.params) } : base.sel,
-    start: uploadFrom(item.inputs?.start),
-    end: uploadFrom(item.inputs?.end),
+    start: frameFrom(item.inputs?.start),
+    end: frameFrom(item.inputs?.end),
     refs: (item.inputs?.references ?? []).map((r) => uploadFrom(r)!),
     quantity: 1,
   };
@@ -463,10 +470,59 @@ export function StudioApp({
     }
   };
 
+  // Tỉ lệ video đang chọn. Start/End frame được cắt phần giữa theo tỉ lệ này, vì Gommo/Veo không tự cắt
+  // mà chèn viền đen (kiểm chứng 2026-10-11: ảnh 3:2 trong video 16:9).
+  const videoModel = currentModel(catalog, draft, 'video');
+  const videoRatio = videoModel ? resolveSelection(videoModel, draft.sel.video).ratio : undefined;
+
+  /** Cắt ảnh frame cho đúng `ratio` rồi tải lên. Frame cũ trên CDN đã đúng tỉ lệ thì dùng lại, khỏi tải lên. */
+  const processFrame = useCallback(
+    (slot: 'start' | 'end', source: File | string, ratio: string | undefined, current?: Upload) => {
+      const key = newKey();
+      const preview = typeof source === 'string' ? (current?.preview ?? source) : URL.createObjectURL(source);
+      const up: Upload = { key, preview, uploading: true, source, ratio };
+      setDraft((d) => (slot === 'start' ? { ...d, start: up } : { ...d, end: up }));
+      const fileName = typeof source === 'string' ? source.split('/').pop() || 'frame.jpg' : source.name;
+      (async () => {
+        const prepared = await prepareImage(typeof source === 'string' ? await fetchImage(source) : source, aspectOf(ratio));
+        if (!prepared.changed && typeof source === 'string' && current?.ref) return { ref: current.ref, cropped: false };
+        setDraft((d) => patchUpload(d, key, { preview: prepared.dataUrl, cropped: prepared.cropped }));
+        return { ref: await uploadDataUrl(prepared.dataUrl, fileName), cropped: prepared.cropped };
+      })()
+        .then(({ ref, cropped }) => setDraft((d) => patchUpload(d, key, { ref, cropped, uploading: false })))
+        .catch((err) => {
+          setDraft((d) => patchUpload(d, key, null));
+          push({ kind: 'error', title: err instanceof Error ? err.message : 'Không tải được ảnh lên' });
+        });
+    },
+    [push],
+  );
+
+  // Đổi tỉ lệ (hoặc model) sau khi đã thêm frame, hoặc frame lấy từ lần tạo trước: cắt lại từ ảnh gốc.
+  const { start: startFrame, end: endFrame } = draft;
+  useEffect(() => {
+    for (const [slot, up] of [['start', startFrame], ['end', endFrame]] as const) {
+      if (up?.source === undefined || up.uploading || up.ratio === videoRatio) continue;
+      // Việc cắt + tải lên là bất đồng bộ; processFrame đánh dấu frame "đang xử lý" ngay để effect không chạy trùng.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      processFrame(slot, up.source, videoRatio, up);
+    }
+  }, [videoRatio, startFrame, endFrame, processFrame]);
+
   const onPickFile = (slot: 'start' | 'end' | 'ref', file: File) => {
-    const key = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    try {
+      assertImageFile(file);
+    } catch (err) {
+      push({ kind: 'error', title: err instanceof Error ? err.message : 'Không tải được ảnh lên' });
+      return;
+    }
+    if (slot !== 'ref') {
+      processFrame(slot, file, videoRatio);
+      return;
+    }
+    const key = newKey();
     const up: Upload = { key, preview: URL.createObjectURL(file), uploading: true };
-    setDraft((d) => (slot === 'start' ? { ...d, start: up } : slot === 'end' ? { ...d, end: up } : { ...d, refs: [...d.refs, up] }));
+    setDraft((d) => ({ ...d, refs: [...d.refs, up] }));
     uploadImage(file)
       .then((ref) => setDraft((d) => patchUpload(d, key, { ref, uploading: false })))
       .catch((err) => {

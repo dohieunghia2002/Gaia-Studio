@@ -29,6 +29,41 @@ There is no test framework. The SQL and pricing logic were verified with throwaw
 - `params`, `searchParams` and `cookies()` are Promises and must be awaited.
 - `getUser()` in `lib/auth.server.ts` calls `connection()`, so auth-gated pages always render per request.
 
+## Page speed (measured 2026-10-12)
+
+From the dev machine in VN, every Supabase call costs about 250 ms of network round trip. The Supabase work itself is about 20 ms, and the DB is in ap-southeast-1. Gommo `/ai/models` costs about 1.6 s. Page time is therefore the number of *sequential* round trips. Keep it at one.
+
+- **`pageSession(nextPath)`** (`lib/auth.server.ts`) replaces `requireUserPage` in pages.
+  - It gives `userId` from the locally verified JWT, so data loads start at once.
+  - It also returns a `verified` promise (`getUser`, still checked against Supabase). Pages must `Promise.all` it with their data before rendering.
+  - Use `getProfileRow(userId)` + `toProfile(user, row)` in the same `Promise.all`.
+- **One query per need:**
+  - `listLibrary` embeds versions (`versions:generations!root_id(...)`).
+  - `getDetail` loads root and versions with one `or(id.eq.X,root_id.eq.X)`.
+  - `getCreditSummary` runs its two queries in parallel.
+- **`getCatalog`** serves a stale catalog immediately and refreshes it in the background after 5 min.
+- **`app/studio/loading.tsx`, `app/credit/loading.tsx`** stream a spinner at once, so a click responds in about 100 ms instead of freezing until the server finishes.
+- **`instrumentation.ts`** sets an undici global dispatcher with a 30 s keep-alive. The default 4 s meant almost every navigation re-opened HTTPS connections, adding ~3 RTT (/credit: 390 ms warm vs 850 ms after a 6 s pause).
+  - `undici` is pinned to a 7.x version, matching Node's bundled undici major, and listed in `serverExternalPackages`.
+- Results:
+  - Steady state is ~0.4 s for detail pages and ~0.45–0.8 s for Studio/Credit, down from 0.9–1.5 s.
+  - The first visit to a route after a dev restart or a `.next` wipe still compiles, which takes seconds. That is dev only.
+
+## Auth: "not signed in" vs "Supabase unreachable"
+
+These are two different states. Never treat an unreachable Supabase as signed out. On 2026-10-11 doing that caused false "Phiên đăng nhập đã hết hạn" messages and bounced users from /credit back to /studio.
+
+- `isAuthUnavailable()` in `lib/supabase/network.ts` classifies the error. A retryable fetch error (network, timeout, 5xx), an unknown or non-JSON response, or a 429 counts as unreachable. A 4xx such as `bad_jwt`, or a missing session, means signed out.
+- `getUser()` throws `AuthUnavailableError` (`lib/auth-unavailable.ts`) when Supabase is unreachable. How each caller handles it:
+  - `requireUserApi` turns it into a 503 `auth_unavailable`. The client then shows the message and does not redirect to /login.
+  - Pages let it reach `app/error.tsx`, which recognises it by `digest` (Next keeps a pre-set digest even in production) and offers "Thử lại".
+- `proxy.ts`:
+  - If `getClaims()` is unreachable, it lets the request through and sets the `x-gaia-auth-unavailable` header. Pages then fail fast instead of waiting through supabase-js's ~25s refresh retry a second time.
+  - On `/login` it checks with `getUser()`, not only the JWT signature, so a session revoked server-side cannot loop /login ↔ page.
+  - It honours `next`, and its redirects copy the refreshed session cookies.
+- The cookie-session clients use `fetchWithTimeout` (20s). The admin/DB client deliberately has no timeout: aborting a credit RPC that already ran would leave the charge state ambiguous.
+- `/auth/callback` sends `error=network` when the code exchange fails because Supabase is unreachable. The login page shows the matching message.
+
 ## Architecture
 
 ### Money flows through Postgres functions
@@ -128,6 +163,12 @@ Prompt translation sits behind `preparePrompt()` (`lib/prompt.server.ts`). For n
   - `components/credit/CreditPage.tsx`.
 - `CreditProvider` shares the balance and `ToastProvider` shows toasts.
 - The client calls the API through `lib/client/api.ts`, which turns `{ error, message }` responses into `ClientError` with the Vietnamese message. Upload images through `lib/client/upload.ts`; it downscales to 2048px before `/api/uploads`, which uploads to Gommo.
+- Start/End frames are centre-cropped in the browser to the selected video ratio (`processFrame` in `StudioApp.tsx`). Gommo/Veo doesn't crop; it pillarboxes a mismatched frame with black bars (verified 2026-10-11).
+  - Each frame `Upload` keeps its `source` (the file, or the CDN URL of a reused frame) and the `ratio` it was prepared for. When the ratio or model changes, an effect re-crops and re-uploads it.
+  - A reused frame that already matches is kept, not re-uploaded. Gommo's CDN sends `Access-Control-Allow-Origin: *`, so reused frames can be fetched and cropped.
+  - The frame chip shows "đã cắt 16:9", and its thumbnail opens a preview of exactly what will be sent.
+- Gommo's capability flags can be wrong. `START_FRAME_REQUIRED` in `lib/models.server.ts` lists video models that need a Start frame despite `startText: true`. The composer blocks Tạo with a hint, and `cleanInputs` rejects such requests on the server.
+  - No free API field reveals this. A wrong entry only shows up as an instant, uncharged Gommo rejection.
 - Elapsed timers and dates use the Asia/Ho_Chi_Minh time zone (`lib/format.ts`), and clocks only start after mount, to avoid hydration mismatches.
 - Gommo's suggestion feeds (`midjourney/kling/sora_feed_suggested`) returned nothing on 2026-10-08, so first-run ideas are GAIA's own (`lib/suggestions.ts`).
 - The landing page (`app/page.tsx`, reworked 2026-10-10 to look less templated) is product-led:

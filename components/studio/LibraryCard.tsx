@@ -164,6 +164,17 @@ export function LibraryCard({
           <p className="card-title">{item.prompt}</p>
           <p className="card-meta">{summary}</p>
         </div>
+        <div className="card-actions">
+          <button
+            type="button"
+            className="overlay-btn"
+            aria-label="Chuyển vào thùng rác"
+            title="Chuyển vào thùng rác"
+            onClick={() => onDelete(item)}
+          >
+            <Icon name="trash" size={18} />
+          </button>
+        </div>
       </div>
     );
   }

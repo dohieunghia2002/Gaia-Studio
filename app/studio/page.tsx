@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getProfile, requireUserPage } from '@/lib/auth.server';
+import { getProfileRow, pageSession, toProfile } from '@/lib/auth.server';
 import { getCatalog } from '@/lib/models.server';
 import { getBalance } from '@/lib/credits.server';
 import { getDetail, listLibrary, trashCount } from '@/lib/generations.server';
@@ -20,22 +20,25 @@ export default async function StudioPage({
   const { reuse: reuseId, prompt, kind } = await searchParams;
   const text = typeof prompt === 'string' ? prompt.trim().slice(0, 2000) : '';
   const initialPrompt = text ? { kind: (kind === 'image' ? 'image' : 'video') as Kind, prompt: text } : null;
-  const user = await requireUserPage(initialPrompt ? promptHref(initialPrompt.kind, initialPrompt.prompt) : '/studio');
+  const { userId, verified } = await pageSession(
+    initialPrompt ? promptHref(initialPrompt.kind, initialPrompt.prompt) : '/studio',
+  );
 
-  const [profile, balance, library, trash, catalog] = await Promise.all([
-    getProfile(user),
-    getBalance(user.id),
-    listLibrary(user.id),
-    trashCount(user.id),
+  // Xác thực và tải dữ liệu cùng lúc (xem pageSession).
+  const [user, profileRow, balance, library, trash, catalog, reuse] = await Promise.all([
+    verified,
+    getProfileRow(userId),
+    getBalance(userId),
+    listLibrary(userId),
+    trashCount(userId),
     getCatalog().catch(() => ({ image: [], video: [] })),
+    reuseId && isUuid(reuseId)
+      ? getDetail(userId, reuseId)
+          .then((d): GenerationItem => d.versions.find((v) => v.id === reuseId) ?? d.root)
+          .catch(() => null)
+      : null,
   ]);
-
-  let reuse: GenerationItem | null = null;
-  if (reuseId && isUuid(reuseId)) {
-    reuse = await getDetail(user.id, reuseId)
-      .then((d) => d.versions.find((v) => v.id === reuseId) ?? d.root)
-      .catch(() => null);
-  }
+  const profile = toProfile(user, profileRow);
 
   return (
     <CreditProvider initial={balance}>

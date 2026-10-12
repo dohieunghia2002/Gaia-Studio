@@ -9,16 +9,18 @@ export async function getBalance(userId: string): Promise<number> {
 }
 
 export async function getCreditSummary(userId: string): Promise<CreditSummary> {
-  const balance = await getBalance(userId);
-  const { data } = await supabaseAdmin()
-    .from('credit_lots')
-    .select('remaining, expires_at')
-    .eq('user_id', userId)
-    .gt('remaining', 0)
-    .gt('expires_at', new Date().toISOString())
-    .order('expires_at', { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  const [balance, { data }] = await Promise.all([
+    getBalance(userId),
+    supabaseAdmin()
+      .from('credit_lots')
+      .select('remaining, expires_at')
+      .eq('user_id', userId)
+      .gt('remaining', 0)
+      .gt('expires_at', new Date().toISOString())
+      .order('expires_at', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
   return {
     balance,
     nextExpiry: data ? { credits: data.remaining as number, expiresAt: data.expires_at as string } : null,

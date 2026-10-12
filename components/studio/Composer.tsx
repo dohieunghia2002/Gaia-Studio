@@ -5,6 +5,7 @@ import { useCallback, useRef, useState, type Dispatch, type RefObject, type SetS
 import { Icon } from '../Icon';
 import { useDismiss } from '../useDismiss';
 import { FIELD_LABEL, priceFor, resolveSelection, selectionFields } from '@/lib/catalog';
+import { aspectOf } from '@/lib/client/upload';
 import { fmtNumber } from '@/lib/format';
 import type { CatalogModel, Kind, MediaRef, Selection } from '@/lib/types';
 
@@ -13,6 +14,12 @@ export interface Upload {
   preview: string;
   ref?: MediaRef;
   uploading: boolean;
+  /** Start/End frame: ảnh gốc (file đã chọn hoặc URL frame cũ), để cắt lại khi đổi tỉ lệ video. */
+  source?: File | string;
+  /** Tỉ lệ video mà ảnh đã được chuẩn bị theo. */
+  ratio?: string;
+  /** Đã cắt bớt ảnh gốc để đúng `ratio`. */
+  cropped?: boolean;
 }
 
 export interface Draft {
@@ -158,15 +165,60 @@ function ModelPicker({
 }
 
 function FrameChip({ label, upload, onRemove }: { label: string; upload: Upload; onRemove: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(open, ref, close);
+  // Start/End frame: hình thu nhỏ theo đúng tỉ lệ video, bấm vào để xem ảnh sẽ gửi đi.
+  const aspect = aspectOf(upload.ratio);
+  const isFrame = upload.source !== undefined;
   return (
-    <span className="frame-chip">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="thumb" src={upload.preview} alt="" />
-      {label}
-      {upload.uploading && <span className="spinner" aria-label="Đang tải ảnh lên" />}
-      <button type="button" aria-label={`Bỏ ${label}`} onClick={onRemove}>
-        <Icon name="x" size={14} />
-      </button>
+    <span className="frame-chip-wrap" ref={ref}>
+      <span className="frame-chip">
+        {isFrame ? (
+          <button
+            type="button"
+            className="thumb-btn"
+            aria-label={`Xem trước ${label}`}
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className="thumb"
+              src={upload.preview}
+              alt=""
+              style={aspect ? { width: Math.round(Math.min(50, Math.max(16, 28 * aspect))) } : undefined}
+            />
+          </button>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="thumb" src={upload.preview} alt="" />
+        )}
+        {label}
+        {upload.cropped && upload.ratio && <span className="faint">· đã cắt {upload.ratio}</span>}
+        {upload.uploading && <span className="spinner" aria-label="Đang tải ảnh lên" />}
+        <button type="button" aria-label={`Bỏ ${label}`} onClick={onRemove}>
+          <Icon name="x" size={14} />
+        </button>
+      </span>
+      {open && (
+        <span className="popover frame-preview" role="dialog" aria-label={`${label} sẽ gửi đi`}>
+          <span className="preview-media">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={upload.preview} alt={label} />
+          </span>
+          <span className="faint">
+            {upload.uploading
+              ? 'Đang chuẩn bị ảnh…'
+              : upload.cropped
+                ? `Đã cắt phần giữa ảnh cho đúng tỉ lệ ${upload.ratio} của video.`
+                : aspect
+                  ? `Ảnh đã đúng tỉ lệ ${upload.ratio}, giữ nguyên.`
+                  : 'Ảnh giữ nguyên.'}
+          </span>
+        </span>
+      )}
     </span>
   );
 }
@@ -203,8 +255,15 @@ export function Composer({
   const kind = draft.kind;
   const lacking = total != null && total > balance;
   const uploading = Boolean(draft.start?.uploading || draft.end?.uploading || draft.refs.some((r) => r.uploading));
+  const needsStart = kind === 'video' && Boolean(model?.frames.startRequired) && !draft.start;
   const canSubmit =
-    Boolean(draft.prompt.trim()) && Boolean(model?.available) && unit != null && !lacking && !submitting && !uploading;
+    Boolean(draft.prompt.trim()) &&
+    Boolean(model?.available) &&
+    unit != null &&
+    !lacking &&
+    !submitting &&
+    !uploading &&
+    !needsStart;
 
   const fields = model ? selectionFields(model) : [];
   const fieldOptions = {} as Record<keyof Selection, { value: string; label: string; price?: string }[]>;
@@ -427,6 +486,9 @@ export function Composer({
           <div className="notice">
             {model.name}: {model.unavailableReason ?? 'tạm ngưng'}. Bạn chọn model khác nhé.
           </div>
+        )}
+        {model?.available && needsStart && (
+          <div className="notice hint">{model.name} cần Start frame để tạo video. Bạn chọn ảnh, hoặc dán ảnh (Ctrl+V) vào ô prompt.</div>
         )}
       </section>
     </div>

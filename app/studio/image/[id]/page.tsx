@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { requireUserPage } from '@/lib/auth.server';
+import { pageSession } from '@/lib/auth.server';
 import { getCatalog } from '@/lib/models.server';
 import { getBalance } from '@/lib/credits.server';
 import { getDetail } from '@/lib/generations.server';
@@ -13,13 +13,17 @@ export const metadata: Metadata = { title: 'Chi tiết ảnh' };
 
 export default async function ImagePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const user = await requireUserPage(`/studio/image/${id}`);
+  const { userId, verified } = await pageSession(`/studio/image/${id}`);
   if (!isUuid(id)) notFound();
-  const detail = await getDetail(user.id, id).catch(() => null);
+  // Xác thực và tải dữ liệu cùng lúc (xem pageSession).
+  const [, detail, balance, catalog] = await Promise.all([
+    verified,
+    getDetail(userId, id).catch(() => null),
+    getBalance(userId),
+    getCatalog().catch(() => ({ image: [], video: [] })),
+  ]);
   if (!detail) notFound();
   if (detail.root.kind === 'video') redirect(`/studio/video/${detail.root.id}`);
-
-  const [balance, catalog] = await Promise.all([getBalance(user.id), getCatalog().catch(() => ({ image: [], video: [] }))]);
 
   return (
     <CreditProvider initial={balance}>

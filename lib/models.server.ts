@@ -27,6 +27,13 @@ export function gaiaCredits(gommoCredits: number): number {
 /** Model không muốn bán cho người dùng (giá trị `model` của Gommo). */
 export const HIDDEN_MODELS: string[] = [];
 
+/**
+ * Model video bắt buộc có Start frame dù Gommo báo `startText: true`. Gommo không có cờ nào cho biết điều này,
+ * chỉ biết khi gửi thử: kling_video_2_5 (mode relax) bị từ chối ngay, không trừ tiền, với lỗi
+ * "Model Kling 2.5 yêu cầu tối thiểu 1 ảnh tham chiếu" (2026-10-11).
+ */
+export const START_FRAME_REQUIRED: string[] = ['kling_video_2_5'];
+
 /** Model hiện trên trang chủ, theo thứ tự. Model nào không còn thì bỏ qua. */
 export const FEATURED_MODELS = ['veo_3_1', 'kling_video_2_5', 'wan_3_0', 'google_image_gen_banana_2'];
 
@@ -128,9 +135,10 @@ function normalize(kind: Kind, m: RawModel): CatalogModel | null {
   const fromCredits = Math.min(...candidates.filter((c) => c > 0));
   if (!Number.isFinite(fromCredits) || fromCredits <= 0) return null; // không có giá thì không bán
 
+  const startRequired = kind === 'video' && Boolean(m.startImage) && START_FRAME_REQUIRED.includes(m.model);
   const tags: string[] = [];
   if (kind === 'video') {
-    tags.push('Text → Video');
+    if (!startRequired) tags.push('Text → Video');
     if (m.startImage) tags.push('Image → Video');
     if (m.startImageAndEnd) tags.push('Start + End frame');
   } else {
@@ -169,6 +177,7 @@ function normalize(kind: Kind, m: RawModel): CatalogModel | null {
     frames: {
       start: kind === 'video' && Boolean(m.startImage),
       end: kind === 'video' && Boolean(m.startImageAndEnd),
+      startRequired,
     },
     maxReferences: kind === 'image' && m.withSubject ? Math.max(0, Number(m.maxSubject) || 0) : 0,
     daily,
@@ -185,9 +194,13 @@ async function fetchKind(kind: Kind): Promise<CatalogModel[]> {
   return byPreferredOrder(kind, models);
 }
 
-/** Danh mục model, lưu tạm 5 phút. Gommo lỗi mà còn bản cũ thì dùng bản cũ. */
+/**
+ * Danh mục model, lưu tạm 5 phút. Quá 5 phút thì vẫn trả bản cũ ngay và tải bản mới ngầm, vì Gommo trả
+ * danh sách model mất ~1,6 giây và trang không nên chờ. Gommo lỗi mà còn bản cũ thì dùng bản cũ.
+ */
 export async function getCatalog(): Promise<{ image: CatalogModel[]; video: CatalogModel[] }> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache;
+  const stale = cache;
   if (!inflight) {
     inflight = Promise.all([fetchKind('image'), fetchKind('video')])
       .then(([image, video]) => {
@@ -201,6 +214,10 @@ export async function getCatalog(): Promise<{ image: CatalogModel[]; video: Cata
       .finally(() => {
         inflight = null;
       });
+  }
+  if (stale) {
+    inflight.catch(() => {});
+    return stale;
   }
   return inflight;
 }
