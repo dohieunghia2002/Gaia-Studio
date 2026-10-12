@@ -20,7 +20,7 @@ GAIA Studio là web app tạo ảnh và video bằng AI, gõ prompt tiếng Vi�
 
 ## Chạy trên máy trong 10 phút
 
-1. Cài **Node.js 24** và git, rồi `git clone https://github.com/dohieunghia2002/Gaia-Studio.git`. Repo để public nên ai cũng clone được; muốn push thì nhờ chủ dự án thêm bạn làm collaborator.
+1. Cài **Node.js 24** và git, rồi `git clone https://github.com/dohieunghia2002/Gaia-Studio.git`. Repo để public nên ai cũng clone được; push bằng tài khoản GitHub của chủ dự án.
 2. `npm install`
 3. Lấy file **`gaia-studio.env`** trong thư mục bí mật chủ dự án gửi riêng (không có trên GitHub), đặt vào thư mục gốc repo và đổi tên thành **`.env`**. Danh sách biến cần có xem trong [.env.example](.env.example).
 4. `npm run dev`, rồi mở http://localhost:3000.
@@ -54,12 +54,14 @@ Quy tắc bắt buộc:
 Ở bước này chưa sửa code: chỉ đọc, kiểm tra rồi báo lại cho mình.
 ```
 
-## Quyền truy cập cần xin chủ dự án
+## Tài khoản dùng cho dự án
+
+Chủ dự án cho phép người tiếp quản dùng trực tiếp mọi tài khoản của mình; không cần mời hay xin quyền riêng.
 
 | Dịch vụ | Để làm gì |
 |---|---|
-| GitHub `dohieunghia2002/Gaia-Studio` | Đẩy code. Repo public, ai cũng đọc được, nhưng phải là collaborator mới push được |
-| Supabase project `ynifiicggklbnszvjjkb` | Database, đăng nhập, xem log. Mời vào organization để có quyền dashboard |
+| GitHub `dohieunghia2002` (repo `Gaia-Studio`) | Đẩy code |
+| Supabase project `ynifiicggklbnszvjjkb` | Database, đăng nhập, xem log, chạy SQL |
 | Google Cloud (OAuth client của GAIA) | Sửa cấu hình đăng nhập Google, thêm tên miền khi deploy |
 | Tài khoản 79ai / Gommo | Xem số dư và lịch sử trừ tiền thật |
 | PayOS (khi làm) | Tạo kênh thanh toán, lấy 3 khoá |
