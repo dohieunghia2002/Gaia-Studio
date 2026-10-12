@@ -5,12 +5,12 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 2e850aa2-4a80-4c8f-bb4f-927366945f4c
-  modified: 2026-10-09T12:40:00.000Z
+  modified: 2026-10-12T12:05:18.414Z
 ---
 
 The repo is https://github.com/dohieunghia2002/Gaia-Studio. It was created on 2026-10-08.
 - It is private, the default branch is `main`, and the remote is `origin`.
-- The repo root is `D:\GAIA-AI\gaia-studio` only. `mockup-gaia/` and `logo/` are not in it.
+- The repo root is `D:\GAIA-AI\gaia-studio`. Since 2026-10-12 it also holds copies of the mockup and logo under `design/` ([[gaia-handoff-2026-10-12]]). The originals remain in `D:\GAIA-AI\mockup-gaia` and `D:\GAIA-AI\logo`.
 - The user chose the name "Gaia-Studio" over "gaia-studio".
 
 **Tools:**

@@ -15,3 +15,4 @@
 - [QA trackers](gaia-qa-image-tracker.md) — round 1 image 6V1FGJZQBgn2RN9gkKzyTo, round 2 system GLEQL5BL9Px7gobtFFwvng (59 cases; default tab "Cần làm"; `reply` + `by` fields); db 'cases'; read status/note
 - [No build while dev runs](no-build-while-dev.md) — next build during user's next dev corrupted .next → all routes 404; fix = kill dev, rm -rf .next, restart
 - [Login fails: network + Unhealthy project](login-fails-flaky-network.md) — 2026-10-11 'phiên hết hạn'/error=1 = flaky IPv4→Cloudflare + Supabase project Unhealthy; check project status first; getUser() maps errors to 401
+- [Handoff 2026-10-12](gaia-handoff-2026-10-12.md) — founder off laptop, colleague takes over; all on GitHub 759483f; .env + Google secret MOVED to D:\GAIA-AI\BI-MAT_KHONG-DUA-LEN-GITHUB
