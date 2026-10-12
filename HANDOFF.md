@@ -32,6 +32,28 @@ GAIA Studio là web app tạo ảnh và video bằng AI, gõ prompt tiếng Vi�
 - Ví test của chủ dự án (dhnghia.ctu@gmail.com) còn khoảng 278 credit. Cấp thêm credit test bằng SQL trong Supabase: `select gaia_grant((select id from auth.users where email = '...'), 500, 'Credit dùng thử');`
 - **Mỗi lần bấm Tạo là tiêu tiền thật** ở tài khoản 79ai.
 
+## Bắt đầu với Claude Code
+
+Mở Claude Code trong thư mục repo và dán nguyên đoạn dưới đây. **Không cần chạy `/init`**: Claude Code tự đọc [CLAUDE.md](CLAUDE.md) có sẵn, còn `/init` có thể ghi đè file này.
+
+```text
+Mình là đồng nghiệp tiếp quản dự án GAIA Studio từ chủ dự án (Đỗ Hiếu Nghĩa), người đã tạm dừng làm việc từ 12/10/2026. Hãy tìm hiểu toàn bộ dự án trước khi làm bất cứ việc gì:
+
+1. Đọc theo thứ tự: HANDOFF.md, CLAUDE.md, AGENTS.md, SETUP.md, docs/gommo-api.md, rồi docs/claude-memory/MEMORY.md và các file nó liệt kê. Đó là ghi chú của trợ lý AI trước; ngày trong ghi chú là ngày xảy ra sự việc, thông tin mới nhất nằm ở HANDOFF.md. Lướt docs/qa/ để biết những gì đã kiểm thử.
+2. Kiểm tra máy mình, không gọi API nào tốn tiền: đã có file .env chưa (lấy từ thư mục bí mật, xem HANDOFF.md), rồi chạy npm install, npm run typecheck, npm run lint.
+3. Tóm tắt lại cho mình bằng tiếng Việt: sản phẩm là gì, kiến trúc chính, trạng thái hiện tại, các việc còn dở theo thứ tự ưu tiên, và những điều bạn chưa rõ cần hỏi mình.
+4. Lưu những điều cần nhớ lâu dài vào memory của bạn: quy ước giao diện, những điều đã kiểm chứng về Gommo, và các quy tắc dưới đây. Sở thích cá nhân trong ghi chú cũ là của chủ dự án, không phải của mình; cần thì hỏi mình.
+
+Quy tắc bắt buộc:
+- KHÔNG gọi API tạo ảnh/video của Gommo, cũng không bấm Tạo trong app, khi mình chưa đồng ý rõ ràng. Mỗi lần là tiền thật.
+- Repo đang PUBLIC: không bao giờ commit .env, file client_secret hay bất kỳ khoá nào; quét diff trước mỗi lần push.
+- Không chạy npm run build khi npm run dev đang chạy (hỏng thư mục .next, mọi trang báo 404).
+- Next.js 16 khác với kiến thức cũ của bạn: đọc tài liệu trong node_modules/next/dist/docs trước khi viết code Next.
+- Chữ trên giao diện bằng tiếng Việt theo docs/claude-memory/gaia-ux-conventions.md; không hứa điều Gommo chưa hỗ trợ (docs/claude-memory/verify-gommo-before-ui-claims.md); đổi thiết kế thì sửa cả mockup trong design/mockup-gaia.
+
+Ở bước này chưa sửa code: chỉ đọc, kiểm tra rồi báo lại cho mình.
+```
+
 ## Quyền truy cập cần xin chủ dự án
 
 | Dịch vụ | Để làm gì |
