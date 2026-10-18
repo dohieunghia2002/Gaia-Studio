@@ -526,23 +526,29 @@ async function syncOne(row: GenRow): Promise<GenRow> {
       if (info?.status === 'SUCCESS' && info.url) {
         return succeedGeneration(row, { url: info.url, thumb: info.url_thumb || info.url_preview, cost: info.credit });
       }
-      if (info?.status === 'ERROR') return failGeneration(row, info.message || 'Gommo báo lỗi');
-      if (info?.status === 'PENDING_PROCESSING') next = await markProcessing(row);
+      if (info?.status === 'ERROR') return confirmFailure(row, info.message || 'Gommo báo lỗi');
+      next = await clearSuspectedFailure(row);
+      if (info?.status === 'PENDING_PROCESSING') next = await markProcessing(next);
     } else {
       const data = await gommoPost<{ videoInfo?: GommoVideoInfo }>('/ai/video', { videoId: row.gommo_id });
       const info = data.videoInfo;
       const s = info?.status;
+      if (s === VIDEO_STATUS.failed || s === VIDEO_STATUS.error) {
+        return confirmFailure(row, info?.message || 'Gommo báo lỗi');
+      }
+      next = await clearSuspectedFailure(row);
       if (s === VIDEO_STATUS.success) {
         // download_url có thể xuất hiện chậm vài giây sau khi đã SUCCESSFUL.
         if (info?.download_url) {
-          return succeedGeneration(row, { url: info.download_url, thumb: info.thumbnail_url, cost: info.credit_fee });
+          return succeedGeneration(next, { url: info.download_url, thumb: info.thumbnail_url, cost: info.credit_fee });
         }
-        next = await markProcessing(row);
+        next = await markProcessing(next);
       } else if (s === VIDEO_STATUS.active || s === VIDEO_STATUS.processing) {
-        next = await markProcessing(row);
+        next = await markProcessing(next);
       } else if (s !== VIDEO_STATUS.pending) {
-        // Gommo: mọi trạng thái ngoài danh sách đều coi là lỗi.
-        return failGeneration(row, info?.message || `Trạng thái lạ: ${s ?? 'không có'}`);
+        // Trạng thái lạ KHÔNG phải là lỗi: 16/10/2026 Seedance 2.0 Pro báo "Đang chuyển máy chủ xử lý..." rồi vẫn
+        // thành công (Gommo đã trừ tiền), trong khi GAIA cũ coi là lỗi và hoàn tiền. Cứ chờ tiếp; hết giờ thì timeout lo.
+        console.warn('[sync] trạng thái video lạ, chờ tiếp', row.id, s, info?.message);
       }
     }
     if (age > TIMEOUT_MS[row.kind]) return failGeneration(row, 'Quá thời gian chờ');
@@ -553,6 +559,39 @@ async function syncOne(row: GenRow): Promise<GenRow> {
     if (age > TIMEOUT_MS[row.kind]) return failGeneration(row, 'Quá thời gian chờ');
     return row;
   }
+}
+
+/**
+ * Gommo có lúc báo lỗi thoáng qua rồi vẫn chạy tiếp, nên chỉ chốt lỗi (và hoàn credit) khi Gommo báo lỗi
+ * liên tục ít nhất FAIL_CONFIRM_MS. Lần đầu thấy lỗi: ghi tạm vào error_message (chưa hiện cho người dùng,
+ * vì chỉ mục status = error mới hiện lỗi) và bấm giờ bằng updated_at.
+ */
+const FAIL_CONFIRM_MS = 60_000;
+
+async function confirmFailure(row: GenRow, message: string): Promise<GenRow> {
+  if (row.error_message) {
+    const seenFor = Date.now() - new Date(row.updated_at).getTime();
+    return seenFor >= FAIL_CONFIRM_MS ? failGeneration(row, message) : row;
+  }
+  const { data } = await db()
+    .from('generations')
+    .update({ error_message: message.slice(0, 500), updated_at: new Date().toISOString() })
+    .eq('id', row.id)
+    .in('status', RUNNING)
+    .select(COLS);
+  return (data?.[0] as GenRow | undefined) ?? row;
+}
+
+/** Gommo hết báo lỗi (job chạy tiếp): xoá dấu lỗi tạm để lần lỗi sau bấm giờ lại từ đầu. */
+async function clearSuspectedFailure(row: GenRow): Promise<GenRow> {
+  if (!row.error_message) return row;
+  const { data } = await db()
+    .from('generations')
+    .update({ error_message: null, updated_at: new Date().toISOString() })
+    .eq('id', row.id)
+    .in('status', RUNNING)
+    .select(COLS);
+  return (data?.[0] as GenRow | undefined) ?? row;
 }
 
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -610,6 +649,7 @@ export async function editImage(
   const source = await successfulImage(userId, sourceId);
   const prompt = cleanPrompt(req.prompt);
   const model = await loadModel('image', req.model || source.model);
+  if (!model.edit) throw new ApiError(400, 'bad_input', `${model.name} chưa sửa ảnh được. Bạn chọn model khác nhé.`);
   const params = resolveSelection(model, source.params ?? {});
   const credits = priceFor(model, params);
   if (credits == null) throw new ApiError(409, 'params_changed', 'Model này không sửa được ảnh với thông số hiện tại.');
@@ -715,6 +755,98 @@ export async function emptyTrash(userId: string): Promise<number> {
     .select('id');
   if (error) throw error;
   return data?.length ?? 0;
+}
+
+// ── Nhiều mục cùng lúc (chọn nhiều trong thư viện / Thùng rác) ──
+// Chia nhỏ danh sách id để URL gửi tới Supabase không quá dài.
+
+export const MAX_BULK = 500;
+const BULK_CHUNK = 100;
+
+function chunks<T>(list: T[], size = BULK_CHUNK): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  return out;
+}
+
+/** Chuyển nhiều ảnh/video (kèm mọi phiên bản) vào Thùng rác với cùng một mốc `deletedAt`, để Hoàn tác được một lần. */
+export async function softDeleteMany(userId: string, ids: string[]) {
+  const stamp = new Date().toISOString();
+  const rootIds = new Set<string>();
+  for (const part of chunks(ids)) {
+    const { data, error } = await db().from('generations').select('id, root_id').eq('user_id', userId).is('deleted_at', null).in('id', part);
+    if (error) throw error;
+    const roots = [...new Set((data ?? []).map((r) => r.root_id ?? r.id))];
+    if (!roots.length) continue;
+    const list = roots.join(',');
+    const { error: e2 } = await db()
+      .from('generations')
+      .update({ deleted_at: stamp })
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .or(`id.in.(${list}),root_id.in.(${list})`);
+    if (e2) throw e2;
+    roots.forEach((r) => rootIds.add(r));
+  }
+  return { rootIds: [...rootIds], deletedAt: stamp };
+}
+
+/**
+ * Có `deletedAt`: hoàn tác một lần chuyển nhiều mục vào Thùng rác. Không có: khôi phục các mục đang trong Thùng rác,
+ * mỗi mục theo mốc xoá của chính nó (phiên bản đã xoá riêng từ trước thì vẫn nằm lại).
+ */
+export async function restoreMany(userId: string, ids: string[], deletedAt?: string): Promise<number> {
+  let restored = 0;
+  for (const part of chunks(ids)) {
+    const { data, error } = await db()
+      .from('generations')
+      .select('id, deleted_at')
+      .eq('user_id', userId)
+      .is('root_id', null)
+      .in('id', part)
+      .not('deleted_at', 'is', null);
+    if (error) throw error;
+    const byStamp = new Map<string, string[]>();
+    // So theo thời điểm, không so chuỗi: Supabase trả "…811+00:00" trong khi mốc gửi lên là "…811Z".
+    const undoAt = deletedAt ? new Date(deletedAt).getTime() : null;
+    for (const r of data ?? []) {
+      if (undoAt != null && new Date(r.deleted_at).getTime() !== undoAt) continue;
+      byStamp.set(r.deleted_at, [...(byStamp.get(r.deleted_at) ?? []), r.id]);
+    }
+    await Promise.all(
+      [...byStamp].map(async ([stamp, roots]) => {
+        const list = roots.join(',');
+        const { error: e2 } = await db()
+          .from('generations')
+          .update({ deleted_at: null })
+          .eq('user_id', userId)
+          .eq('deleted_at', stamp)
+          .or(`id.in.(${list}),root_id.in.(${list})`);
+        if (e2) throw e2;
+        restored += roots.length;
+      }),
+    );
+  }
+  return restored;
+}
+
+/** Xoá vĩnh viễn nhiều mục trong Thùng rác. Mục đang tạo dở được bỏ qua (giống Dọn thùng rác). */
+export async function purgeMany(userId: string, ids: string[]): Promise<string[]> {
+  const deleted: string[] = [];
+  for (const part of chunks(ids)) {
+    const { data, error } = await db()
+      .from('generations')
+      .delete()
+      .eq('user_id', userId)
+      .is('root_id', null)
+      .not('deleted_at', 'is', null)
+      .not('status', 'in', `(${RUNNING.join(',')})`)
+      .in('id', part)
+      .select('id');
+    if (error) throw error;
+    deleted.push(...(data ?? []).map((r) => r.id));
+  }
+  return deleted;
 }
 
 /** Tự xoá vĩnh viễn những gì đã nằm trong Thùng rác (hoặc phiên bản đã xoá) quá TRASH_DAYS ngày. */

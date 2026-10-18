@@ -7,6 +7,7 @@ const DAY_MS = 24 * 60 * 60_000;
 
 /** Số ngày còn lại trước khi tự xoá vĩnh viễn (0 = hôm nay). */
 export function trashDaysLeft(deletedAt: string, now: number): number {
-  const passed = Math.floor((now - new Date(deletedAt).getTime()) / DAY_MS);
+  // `now` của trang có thể sớm hơn lúc xoá (mục vừa chuyển vào thùng rác sau khi mở trang): không để thành 31 ngày.
+  const passed = Math.max(0, Math.floor((now - new Date(deletedAt).getTime()) / DAY_MS));
   return Math.max(0, TRASH_DAYS - passed);
 }

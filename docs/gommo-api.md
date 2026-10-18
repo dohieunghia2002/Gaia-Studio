@@ -37,6 +37,20 @@ Nguồn: prompt tài liệu do Gommo cung cấp, được cô đọng lại (đ�
   - `price` ở cấp model có thể thấp hơn dòng rẻ nhất của `prices`: VEO 3.1 ghi 600, nhưng rẻ nhất trong bảng là lite 720p = 800.
 - Gợi ý prompt (`ai_templates/tools`): `midjourney_feed_suggested` trả `items: null`, `kling_feed_suggested` trả rỗng, `sora_feed_suggested` báo "Hiện gói dịch vụ không khả dụng". Số dư không đổi sau các lệnh này.
 
+## Kiểm thử chức năng phụ (18/10/2026, đã kiểm chứng, xem `docs/qa/`)
+
+- **Status `SUCCESS` không có nghĩa là model đã dùng ảnh gửi kèm.**
+  - Sửa ảnh (`editImage=true` + `base64Image`) trên Z-Image, Kling Colors 1.5 và 2.1 vẫn thành công và trừ tiền, nhưng ra một ảnh mới hoàn toàn, bỏ qua ảnh gốc.
+  - Wan 3.0 (mode `cheap` và `vip`): Gommo ghi đúng `action_type: createFromImageStart(AndEnd)` và giữ đúng `images`, nhưng video ra một cảnh khác.
+  - Meta Muse: Start frame đúng 2/3 lần; End frame sai 2/2 lần (lần 2 sai cả khung đầu).
+- `subjects` gồm 3 ảnh `[{id_base, url}]` chạy đúng (ảnh ra có đủ cả 3 vật thể) trên Nano Banana 2/Pro, Nano Banana, GPT Image 2, GPT Image 2.5 Flare/Sunburst, Kling 3.0 Omni (ảnh), O1 và Kling Colors 2.0.
+- Kling 2.1 (5s, 10s) với Start frame: "Tạo video thất bại, có thể nội dung vi phạm chính sách, hoặc File ảnh, Video chất lượng quá thấp #54hh".
+  - Lỗi xảy ra ở cả Standard lẫn Professional, với ảnh 960×540 lẫn 2752×1536 phong cảnh không người, nên không phải do độ phân giải.
+  - Start + End ở Standard bị báo lỗi sau ~2 phút (không phải từ chối ngay): "chỉ hỗ trợ End Frame ở Professional".
+- Midjourney 7.0/8.1/8.2 vẫn "Không thể hoàn thành #csdsd2" với prompt tiếng Anh, nên lỗi không do ngôn ngữ.
+- Lỗi mới: `#img_bp` "Máy chủ tạo ảnh không khả dụng" (Seedream 5.0 Pro/Flash, mọi lượt, kể cả tạo ảnh từ prompt); Hailuo 2.3 báo "gói dịch vụ không khả dụng"; Veo Omni + Start frame báo `#vid_fail` 2/2 lần.
+- Reference cho video: `/ai/models` báo `withReference: true` cho 16 model video, và `configs.reference.inputSpec` gợi ý trường multipart `video_files[]`/`audio_files[]`. Tài liệu không mô tả cách gửi, nên GAIA chưa dùng.
+
 ## Ảnh
 
 ### Tạo ảnh / sửa ảnh — `/ai/generateImage`
@@ -99,7 +113,8 @@ Tham số: `videoId` (= `videoInfo.id_base`). Các status:
 - `MEDIA_GENERATION_STATUS_PROCESSING`: đang render
 - `MEDIA_GENERATION_STATUS_SUCCESSFUL`: thành công
 - `MEDIA_GENERATION_STATUS_FAILED`: thất bại
-- **Mọi status khác đều coi là lỗi.**
+- `ERROR`: không có trong tài liệu nhưng Gommo dùng thật cho video lỗi (`#vid_policy`, `#vid_fail`, `#vid_maintenance`, `#cg33`…).
+- **Status khác KHÔNG phải lỗi** (sửa 17/10/2026). Seedance 2.0 Pro từng trả một status lạ kèm "Đang chuyển máy chủ xử lý..." rồi vẫn thành công và đã trừ tiền. GAIA coi status lạ là đang chạy, chỉ chốt lỗi khi `FAILED`/`ERROR` kéo dài ít nhất 60 giây; còn lại để timeout xử lý.
 
 `download_url` có thể xuất hiện chậm vài giây sau khi status đã là `SUCCESSFUL`, nên cần poll thêm vài lần. Có thêm `thumbnail_url`.
 

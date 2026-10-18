@@ -109,7 +109,7 @@ Lượt bạn kiểm thử trong app (11/10/2026) xác nhận thêm:
 
 ## Tuỳ chỉnh nhanh
 
-- **Ẩn/sắp xếp model, model trên trang chủ**: `HIDDEN_MODELS`, `MODEL_ORDER`, `FEATURED_MODELS` trong `lib/models.server.ts`.
+- **Model được bán, sắp xếp model, model trên trang chủ**: `VERIFIED_MODELS` (danh sách trắng: chỉ model và chức năng đã kiểm thử mới hiện), `MODEL_ORDER`, `FEATURED_MODELS` trong `lib/models.server.ts`.
 - **Tỉ lệ lời / giá vốn**: `GAIA_MARKUP`, `GAIA_COST_PER_GOMMO_CREDIT` trong `.env`.
 - **Mốc nạp, thưởng, hạn dùng**: `lib/topup-rules.ts`. Nếu đổi số ngày hết hạn thì sửa cả `interval '90 days'` trong file SQL.
 - **Ý tưởng gợi ý** (Studio lần đầu và cột "Thử một ý tưởng" ở trang chủ): `lib/suggestions.ts`.

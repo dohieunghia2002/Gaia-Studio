@@ -106,10 +106,12 @@ export function ImageDetail({
     }
   });
 
+  // Chỉ model đã kiểm chứng sửa được ảnh (có model nhận ảnh gốc nhưng vẽ ảnh mới hoàn toàn).
+  const editModels = imageModels.filter((m) => m.edit);
   const editModel =
-    imageModels.find((m) => m.id === (editModelId ?? active.model)) ??
-    imageModels.find((m) => m.id === root.model) ??
-    imageModels.find((m) => m.available);
+    editModels.find((m) => m.id === (editModelId ?? active.model)) ??
+    editModels.find((m) => m.id === root.model) ??
+    editModels.find((m) => m.available);
   const editSel = editModel ? resolveSelection(editModel, active.params) : {};
   const editCredits = editModel ? priceFor(editModel, editSel) : null;
   const editTotal = editCredits == null ? null : editCredits * editQty;
@@ -283,7 +285,7 @@ export function ImageDetail({
             />
             <div className="row-between">
               <div className="row" style={{ gap: 6, fontSize: 13 }}>
-                <EditModelChip models={imageModels} current={editModel} onPick={(m) => setEditModelId(m.id)} />
+                <EditModelChip models={editModels} current={editModel} onPick={(m) => setEditModelId(m.id)} />
                 <OptionChip
                   label="Số lượng"
                   value={String(editQty)}

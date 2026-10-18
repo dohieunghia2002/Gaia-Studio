@@ -24,15 +24,61 @@ export function gaiaCredits(gommoCredits: number): number {
 
 // ── Danh mục ──
 
-/** Model không muốn bán cho người dùng (giá trị `model` của Gommo). */
-export const HIDDEN_MODELS: string[] = [];
+/**
+ * Danh sách trắng (18/10/2026): GAIA chỉ bán model đã tạo thử thành công qua GAIA. Model Gommo mới thêm, hay model
+ * đang lỗi, không có ở đây thì bị ẩn hẳn. Chức năng phụ cũng chỉ bật khi đã kiểm chứng trên chính model đó, bằng
+ * mắt chứ không chỉ nhìn status (có model báo thành công nhưng bỏ qua ảnh gửi kèm):
+ * - `refs`: tạo ảnh từ ảnh Reference (thử với 3 ảnh); `edit`: sửa ảnh (giữ cảnh, chỉ đổi phần được yêu cầu);
+ * - `start`: video bắt đầu đúng từ Start frame; `end`: video kết thúc đúng ở End frame.
+ * Thêm model: tạo thử qua GAIA từng chức năng rồi ghi vào đây. Kết quả và lý do loại từng model:
+ * docs/qa/kiem-thu-model-2026-10-16.md.
+ */
+type Verified = { refs?: true; edit?: true; start?: true; end?: true };
+export const VERIFIED_MODELS: Record<string, Verified> = {
+  // Ảnh
+  google_image_gen_banana_2: { refs: true, edit: true },
+  google_image_gen_banana_pro: { refs: true, edit: true },
+  google_image_gen_banana: { refs: true, edit: true },
+  imagegen_2_0: { refs: true, edit: true },
+  'gpt-image-2.5-flare': { refs: true, edit: true },
+  'gpt-image-2.5-sunburst': { refs: true, edit: true },
+  '3.0-omni': { refs: true, edit: true },
+  o1: { refs: true, edit: true },
+  z_image: {}, // sửa ảnh: vẽ ảnh mới, bỏ qua ảnh gốc
+  kling_colors_1_5: {}, // sửa ảnh: vẽ ảnh mới, bỏ qua ảnh gốc
+  kling_colors_2_0: { refs: true }, // sửa ảnh: "Không thể hoàn thành #rq11"
+  kling_colors_2_1: {}, // sửa ảnh: vẽ ảnh mới, bỏ qua ảnh gốc
+  // Video
+  veo_3_1: { start: true, end: true },
+  kling_video_2_5: { start: true, end: true },
+  kling_4_0: { start: true, end: true },
+  kling_4_0_flash: { start: true },
+  kling_video_2_6: { start: true },
+  seedance_20_pro: { start: true, end: true },
+  seedance_20_mini: {},
+  seedance_25_omni: {},
+  seedance_20_pro_edit: {},
+  grok_video_heavy: { start: true },
+  meta_muse_video: {}, // Start frame đúng 2/3 lần (lần 3 ra cảnh khác); End frame sai 2/2 lần
+  wan_3_0: {}, // Start/End frame: Gommo nhận ảnh nhưng video ra cảnh khác (mode cheap và vip)
+  veo_omni: {}, // Start frame: "Tạo video thất bại #vid_fail" 2/2 lần
+};
 
 /**
  * Model video bắt buộc có Start frame dù Gommo báo `startText: true`. Gommo không có cờ nào cho biết điều này,
- * chỉ biết khi gửi thử: kling_video_2_5 (mode relax) bị từ chối ngay, không trừ tiền, với lỗi
- * "Model Kling 2.5 yêu cầu tối thiểu 1 ảnh tham chiếu" (2026-10-11).
+ * chỉ biết khi gửi thử (bị từ chối ngay, không trừ tiền):
+ * - kling_video_2_5 (mode relax): "Model Kling 2.5 yêu cầu tối thiểu 1 ảnh tham chiếu" (2026-10-11);
+ * - hailuo_2_3: "Model Hailuo 2.3 cần ảnh tham chiếu khung hình đầu" (2026-10-16);
+ * - kling_video_2_1_5s, kling_video_2_1_10s: "Vui lòng đính kèm ảnh." (2026-10-16).
  */
-export const START_FRAME_REQUIRED: string[] = ['kling_video_2_5'];
+export const START_FRAME_REQUIRED: string[] = ['kling_video_2_5', 'hailuo_2_3', 'kling_video_2_1_5s', 'kling_video_2_1_10s'];
+
+/**
+ * Model chỉ bán được một số mode, dù Gommo liệt kê thêm mode khác. google_image_gen_banana_pro: relaxed và
+ * standard bị từ chối ngay, không trừ tiền: "Chế độ Relaxed và Standard hiện không khả dụng vui lòng chọn các
+ * chế độ VIP" (2026-10-16).
+ */
+export const ALLOWED_MODES: Record<string, string[]> = { google_image_gen_banana_pro: ['vip', 'vip2', 'vip3'] };
 
 /**
  * Model chỉ nhận Start + End frame ở một số mode, dù Gommo báo `startImageAndEnd: true` và không ghi giới hạn này.
@@ -120,17 +166,26 @@ function isUsableImage(m: RawModel): boolean {
 
 function normalize(kind: Kind, m: RawModel): CatalogModel | null {
   if (!m.model || !m.name) return null;
-  if (HIDDEN_MODELS.includes(m.model)) return null;
+  const verified = VERIFIED_MODELS[m.model];
+  if (!verified) return null;
   if (kind === 'video' ? !isUsableVideo(m) : !isUsableImage(m)) return null;
 
-  const rawModes = m.modes?.length ? m.modes : m.mode;
+  const allowedModes = ALLOWED_MODES[m.model];
+  const rawModes = (m.modes?.length ? m.modes : m.mode)?.filter((o) => !allowedModes || allowedModes.includes(String(o.type)));
   const modes = modeOptions(rawModes);
+  const resolutions = options(m.resolutions, 'resolution');
+  const durations = options(m.durations, 'duration');
   const modeCredits: Record<string, number> = {};
   for (const o of rawModes ?? []) {
     if (o.type && typeof o.price === 'number' && o.price > 0) modeCredits[String(o.type)] = gaiaCredits(o.price);
   }
+  // Chỉ giữ dòng giá người dùng chọn được: Gommo có liệt kê giá cho mode/độ phân giải không có trong danh sách
+  // lựa chọn (vd. minimax_h3_max "trial" 500 trong khi mode chọn được rẻ nhất là 5.915), làm "từ X credit" sai.
+  const sellable = (list: Option[], value: unknown) =>
+    value === undefined || value === null || value === '' || !list.length || list.some((o) => o.value === String(value));
   const prices: PriceRow[] = (m.prices ?? [])
     .filter((p) => typeof p.price === 'number' && p.price > 0)
+    .filter((p) => sellable(modes, p.mode) && sellable(resolutions, p.resolution) && sellable(durations, p.duration))
     .map((p) => ({
       ...(p.mode ? { mode: String(p.mode) } : {}),
       ...(p.resolution ? { resolution: String(p.resolution) } : {}),
@@ -142,15 +197,19 @@ function normalize(kind: Kind, m: RawModel): CatalogModel | null {
   const fromCredits = Math.min(...candidates.filter((c) => c > 0));
   if (!Number.isFinite(fromCredits) || fromCredits <= 0) return null; // không có giá thì không bán
 
-  const startRequired = kind === 'video' && Boolean(m.startImage) && START_FRAME_REQUIRED.includes(m.model);
+  const start = kind === 'video' && Boolean(m.startImage) && Boolean(verified.start);
+  const end = start && Boolean(m.startImageAndEnd) && Boolean(verified.end);
+  const startRequired = kind === 'video' && START_FRAME_REQUIRED.includes(m.model);
+  if (startRequired && !start) return null; // bắt buộc Start frame mà Start frame chưa chạy được thì không tạo được gì
+  const maxReferences = kind === 'image' && m.withSubject && verified.refs ? Math.max(0, Number(m.maxSubject) || 0) : 0;
   const tags: string[] = [];
   if (kind === 'video') {
     if (!startRequired) tags.push('Text → Video');
-    if (m.startImage) tags.push('Image → Video');
-    if (m.startImageAndEnd) tags.push('Start + End frame');
+    if (start) tags.push('Image → Video');
+    if (end) tags.push('Start + End frame');
   } else {
     tags.push('Text → Image');
-    if (m.withSubject) tags.push('Reference');
+    if (maxReferences > 0) tags.push('Reference');
   }
 
   let available = m.status === undefined || m.status === null || m.status === 'ON';
@@ -173,8 +232,8 @@ function normalize(kind: Kind, m: RawModel): CatalogModel | null {
     available,
     unavailableReason,
     ratios: options(m.ratios, 'ratio'),
-    resolutions: options(m.resolutions, 'resolution'),
-    durations: options(m.durations, 'duration'),
+    resolutions,
+    durations,
     modes,
     prices,
     baseCredits,
@@ -182,14 +241,15 @@ function normalize(kind: Kind, m: RawModel): CatalogModel | null {
     fromCredits,
     tags,
     frames: {
-      start: kind === 'video' && Boolean(m.startImage),
-      end: kind === 'video' && Boolean(m.startImageAndEnd),
+      start,
+      end,
       startRequired,
-      ...(kind === 'video' && m.startImageAndEnd && END_FRAME_MODES[m.model]
+      ...(end && END_FRAME_MODES[m.model]
         ? { endModes: END_FRAME_MODES[m.model].filter((v) => modes.some((o) => o.value === v)) }
         : {}),
     },
-    maxReferences: kind === 'image' && m.withSubject ? Math.max(0, Number(m.maxSubject) || 0) : 0,
+    maxReferences,
+    edit: kind === 'image' && Boolean(verified.edit),
     daily,
   };
 }

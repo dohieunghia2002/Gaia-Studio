@@ -87,6 +87,8 @@ export const VIDEO_STATUS = {
   processing: 'MEDIA_GENERATION_STATUS_PROCESSING',
   success: 'MEDIA_GENERATION_STATUS_SUCCESSFUL',
   failed: 'MEDIA_GENERATION_STATUS_FAILED',
+  /** Không có trong tài liệu nhưng Gommo dùng thật cho video lỗi (#vid_policy, #vid_fail, #cg33…). */
+  error: 'ERROR',
 } as const;
 
 /**

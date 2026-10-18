@@ -153,6 +153,12 @@ export function StudioApp({
   const [hasAny, setHasAny] = useState(initialItems.length > 0);
   const [trashCount, setTrashCount] = useState(initialTrashCount);
   const [confirmEmpty, setConfirmEmpty] = useState(false);
+  // Chọn nhiều: `selecting` bật khi bấm "Chọn" hoặc tick một thẻ; `lastPicked` là mốc cho Shift+click chọn cả dãy.
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const lastPicked = useRef<string | null>(null);
+  const [confirmPurge, setConfirmPurge] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [now, setNow] = useState<number | null>(null);
   const [draft, setDraft] = useState<Draft>(() =>
     reuse
@@ -279,10 +285,27 @@ export function StudioApp({
     [push],
   );
 
+  const exitSelect = useCallback(() => {
+    setSelecting(false);
+    setSelected(new Set());
+    setConfirmPurge(false);
+    lastPicked.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (!selecting) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') exitSelect();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selecting, exitSelect]);
+
   const changeFilter = (f: Filter) => {
     if (f === filter) return;
     setFilter(f);
     setConfirmEmpty(false);
+    exitSelect();
     loadList(f);
   };
 
@@ -393,6 +416,130 @@ export function StudioApp({
       push({ kind: 'error', title: err instanceof Error ? err.message : 'Không dọn được thùng rác' });
     }
     loadList('trash');
+  };
+
+  // ── Chọn nhiều ──
+  // Thư viện: mục đang tạo không chọn được (giống thẻ của nó không có nút xoá). Thùng rác: chọn được mọi mục.
+  const canSelect = useCallback((it: LibraryItem) => filter === 'trash' || !isRunning(it.status), [filter]);
+  const itemsForRef = useRef(itemsFor);
+  useEffect(() => {
+    itemsForRef.current = itemsFor;
+  }, [itemsFor]);
+
+  const toggleSelect = useCallback(
+    (item: LibraryItem, range: boolean) => {
+      if (!canSelect(item)) return;
+      const list = itemsRef.current;
+      const from = range && lastPicked.current ? list.findIndex((i) => i.id === lastPicked.current) : -1;
+      const to = list.findIndex((i) => i.id === item.id);
+      setSelecting(true);
+      setConfirmPurge(false);
+      setSelected((prev) => {
+        const next = new Set(prev);
+        if (from >= 0 && to >= 0) {
+          const [a, b] = from < to ? [from, to] : [to, from];
+          for (const it of list.slice(a, b + 1)) if (canSelect(it)) next.add(it.id);
+        } else if (next.has(item.id)) next.delete(item.id);
+        else next.add(item.id);
+        return next;
+      });
+      lastPicked.current = item.id;
+    },
+    [canSelect],
+  );
+
+  const trashPicked = async () => {
+    const tab = itemsForRef.current;
+    const removed = itemsRef.current.map((it, index) => ({ it, index })).filter(({ it }) => selected.has(it.id) && canSelect(it));
+    if (!removed.length) return;
+    const ids = removed.map(({ it }) => it.id);
+    // Đặt lại đúng vị trí cũ; nếu đã sang tab khác thì tải lại tab đang xem thay vì chèn thẻ thư viện vào đó.
+    const putBack = () => {
+      if (itemsForRef.current !== tab) {
+        loadList(itemsForRef.current);
+        return;
+      }
+      setItems((prev) => {
+        const next = [...prev];
+        for (const { it, index } of removed) if (!next.some((i) => i.id === it.id)) next.splice(Math.min(index, next.length), 0, it);
+        return next;
+      });
+    };
+    exitSelect();
+    setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+    try {
+      const res = await api<{ rootIds: string[]; deletedAt: string }>('/api/generations/bulk', { method: 'POST', json: { action: 'trash', ids } });
+      setTrashCount((n) => n + res.rootIds.length);
+      push({
+        title: `Đã chuyển ${fmtNumber(ids.length)} mục vào thùng rác`,
+        sub: `Tự xoá vĩnh viễn sau ${TRASH_DAYS} ngày`,
+        action: {
+          label: 'Hoàn tác',
+          onClick: async () => {
+            try {
+              const undo = await api<{ restored: number }>('/api/generations/bulk', {
+                method: 'POST',
+                json: { action: 'restore', ids: res.rootIds, deletedAt: res.deletedAt },
+              });
+              setTrashCount((n) => Math.max(0, n - undo.restored));
+              if (undo.restored === res.rootIds.length) putBack();
+              else {
+                // Có mục đã bị đổi trong lúc chờ (vd. xoá vĩnh viễn ở tab khác): tải lại cho đúng thực tế.
+                loadList(itemsForRef.current);
+                if (!undo.restored) push({ kind: 'error', title: 'Không hoàn tác được' });
+              }
+            } catch (err) {
+              push({ kind: 'error', title: err instanceof Error ? err.message : 'Không hoàn tác được' });
+            }
+          },
+        },
+      });
+    } catch (err) {
+      putBack();
+      push({ kind: 'error', title: err instanceof Error ? err.message : 'Không xoá được' });
+    }
+  };
+
+  const restorePicked = async () => {
+    const ids = itemsRef.current.filter((i) => selected.has(i.id)).map((i) => i.id);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    try {
+      const res = await api<{ restored: number }>('/api/generations/bulk', { method: 'POST', json: { action: 'restore', ids } });
+      exitSelect();
+      setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+      setTrashCount((n) => Math.max(0, n - res.restored));
+      setHasAny(true);
+      push({ title: `Đã khôi phục ${fmtNumber(res.restored)} mục vào thư viện` });
+      if (res.restored < ids.length) loadList('trash');
+    } catch (err) {
+      push({ kind: 'error', title: err instanceof Error ? err.message : 'Không khôi phục được' });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const purgePicked = async () => {
+    const picked = itemsRef.current.filter((i) => selected.has(i.id));
+    const ids = picked.filter((i) => !isRunning(i.status)).map((i) => i.id);
+    const skipped = picked.length - ids.length;
+    if (!ids.length) return;
+    setBulkBusy(true);
+    try {
+      const res = await api<{ deletedIds: string[] }>('/api/generations/bulk', { method: 'POST', json: { action: 'purge', ids } });
+      exitSelect();
+      setItems((prev) => prev.filter((i) => !res.deletedIds.includes(i.id)));
+      setTrashCount((n) => Math.max(0, n - res.deletedIds.length));
+      push({
+        title: `Đã xoá vĩnh viễn ${fmtNumber(res.deletedIds.length)} mục`,
+        sub: skipped ? `Bỏ qua ${fmtNumber(skipped)} mục đang tạo dở` : undefined,
+      });
+    } catch (err) {
+      setConfirmPurge(false);
+      push({ kind: 'error', title: err instanceof Error ? err.message : 'Không xoá được' });
+    } finally {
+      setBulkBusy(false);
+    }
   };
 
   const retryCreditsFor = useCallback(
@@ -591,6 +738,12 @@ export function StudioApp({
   const inTrash = filter === 'trash';
   const stale = itemsFor !== filter;
   const model = currentModel(catalog, draft);
+  const selectable = stale ? [] : items.filter(canSelect);
+  const picked = items.filter((i) => selected.has(i.id));
+  const allPicked = selectable.length > 0 && picked.length === selectable.length;
+  const purgeCount = picked.filter((i) => !isRunning(i.status)).length;
+  const selectFor = (it: LibraryItem) =>
+    canSelect(it) ? { active: selecting, selected: selected.has(it.id), onToggle: toggleSelect } : undefined;
 
   return (
     <div className="page">
@@ -600,6 +753,63 @@ export function StudioApp({
         <Welcome onPick={pickSuggestion} />
       ) : (
         <>
+          {selecting ? (
+            <div className="lib-toolbar select-bar" role="toolbar" aria-label="Thao tác với các mục đã chọn">
+              <div className="row" style={{ gap: 8 }}>
+                <button type="button" className="icon-ghost" aria-label="Thoát chọn" title="Thoát chọn (Esc)" onClick={exitSelect}>
+                  <Icon name="x" size={18} />
+                </button>
+                <span className="select-count" aria-live="polite">
+                  Đã chọn <span className="mono">{fmtNumber(picked.length)}</span>
+                </span>
+                <button
+                  type="button"
+                  className="text-btn"
+                  disabled={!selectable.length}
+                  onClick={() => setSelected(allPicked ? new Set() : new Set(selectable.map((i) => i.id)))}
+                >
+                  {allPicked ? 'Bỏ chọn tất cả' : cursor ? 'Chọn tất cả đang hiện' : 'Chọn tất cả'}
+                </button>
+              </div>
+              <div className="row trash-tools">
+                {!inTrash ? (
+                  <button type="button" className="mini-btn danger-ghost" disabled={!picked.length} onClick={trashPicked}>
+                    <Icon name="trash" size={14} />
+                    Chuyển vào thùng rác
+                  </button>
+                ) : confirmPurge ? (
+                  <>
+                    <span className="danger-text" style={{ fontSize: 13, fontWeight: 500 }}>
+                      Xoá vĩnh viễn {fmtNumber(purgeCount)} mục?
+                    </span>
+                    <button type="button" className="mini-btn danger-fill" disabled={bulkBusy} onClick={purgePicked}>
+                      Xoá
+                    </button>
+                    <button type="button" className="mini-btn" disabled={bulkBusy} onClick={() => setConfirmPurge(false)}>
+                      Huỷ
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" className="mini-btn" disabled={!picked.length || bulkBusy} onClick={restorePicked}>
+                      <Icon name="undo" size={14} />
+                      Khôi phục
+                    </button>
+                    <button
+                      type="button"
+                      className="mini-btn danger-ghost"
+                      disabled={!purgeCount || bulkBusy}
+                      title={picked.length && !purgeCount ? 'Đợi tạo xong rồi hãy xoá vĩnh viễn' : undefined}
+                      onClick={() => setConfirmPurge(true)}
+                    >
+                      <Icon name="trash" size={14} />
+                      Xoá vĩnh viễn
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
           <div className="lib-toolbar">
             <nav aria-label="Lọc thư viện" style={{ display: 'flex', flexWrap: 'wrap', gap: '0 24px' }}>
               {(['all', 'image', 'video', 'trash'] as Filter[]).map((f) => (
@@ -615,6 +825,12 @@ export function StudioApp({
                   <span className="pulse-dot" />
                   {runningCount} đang chạy
                 </div>
+              )}
+              {selectable.length > 0 && !confirmEmpty && (
+                <button type="button" className="mini-btn select-start" onClick={() => setSelecting(true)}>
+                  <Icon name="check" size={14} />
+                  Chọn
+                </button>
               )}
               {inTrash && !stale && items.length > 0 && (
                 <div className="row trash-tools">
@@ -640,8 +856,9 @@ export function StudioApp({
               )}
             </div>
           </div>
+          )}
 
-          <main className="lib-main" aria-busy={loadingList}>
+          <main className={`lib-main${selecting ? ' selecting' : ''}`} aria-busy={loadingList}>
             {inTrash && (
               <p className="trash-note">
                 Ảnh và video trong thùng rác tự xoá vĩnh viễn sau {TRASH_DAYS} ngày. Khôi phục để đưa lại vào thư viện.
@@ -667,7 +884,7 @@ export function StudioApp({
             {inTrash && !stale && items.length > 0 && (
               <div className="lib-grid" style={{ marginTop: 16 }}>
                 {items.map((it) => (
-                  <TrashCard key={it.id} item={it} now={now} onRestore={restoreItem} onPurge={purgeItem} />
+                  <TrashCard key={it.id} item={it} now={now} onRestore={restoreItem} onPurge={purgeItem} select={selectFor(it)!} />
                 ))}
               </div>
             )}
@@ -685,6 +902,7 @@ export function StudioApp({
                       onCopy={copyPrompt}
                       onDelete={removeItem}
                       onRetry={retry}
+                      select={selectFor(it)}
                     />
                   ))}
                 </div>

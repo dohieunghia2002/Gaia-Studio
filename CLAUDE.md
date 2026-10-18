@@ -91,7 +91,8 @@ Server code uses the secret-key client `supabaseAdmin()` (`lib/supabase/admin.ts
 - `lib/models.server.ts` fetches `/ai/models`, curates the list, converts prices to GAIA credits and caches the result in memory for 5 minutes.
   - Curation: video models need `startText` and must not be edit, lipsync, motion, upscale or per-second models. Image models must have a ratio other than `auto`.
   - Conversion: `ceil(gommo × GAIA_COST_PER_GOMMO_CREDIT × GAIA_MARKUP ÷ 100)`.
-  - Founder controls: `HIDDEN_MODELS`, `MODEL_ORDER` and `FEATURED_MODELS`. The first available model in `MODEL_ORDER` is the composer default.
+  - Allowlist: only models in `VERIFIED_MODELS` are sold. That includes models Gommo adds later, which stay hidden until tested. Each entry also switches on only the verified extras: `refs` (Reference images), `edit` (Sửa ảnh), `start` and `end` (Start/End frame). The catalog exposes these as `maxReferences`, `edit` and `frames`.
+  - Founder controls: `VERIFIED_MODELS`, `MODEL_ORDER` and `FEATURED_MODELS`. The first available model in `MODEL_ORDER` is the composer default.
 - `lib/catalog.ts` is shared by client and server.
   - `priceFor` picks the most specific matching row of the model's `prices` table, or returns `null` when the model doesn't sell that combination.
   - `resolveSelection` snaps a selection to a combination that is actually sold.
@@ -141,6 +142,15 @@ Images are versioned. Edits (`op='edit'`, `editImage` + `base64Image` data URL, 
 - Items in the trash for `TRASH_DAYS` (30, `lib/trash.ts`) are purged lazily whenever the trash is listed.
 - Running jobs are never hard-deleted.
 - Deleting a single edit version ("Xoá phiên bản này") stays a soft delete with undo. It doesn't show in the trash and is purged after 30 days.
+- Multi-select ("Chọn") works in the library and the Trash. Click the "Chọn" button, or tick a card's checkbox (shown on hover on desktop). Shift+click selects a range, and Esc exits.
+  - In this mode, clicking a card toggles it instead of opening the detail page. The selection bar replaces the filter tabs.
+  - Running jobs can't be selected in the library. In the Trash they can be restored but not purged.
+  - All bulk actions go through `POST /api/generations/bulk { action: 'trash' | 'restore' | 'purge', ids, deletedAt? }`, with at most `MAX_BULK` (500) ids, chunked to 100 per Supabase query.
+  - A bulk trash uses one stamp, so a single undo (`restore` + `deletedAt`) brings everything back.
+  - Compare `deleted_at` as a time, not a string: Supabase returns `…+00:00`, while JS stamps end in `Z`.
+- UI tests of this flow (headless Chrome + temporary magic-link session + `[QA]` dummy rows that are deleted afterwards) are stable only against a production build on :3100.
+  - In Next 16.4 dev, a cold-compile error on `/studio` ("The server could not finish this Suspense boundary") can turn into a reload loop. Browser logs written to `.next/dev/logs` trigger recompiles, which trigger reloads, which log the error again.
+  - Don't build while the user's dev server is running.
 
 Downloads go through `/api/generations/[id]/download`, because Gommo's CDN is cross-origin and `<a download>` can't force a download.
 
@@ -169,6 +179,18 @@ Prompt translation sits behind `preparePrompt()` (`lib/prompt.server.ts`). For n
   - The frame chip shows "đã cắt 16:9", and its thumbnail opens a preview of exactly what will be sent.
 - Gommo's capability flags can be wrong. `START_FRAME_REQUIRED` in `lib/models.server.ts` lists video models that need a Start frame despite `startText: true`. The composer blocks Tạo with a hint, and `cleanInputs` rejects such requests on the server.
   - No free API field reveals this. A wrong entry only shows up as an instant, uncharged Gommo rejection.
+- Per-model tests on 2026-10-16 and 2026-10-18 (results in `docs/qa/`):
+  - A model or extra goes into `VERIFIED_MODELS` only after a real run through GAIA's API **and a visual check of the output**. A `success` status alone is not enough.
+    - Edits on Z-Image and Kling Colors 1.5/2.1 "succeeded" but drew a new picture that ignored the source.
+    - Wan 3.0 Start/End frame runs "succeeded" with an unrelated scene.
+    - Check frames with Chrome headless; there is no ffmpeg on this machine.
+  - Models Gommo lists as ON can still reject every job: "gói dịch vụ không khả dụng", `#vid_maintenance`, `#img_bp` and similar. Leave them out of `VERIFIED_MODELS`.
+  - `ALLOWED_MODES` restricts modes. `google_image_gen_banana_pro` is VIP-only.
+  - `editImage` rejects a model without `edit`, and the detail page's edit model picker only lists those models.
+  - Price rows whose mode/resolution/duration is not a selectable option are dropped, so "từ X credit" is the real minimum.
+- Sync never fails a job on an unknown Gommo status.
+  - For `FAILED`/`ERROR` it first records the message in `error_message` while the job stays running (`confirmFailure`). It fails and refunds only if the error persists for 60 s or more.
+  - A Seedance job reported "Đang chuyển máy chủ xử lý..." and later succeeded, after the old code had already refunded it.
 - `END_FRAME_MODES` (same file) lists models whose Start + End frame only works in some modes. `kling_video_2_5` needs `professional`; Gommo rejected relax instantly on 2026-10-12. The composer shows a hint and blocks Tạo, and `createGenerations` rejects it on the server.
 - The Studio library tracks which tab `items` belong to (`itemsFor`). While a tab switch is loading it shows a spinner and drops stale responses. Before this, library items briefly rendered as Trash cards, and clicking Khôi phục on them returned 404.
 - Elapsed timers and dates use the Asia/Ho_Chi_Minh time zone (`lib/format.ts`), and clocks only start after mount, to avoid hydration mismatches.

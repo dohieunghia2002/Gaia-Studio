@@ -39,6 +39,8 @@ export interface CatalogModel {
    */
   frames: { start: boolean; end: boolean; startRequired: boolean; endModes?: string[] };
   maxReferences: number;
+  /** Sửa ảnh (gửi kèm ảnh gốc) đã kiểm chứng giữ được ảnh gốc trên model này. */
+  edit: boolean;
   daily?: { used: number; max: number };
 }
 

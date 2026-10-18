@@ -102,6 +102,33 @@ img, video { display: block; }
 .play-badge { width: 52px; height: 52px; border-radius: 50%; background: rgba(15, 15, 14, .6); display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
 .overlay-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid #3a3a34; background: rgba(15, 15, 14, .8); display: flex; align-items: center; justify-content: center; color: #edebe6; }
 .overlay-btn:hover { background: rgba(31, 31, 28, .95); }
+
+/* Chọn nhiều: ô tick ở góc trái thẻ (hiện khi rê chuột, hoặc luôn hiện khi đang chọn), thanh thao tác thay thanh lọc. */
+.select-box { position: absolute; top: 4px; left: 4px; z-index: 2; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s; }
+.select-box .box { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid rgba(237, 235, 230, .85); background: rgba(15, 15, 14, .6); display: flex; align-items: center; justify-content: center; color: #1a1206; transition: background-color .12s, border-color .12s; }
+.select-box[aria-checked='true'] .box { background: #f0a93a; border-color: #f0a93a; }
+.select-box:focus-visible { outline: none; }
+.select-box:focus-visible .box { box-shadow: 0 0 0 3px rgba(240, 169, 58, .45); }
+.select-box:focus-visible, .selecting .select-box { opacity: 1; }
+.card .ver-badge { transition: left .15s; }
+.selecting .ver-badge { left: 50px; }
+@media (hover: hover) {
+  .card:hover .select-box { opacity: 1; }
+  .card:hover .ver-badge { left: 50px; }
+}
+.card.selected, .card.selected:hover { border-color: #f0a93a; box-shadow: 0 0 0 1px #f0a93a; }
+.selecting .card-actions { display: none; }
+.selecting .card:not(.unselectable) { cursor: pointer; }
+.selecting .card.unselectable { opacity: .45; }
+.select-start { margin-bottom: 6px; }
+.select-bar { align-items: center; min-height: 53px; padding-top: 4px; padding-bottom: 4px; }
+.select-bar .trash-tools { margin-bottom: 0; }
+.select-count { font-size: 14px; font-weight: 600; }
+.icon-ghost { width: 40px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: #a8a399; display: flex; align-items: center; justify-content: center; }
+.icon-ghost:hover { background: #1f1f1c; color: #edebe6; }
+.text-btn { height: 40px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; color: var(--accent); font-size: 13px; font-weight: 500; }
+.text-btn:hover:not(:disabled) { background: #2a2112; }
+.text-btn:disabled { opacity: .5; }
 .menu { position: absolute; width: 220px; background: #1c1c19; border: 1px solid #2e2e29; border-radius: 12px; padding: 6px; box-shadow: 0 20px 50px rgba(0, 0, 0, .6); display: flex; flex-direction: column; z-index: 20; animation: gaia-in .12s ease-out; }
 .menu button, .menu a.menu-link { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; text-align: left; font-size: 13px; color: #edebe6; width: 100%; }
 .menu button:hover, .menu a.menu-link:hover { background: #26261f; }

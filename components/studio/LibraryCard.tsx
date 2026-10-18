@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type MouseEvent } from 'react';
 import { Icon } from '../Icon';
 import { useDismiss } from '../useDismiss';
 import { paramSummary, ratioLabel, ratioNumber } from '@/lib/catalog';
@@ -20,6 +20,33 @@ function CreditUsed({ value, title }: { value: number; title: string }) {
       {fmtNumber(value)}
       <span className="sr-only"> credit</span>
     </span>
+  );
+}
+
+/** Chọn nhiều: bấm ô tick để chọn/bỏ chọn; giữ Shift để chọn cả dãy từ mục bấm lần trước. */
+export type Selection = {
+  active: boolean;
+  selected: boolean;
+  onToggle: (item: LibraryItem, range: boolean) => void;
+};
+
+function SelectBox({ item, select }: { item: LibraryItem; select: Selection }) {
+  return (
+    <button
+      type="button"
+      className="select-box"
+      role="checkbox"
+      aria-checked={select.selected}
+      aria-label={select.selected ? 'Bỏ chọn' : 'Chọn'}
+      title={select.selected ? 'Bỏ chọn' : 'Chọn'}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        select.onToggle(item, e.shiftKey);
+      }}
+    >
+      <span className="box">{select.selected && <Icon name="check" size={14} />}</span>
+    </button>
   );
 }
 
@@ -61,6 +88,7 @@ export function LibraryCard({
   onCopy,
   onDelete,
   onRetry,
+  select,
 }: {
   item: LibraryItem;
   now: number | null;
@@ -69,6 +97,8 @@ export function LibraryCard({
   onCopy: (item: LibraryItem) => void;
   onDelete: (item: LibraryItem) => void;
   onRetry: (item: LibraryItem) => void;
+  /** Không có: mục không chọn được (đang tạo). */
+  select?: Selection;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -82,7 +112,7 @@ export function LibraryCard({
   if (item.status === 'pending' || item.status === 'processing') {
     const rendering = item.status === 'processing';
     return (
-      <div className="card">
+      <div className="card unselectable">
         <div className="frame status" style={rendering ? undefined : { gap: 4 }}>
           {rendering ? (
             <>
@@ -122,9 +152,15 @@ export function LibraryCard({
     );
   }
 
+  const selecting = Boolean(select?.active);
+  const cardClass = `card${select?.selected ? ' selected' : ''}`;
+  // Đang chọn nhiều: bấm vào thẻ là chọn/bỏ chọn, không mở trang chi tiết.
+  const toggleOnClick = select?.active ? (e: MouseEvent) => select.onToggle(item, e.shiftKey) : undefined;
+
   if (item.status === 'error') {
     return (
-      <div className="card">
+      <div className={cardClass} onClick={toggleOnClick}>
+        {select && <SelectBox item={item} select={select} />}
         <div className="frame status failed">
           <span className="danger-text" style={{ display: 'flex' }}>
             <Icon name="alert" size={24} />
@@ -141,7 +177,7 @@ export function LibraryCard({
               Đã hoàn {fmtNumber(item.refundedCredits)} credit
             </span>
           )}
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 4 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 4, visibility: selecting ? 'hidden' : undefined }}>
             {retryCredits != null && (
               <button
                 type="button"
@@ -182,8 +218,16 @@ export function LibraryCard({
   const multi = item.kind === 'image' && item.versionCount > 1;
   const durationSec = Number(item.params.duration);
   return (
-    <div className="card">
-      <Link href={detailHref(item)}>
+    <div className={cardClass}>
+      {select && <SelectBox item={item} select={select} />}
+      <Link
+        href={detailHref(item)}
+        onClick={(e) => {
+          if (!toggleOnClick) return;
+          e.preventDefault();
+          toggleOnClick(e);
+        }}
+      >
         <div className="frame">
           <Media item={item} />
           {multi && (
@@ -271,11 +315,13 @@ export function TrashCard({
   now,
   onRestore,
   onPurge,
+  select,
 }: {
   item: LibraryItem;
   now: number | null;
   onRestore: (item: LibraryItem) => Promise<void>;
   onPurge: (item: LibraryItem) => Promise<void>;
+  select: Selection;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -291,7 +337,11 @@ export function TrashCard({
     }
   };
   return (
-    <div className="card trash-card">
+    <div
+      className={`card trash-card${select.selected ? ' selected' : ''}`}
+      onClick={select.active ? (e) => select.onToggle(item, e.shiftKey) : undefined}
+    >
+      <SelectBox item={item} select={select} />
       {item.status === 'success' ? (
         <div className="frame">
           <Media item={item} />
@@ -319,7 +369,7 @@ export function TrashCard({
         <p className="trash-left">
           {daysLeft == null ? '\u00a0' : daysLeft === 0 ? 'Tự xoá vĩnh viễn hôm nay' : `Tự xoá vĩnh viễn sau ${daysLeft} ngày`}
         </p>
-        <div className="trash-actions">
+        <div className="trash-actions" style={select.active ? { visibility: 'hidden' } : undefined}>
           {confirming ? (
             <>
               <span className="danger-text" style={{ fontSize: 13, fontWeight: 500, marginRight: 'auto' }}>
