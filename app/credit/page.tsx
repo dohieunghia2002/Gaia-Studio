@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getProfileRow, pageSession, toProfile } from '@/lib/auth.server';
+import { getProfileRow, pageSession, preferAuthError, toProfile } from '@/lib/auth.server';
 import { getCreditSummary, getLedger } from '@/lib/credits.server';
 import { getTopup } from '@/lib/payments.server';
 import { isPayosConfigured } from '@/lib/env';
@@ -22,7 +22,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ o
     getCreditSummary(userId),
     getLedger(userId),
     Number.isSafeInteger(orderCode) && orderCode > 0 ? getTopup(userId, orderCode).catch(() => null) : null,
-  ]);
+  ]).catch(preferAuthError(verified));
   const profile = toProfile(user, profileRow);
   // Đã trả xong thì số dư có thể vừa đổi trong lúc hỏi PayOS.
   const [finalSummary, finalLedger] =

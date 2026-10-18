@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getProfileRow, pageSession, toProfile } from '@/lib/auth.server';
+import { getProfileRow, pageSession, preferAuthError, toProfile } from '@/lib/auth.server';
 import { getCatalog } from '@/lib/models.server';
 import { getBalance } from '@/lib/credits.server';
 import { getDetail, listLibrary, trashCount } from '@/lib/generations.server';
@@ -37,7 +37,7 @@ export default async function StudioPage({
           .then((d): GenerationItem => d.versions.find((v) => v.id === reuseId) ?? d.root)
           .catch(() => null)
       : null,
-  ]);
+  ]).catch(preferAuthError(verified));
   const profile = toProfile(user, profileRow);
 
   return (

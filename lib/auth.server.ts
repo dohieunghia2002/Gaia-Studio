@@ -66,6 +66,19 @@ export async function pageSession(nextPath: string): Promise<{ userId: string; v
   return { userId: user.id, verified: Promise.resolve(user) };
 }
 
+/**
+ * Gắn vào `Promise.all([verified, ...dữ liệu])` của trang: `.catch(preferAuthError(verified))`.
+ * Mất kết nối tới Supabase thì truy vấn dữ liệu thường hỏng trước bước xác thực, và trang chỉ báo "Có lỗi khi tải
+ * trang" chung chung. Ở đây chờ `verified` trước: nó lỗi (chuyển sang /login, AuthUnavailableError) thì lỗi đó được
+ * ưu tiên, để trang báo đúng "Không kết nối được máy chủ đăng nhập" (case H01, 18/10/2026).
+ */
+export function preferAuthError(verified: Promise<User>) {
+  return async (err: unknown): Promise<never> => {
+    await verified;
+    throw err;
+  };
+}
+
 /** Dùng trong API route: chưa đăng nhập thì trả 401. */
 export async function requireUserApi(): Promise<User> {
   if (!isSupabaseConfigured()) {

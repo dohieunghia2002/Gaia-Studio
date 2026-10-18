@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { pageSession } from '@/lib/auth.server';
+import { pageSession, preferAuthError } from '@/lib/auth.server';
 import { getCatalog } from '@/lib/models.server';
 import { getBalance } from '@/lib/credits.server';
 import { getDetail } from '@/lib/generations.server';
@@ -22,7 +22,7 @@ export default async function VideoPage({ params }: { params: Promise<{ id: stri
     getDetail(userId, id).catch(() => null),
     getBalance(userId),
     getCatalog().catch(() => null),
-  ]);
+  ]).catch(preferAuthError(verified));
   if (!detail) notFound();
   if (detail.root.kind === 'image') redirect(`/studio/image/${detail.root.id}`);
 

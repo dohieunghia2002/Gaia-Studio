@@ -57,6 +57,10 @@ These are two different states. Never treat an unreachable Supabase as signed ou
 - `getUser()` throws `AuthUnavailableError` (`lib/auth-unavailable.ts`) when Supabase is unreachable. How each caller handles it:
   - `requireUserApi` turns it into a 503 `auth_unavailable`. The client then shows the message and does not redirect to /login.
   - Pages let it reach `app/error.tsx`, which recognises it by `digest` (Next keeps a pre-set digest even in production) and offers "Thử lại".
+  - Pages end their `Promise.all([verified, ...data])` with `.catch(preferAuthError(verified))`.
+    - When Supabase is unreachable the data queries usually fail before `verified`, and the page then showed the generic "Có lỗi khi tải trang".
+    - `preferAuthError` awaits `verified` first, so its error (the redirect or `AuthUnavailableError`) wins.
+    - Verified on 2026-10-18 by QA case H01, run on a production build with a preload that makes every fetch to the Supabase host fail.
 - `proxy.ts`:
   - If `getClaims()` is unreachable, it lets the request through and sets the `x-gaia-auth-unavailable` header. Pages then fail fast instead of waiting through supabase-js's ~25s refresh retry a second time.
   - On `/login` it checks with `getUser()`, not only the JWT signature, so a session revoked server-side cannot loop /login ↔ page.
@@ -151,6 +155,9 @@ Images are versioned. Edits (`op='edit'`, `editImage` + `base64Image` data URL, 
 - UI tests of this flow (headless Chrome + temporary magic-link session + `[QA]` dummy rows that are deleted afterwards) are stable only against a production build on :3100.
   - In Next 16.4 dev, a cold-compile error on `/studio` ("The server could not finish this Suspense boundary") can turn into a reload loop. Browser logs written to `.next/dev/logs` trigger recompiles, which trigger reloads, which log the error again.
   - Don't build while the user's dev server is running.
+  - **Never recursively delete a `.next` folder on Windows**, including a temp worktree's: no `Remove-Item -Recurse`, `git worktree remove` or `rm -rf`. `next build` (Turbopack) creates junctions in `.next/node_modules/` (e.g. `undici-<hash>`) that point at the real packages in `serverExternalPackages`, and the delete follows them.
+    - On 2026-10-18 this emptied `node_modules/undici`. `npm install` restored it.
+    - Remove those junctions first with `cmd /c rmdir <junction>`.
 
 Downloads go through `/api/generations/[id]/download`, because Gommo's CDN is cross-origin and `<a download>` can't force a download.
 
