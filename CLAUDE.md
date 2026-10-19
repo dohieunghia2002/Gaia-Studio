@@ -192,7 +192,11 @@ Prompt translation sits behind `preparePrompt()` (`lib/prompt.server.ts`). For n
     - Wan 3.0 Start/End frame runs "succeeded" with an unrelated scene.
     - Check frames with Chrome headless; there is no ffmpeg on this machine.
   - Models Gommo lists as ON can still reject every job: "gói dịch vụ không khả dụng", `#vid_maintenance`, `#img_bp` and similar. Leave them out of `VERIFIED_MODELS`.
-  - `ALLOWED_MODES` restricts modes. `google_image_gen_banana_pro` is VIP-only.
+  - `ALLOWED_MODES` restricts modes. `google_image_gen_banana_pro` is VIP-only. Grok's "Spicy" mode is hidden by founder decision.
+  - `TESTED_RANGE` (video) sells only the modes and resolutions already generated successfully through GAIA, with durations inside the tested min–max.
+    - Its `exclude` blocks combos Gommo prices but rejects, such as Kling 2.5 Relax 10s and VEO 3.1 4s.
+    - It filters the option lists and the price rows, so the composer, "từ X credit" and the server's 409 check all follow it.
+    - Widen a range only after a real run. Results are in `docs/qa/`.
   - `editImage` rejects a model without `edit`, and the detail page's edit model picker only lists those models.
   - Price rows whose mode/resolution/duration is not a selectable option are dropped, so "từ X credit" is the real minimum.
 - Sync never fails a job on an unknown Gommo status.

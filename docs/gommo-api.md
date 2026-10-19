@@ -49,6 +49,14 @@ Nguồn: prompt tài liệu do Gommo cung cấp, được cô đọng lại (đ�
   - Start + End ở Standard bị báo lỗi sau ~2 phút (không phải từ chối ngay): "chỉ hỗ trợ End Frame ở Professional".
 - Midjourney 7.0/8.1/8.2 vẫn "Không thể hoàn thành #csdsd2" với prompt tiếng Anh, nên lỗi không do ngôn ngữ.
 - Lỗi mới: `#img_bp` "Máy chủ tạo ảnh không khả dụng" (Seedream 5.0 Pro/Flash, mọi lượt, kể cả tạo ảnh từ prompt); Hailuo 2.3 báo "gói dịch vụ không khả dụng"; Veo Omni + Start frame báo `#vid_fail` 2/2 lần.
+- Bảng giá `/ai/models` có thể liệt kê tổ hợp Gommo không chạy (18/10/2026):
+  - Kling 2.5 Relax 10s bị từ chối ngay: "Model Kling 2.5 Relax chỉ hỗ trợ thời lượng 5s".
+  - VEO 3.1 4s chạy rồi mới lỗi, với mã `#vid_duration_unavailable` ("Thời lượng 4s không khả dụng").
+  - GAIA chỉ bán phạm vi đã thử (`TESTED_RANGE`).
+- `credit_fee` của video luôn bằng dòng giá trong `/ai/models` của đúng tổ hợp đã gửi: đã kiểm 14/14 lượt ngày 18–19/10, gồm mode, độ phân giải, thời lượng, Start/End frame và mode có âm thanh.
+- Kling 4.0 nhận Start frame 16:9 (960×540 và 1920×1072). Một lần với ảnh dọc 864×1536 thì lỗi "Kling media verification incomplete (image #1)", chưa thử lại.
+- Grok mode "Fun" (`extremely-crazy`) chủ động chèn thêm nhân vật hoạt hình vào cảnh. Mode "Spicy" (`extremely-spicy-or-crazy`) GAIA đã ẩn.
+- Kling 2.6 `professional_audio` trả MP4 có rãnh tiếng (`soun`).
 - Reference cho video: `/ai/models` báo `withReference: true` cho 16 model video, và `configs.reference.inputSpec` gợi ý trường multipart `video_files[]`/`audio_files[]`. Tài liệu không mô tả cách gửi, nên GAIA chưa dùng.
 
 ## Ảnh

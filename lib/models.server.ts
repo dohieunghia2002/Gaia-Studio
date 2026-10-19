@@ -59,9 +59,9 @@ export const VERIFIED_MODELS: Record<string, Verified> = {
   seedance_25_omni: {},
   seedance_20_pro_edit: {},
   grok_video_heavy: { start: true },
-  meta_muse_video: {}, // Start frame đúng 2/3 lần (lần 3 ra cảnh khác); End frame sai 2/2 lần
   wan_3_0: {}, // Start/End frame: Gommo nhận ảnh nhưng video ra cảnh khác (mode cheap và vip)
-  veo_omni: {}, // Start frame: "Tạo video thất bại #vid_fail" 2/2 lần
+  // Founder bỏ sau khi xem video mẫu (18/10/2026): meta_muse_video (Start frame đúng 2/3, End sai 2/2),
+  // veo_omni (Start frame lỗi 2/2).
 };
 
 /**
@@ -78,7 +78,11 @@ export const START_FRAME_REQUIRED: string[] = ['kling_video_2_5', 'hailuo_2_3', 
  * standard bị từ chối ngay, không trừ tiền: "Chế độ Relaxed và Standard hiện không khả dụng vui lòng chọn các
  * chế độ VIP" (2026-10-16).
  */
-export const ALLOWED_MODES: Record<string, string[]> = { google_image_gen_banana_pro: ['vip', 'vip2', 'vip3'] };
+export const ALLOWED_MODES: Record<string, string[]> = {
+  google_image_gen_banana_pro: ['vip', 'vip2', 'vip3'],
+  // Founder ẩn mode "Spicy" (extremely-spicy-or-crazy) để tránh nội dung nhạy cảm (18/10/2026).
+  grok_video_heavy: ['normal', 'extremely-crazy', 'custom'],
+};
 
 /**
  * Model chỉ nhận Start + End frame ở một số mode, dù Gommo báo `startImageAndEnd: true` và không ghi giới hạn này.
@@ -86,6 +90,43 @@ export const ALLOWED_MODES: Record<string, string[]> = { google_image_gen_banana
  * chế độ Professional" (2026-10-12).
  */
 export const END_FRAME_MODES: Record<string, string[]> = { kling_video_2_5: ['professional'] };
+
+/**
+ * Tạm chỉ bán phạm vi thông số đã tạo thử thành công qua GAIA (founder chọn 18/10/2026): mode và độ phân giải đã
+ * thử, thời lượng trong khoảng [ngắn nhất, dài nhất] đã thử. Thử thêm thì nới ra ở đây. `exclude` chặn tổ hợp Gommo
+ * có liệt kê giá nhưng chạy lỗi. Model không có ở đây thì bán đủ như Gommo liệt kê (hiện là các model ảnh).
+ * Kết quả từng lượt: docs/qa/kiem-thu-model-2026-10-16.md.
+ */
+type TestedRange = {
+  modes?: string[];
+  resolutions?: string[];
+  durations?: [number, number];
+  exclude?: (row: { mode?: string; resolution?: string; duration?: string }) => boolean;
+};
+export const TESTED_RANGE: Record<string, TestedRange> = {
+  // 4 giây: "Thời lượng 4s không khả dụng #vid_duration_unavailable" (lite 4K, 18/10). 4K chưa thử.
+  veo_3_1: { resolutions: ['720p', '1080p'], durations: [6, 8] },
+  // Relax 10 giây bị từ chối ngay: "Model Kling 2.5 Relax chỉ hỗ trợ thời lượng 5s" (18/10). 10 giây chưa thử ở mode khác.
+  kling_video_2_5: { durations: [5, 5], exclude: (r) => r.mode === 'relax' && r.duration === '10' },
+  kling_video_2_6: { modes: ['standard', 'professional_audio'], durations: [5, 5] },
+  wan_3_0: { modes: ['cheap', 'vip'], resolutions: ['480p'], durations: [4, 10] },
+  seedance_20_pro: { modes: ['fast', 'professional'], resolutions: ['480p', '720p'], durations: [4, 4] },
+  grok_video_heavy: { durations: [6, 15] },
+  kling_4_0: { resolutions: ['720p', '1080p'], durations: [3, 10] },
+  kling_4_0_flash: { durations: [3, 3] },
+  // Founder giữ nhưng không thử sâu: chỉ bán đúng cấu hình đã tạo thử.
+  seedance_20_mini: { modes: ['business_mini_vip'], resolutions: ['480p'], durations: [4, 4] },
+  seedance_25_omni: { modes: ['business_professional_vip'], resolutions: ['480p'], durations: [4, 4] },
+  seedance_20_pro_edit: { modes: ['business_fast'], resolutions: ['720p'], durations: [4, 4] },
+};
+
+function inRange(range: TestedRange | undefined, field: 'mode' | 'resolution' | 'duration', value: string): boolean {
+  if (!range) return true;
+  if (field === 'mode') return !range.modes || range.modes.includes(value);
+  if (field === 'resolution') return !range.resolutions || range.resolutions.includes(value);
+  const n = Number(value);
+  return !range.durations || (n >= range.durations[0] && n <= range.durations[1]);
+}
 
 /** Model hiện trên trang chủ, theo thứ tự. Model nào không còn thì bỏ qua. */
 export const FEATURED_MODELS = ['veo_3_1', 'kling_video_2_5', 'wan_3_0', 'google_image_gen_banana_2'];
@@ -171,10 +212,13 @@ function normalize(kind: Kind, m: RawModel): CatalogModel | null {
   if (kind === 'video' ? !isUsableVideo(m) : !isUsableImage(m)) return null;
 
   const allowedModes = ALLOWED_MODES[m.model];
-  const rawModes = (m.modes?.length ? m.modes : m.mode)?.filter((o) => !allowedModes || allowedModes.includes(String(o.type)));
+  const range = TESTED_RANGE[m.model];
+  const rawModes = (m.modes?.length ? m.modes : m.mode)?.filter(
+    (o) => (!allowedModes || allowedModes.includes(String(o.type))) && inRange(range, 'mode', String(o.type)),
+  );
   const modes = modeOptions(rawModes);
-  const resolutions = options(m.resolutions, 'resolution');
-  const durations = options(m.durations, 'duration');
+  const resolutions = options(m.resolutions, 'resolution').filter((o) => inRange(range, 'resolution', o.value));
+  const durations = options(m.durations, 'duration').filter((o) => inRange(range, 'duration', o.value));
   const modeCredits: Record<string, number> = {};
   for (const o of rawModes ?? []) {
     if (o.type && typeof o.price === 'number' && o.price > 0) modeCredits[String(o.type)] = gaiaCredits(o.price);
@@ -191,7 +235,8 @@ function normalize(kind: Kind, m: RawModel): CatalogModel | null {
       ...(p.resolution ? { resolution: String(p.resolution) } : {}),
       ...(p.duration !== undefined && p.duration !== null && p.duration !== '' ? { duration: String(p.duration) } : {}),
       credits: gaiaCredits(p.price as number),
-    }));
+    }))
+    .filter((p) => !range?.exclude?.(p));
   const baseCredits = gaiaCredits(Number(m.price) || 0);
   const candidates = prices.length ? prices.map((p) => p.credits) : [...Object.values(modeCredits), baseCredits];
   const fromCredits = Math.min(...candidates.filter((c) => c > 0));

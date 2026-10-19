@@ -99,3 +99,49 @@ Sau vòng này GAIA chuyển sang **danh sách trắng** `VERIFIED_MODELS` (`lib
 | Gemini Omni Flash 1.0 (`veo_omni`) | | | ❌ #vid_fail 2/2 | — |
 
 ✅ = đã kiểm chứng và đang bật; ❌ = đang tắt; — = Gommo không hỗ trợ; ô trống = không áp dụng.
+
+### Founder duyệt video mẫu (18/10/2026)
+
+Trang duyệt: https://claude.ai/artifact/7MT8PibRZEhKLQ2YvL2Lyy (cùng prompt sóng biển cho mọi model, kèm video Start/End frame).
+
+- **Bỏ (đã ẩn khỏi GAIA):** Meta Muse 1.0, Gemini Omni Flash 1.0 (`veo_omni`).
+- **Giữ và kiểm thử sâu:** VEO 3.1, Kling 2.5, Kling 2.6, WAN 3.0 (chỉ từ prompt; Start/End frame vẫn tắt), Seedance 2.0, Grok Video Heavy, Kling 4.0, Kling 4.0 Flash.
+- **Giữ, không kiểm thử sâu** (chỉ tạo từ prompt; Seedance 2.5 còn vì đắt): Seedance 2.0 Mini, Seedance 2.0 Omni, Seedance 2.5.
+
+## Kiểm thử sâu video — 18–19/10/2026
+
+Chạy qua đúng API của GAIA. Prompt tiếng Việt có chỉ dẫn máy quay / chuyển động (xe đạp ở phố cổ Hội An, máy quay lia; mèo cam nhảy lên bậu cửa; mưa trên mái tôn). Start/End frame: ảnh phong cảnh 2K cắt giữa theo đúng tỉ lệ (16:9, 9:16, 1:1), End = cùng ảnh phóng to. Kiểm tra khung đầu/cuối bằng mắt; **giá Gommo thu (`gommo_cost`) khớp giá GAIA hiển thị ở cả 14 lượt có tính phí** (= giá Gommo × 1,5 ÷ 100, làm tròn lên). Chi phí: ~66 nghìn đ (79ai 69.365 → khoảng 2.750; lượt lỗi được hoàn).
+
+| Model | Lượt | Kết quả |
+|---|---|---|
+| VEO 3.1 | lite 4K 4s 9:16 | ❌ "Thời lượng 4s không khả dụng #vid_duration_unavailable" → chặn 4 giây |
+| | fast 1080p 6s 16:9 | ✅ |
+| | quality 720p 8s 16:9 + Start/End | ✅ khung đầu và cuối đúng |
+| Kling 2.5 | relax 10s 1:1 + Start | ❌ từ chối ngay: "Kling 2.5 Relax chỉ hỗ trợ thời lượng 5s" (Gommo vẫn có giá) → chặn |
+| | standard 5s 9:16 + Start | ✅ |
+| | professional 5s 16:9 + Start/End | ✅ |
+| Kling 2.6 | professional_audio 5s 16:9 | ✅ có rãnh tiếng; tự thêm một người vào cảnh |
+| Kling 4.0 | 1080p 3s 9:16 + Start (ảnh 864×1536) | ❌ "Kling media verification incomplete (image #1)" — cần thử lại |
+| | 1080p 3s 16:9 | ✅ |
+| | 720p 10s 16:9 + Start/End | ✅ |
+| Seedance 2.0 | professional 720p 4s 1:1 + Start/End | ✅ |
+| WAN 3.0 | cheap 480p 10s 16:9 | ✅ làm đúng nhất: mèo nhảy lên rồi ngồi liếm chân |
+| Grok Video Heavy | Fun 720p 6s 16:9 + Start | ✅ Start đúng; mode Fun chèn nhân vật hoạt hình vào cảnh |
+| | Normal 1080p 6s 1:1 | ✅ |
+| | Custom 480p 15s 9:16 | ✅ (mèo ngồi sẵn trên bậu, bỏ động tác nhảy) |
+
+**GAIA chỉ bán phạm vi đã thử** (`TESTED_RANGE` trong `lib/models.server.ts`; API trả 409 nếu gửi tổ hợp ngoài phạm vi, đã kiểm):
+
+| Model | Mode | Độ phân giải | Thời lượng |
+|---|---|---|---|
+| VEO 3.1 | lite, fast, quality | 720p, 1080p | 6–8s |
+| Kling 2.5 | relax, standard, professional | — | 5s |
+| Kling 2.6 | standard, professional_audio | — | 5s |
+| WAN 3.0 | cheap, vip | 480p | 4–10s |
+| Seedance 2.0 | fast, professional | 480p, 720p | 4s |
+| Grok Video Heavy | Normal, Fun, Custom (Spicy đã ẩn) | 480p, 720p, 1080p | 6–15s |
+| Kling 4.0 | professional | 720p, 1080p | 3–10s |
+| Kling 4.0 Flash | flash | 720p | 3s |
+| Seedance 2.0 Mini / 2.5 / 2.0 Omni | đúng 1 cấu hình đã thử | | 4s |
+
+**Chưa thử (chờ nạp 79ai, ~52 nghìn đ):** Kling 2.6 standard 10s và mode professional; WAN vip 720p/1080p; Kling 4.0 Flash 10s + Start; Seedance 2.0 fast 10s và 1080p; VEO 4K; Kling 4.0 + Start frame ảnh dọc (thử lại); Kling 4.0 trên 10s.
