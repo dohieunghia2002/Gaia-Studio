@@ -22,6 +22,12 @@ export function gaiaCredits(gommoCredits: number): number {
   return Math.ceil((gommoCredits * costPerGommoCredit() * markup()) / 100);
 }
 
+/** Chiều ngược của gaiaCredits: credit Gommo tối đa một mức giá GAIA có thể tốn (làm tròn lên). */
+export function gommoCreditsFor(gaia: number): number {
+  if (!Number.isFinite(gaia) || gaia <= 0) return 0;
+  return Math.ceil((gaia * 100) / (costPerGommoCredit() * markup()));
+}
+
 // ── Danh mục ──
 
 /**
@@ -80,8 +86,9 @@ export const START_FRAME_REQUIRED: string[] = ['kling_video_2_5', 'hailuo_2_3', 
  */
 export const ALLOWED_MODES: Record<string, string[]> = {
   google_image_gen_banana_pro: ['vip', 'vip2', 'vip3'],
-  // Founder ẩn mode "Spicy" (extremely-spicy-or-crazy) để tránh nội dung nhạy cảm (18/10/2026).
-  grok_video_heavy: ['normal', 'extremely-crazy', 'custom'],
+  // Founder ẩn mode "Spicy" (extremely-spicy-or-crazy) để tránh nội dung nhạy cảm (18/10/2026) và mode "Fun"
+  // (extremely-crazy), vì nó tự chèn nhân vật hoạt hình vào cảnh (19/10/2026).
+  grok_video_heavy: ['normal', 'custom'],
 };
 
 /**

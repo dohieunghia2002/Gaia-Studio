@@ -35,6 +35,13 @@ export function requireEnv(name: string): string {
   return value;
 }
 
+/** Biến môi trường dạng số (không đặt hoặc không hợp lệ thì dùng `fallback`). */
+export function envNumber(name: string, fallback: number): number {
+  const raw = process.env[name];
+  const value = raw === undefined || raw === '' ? NaN : Number(raw);
+  return Number.isFinite(value) ? value : fallback;
+}
+
 /** Địa chỉ công khai của site, dùng cho returnUrl/cancelUrl của PayOS. */
 export function siteUrl(fallbackOrigin?: string): string {
   return (process.env.NEXT_PUBLIC_SITE_URL || fallbackOrigin || 'http://localhost:3000').replace(/\/$/, '');

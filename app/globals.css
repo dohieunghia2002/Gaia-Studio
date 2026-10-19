@@ -361,6 +361,13 @@ a.home-login:hover { color: #0f0f0e; }
 .prose { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; font-size: 15px; line-height: 1.7; }
 .prose h1 { font-size: 28px; line-height: 1.25; margin: 0 0 16px; }
 .prose p { color: #a8a399; }
+.prose h2 { font-size: 18px; line-height: 1.35; margin: 32px 0 8px; color: #edebe6; }
+.prose ul { margin: 0 0 12px; padding-left: 20px; color: #a8a399; }
+.prose li { margin: 4px 0; }
+.prose strong { color: #edebe6; font-weight: 600; }
+.prose a { color: var(--accent); }
+.prose .legal-meta { margin: -8px 0 16px; font-size: 13px; color: #8c877d; }
+.prose .legal-draft { padding: 10px 14px; border-radius: 10px; background: #2a2112; color: #f0a93a; font-size: 14px; }
 
 @media (max-width: 640px) {
   .topbar, .lib-toolbar { padding-left: 16px; padding-right: 16px; }

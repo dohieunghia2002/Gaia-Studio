@@ -77,12 +77,22 @@ select gaia_grant((select id from auth.users where email = 'email-cua-ban@gmail.
 
 Khi chạy trên máy (chưa có webhook), trang Credit tự hỏi PayOS mỗi 3 giây trong lúc chờ chuyển khoản. Vì vậy credit vẫn được cộng ngay khi tiền về. Webhook là đường thứ hai, phòng khi người dùng đã đóng trang. Credit chỉ được cộng một lần dù cả hai đường cùng báo.
 
+Thử thật trên máy: nạp mốc thấp nhất (20.000đ) bằng chính tài khoản ngân hàng của bạn. Tiền về đúng tài khoản nhận của bạn, nên gần như không tốn gì.
+
 ## Bước 7 — Đưa lên mạng (khi sẵn sàng)
 
-Gợi ý Vercel (hợp với Next.js):
+**Trước khi mở cho người dùng:**
 
-1. Đưa thư mục `gaia-studio` lên GitHub (file `.env` đã nằm trong `.gitignore`, không bị đẩy lên).
-2. Import vào Vercel, khai báo các biến môi trường giống `.env`, đặt `NEXT_PUBLIC_SITE_URL` = tên miền thật.
+1. **Nạp tiền vào 79ai.** Tiền người dùng nạp vào GAIA không tự chuyển sang 79ai; bạn tự lấy doanh thu nạp vào đó.
+2. **Chốt an toàn số dư 79ai** (đặt trong `.env` của nơi host, đơn vị là credit Gommo ≈ đồng):
+   - `GAIA_PROVIDER_RESERVE`: GAIA từ chối lượt tạo nếu sau lượt đó số dư 79ai còn dưới mức này (mặc định 0). Người dùng nhận thông báo "GAIA đang tạm dừng nhận yêu cầu tạo mới" và không bị trừ credit.
+   - `GAIA_TOPUP_MIN_PROVIDER_BALANCE`: số dư 79ai dưới mức này thì tạm dừng nạp credit, để không ai trả tiền mà không tạo được gì. Mặc định 0 (tắt, để thử PayOS trên máy). Khi mở thật nên đặt, ví dụ `100000`.
+3. **Điền trang Điều khoản và Bảo mật:** sửa `lib/legal.ts` (tên người vận hành, email hỗ trợ, độ tuổi), chốt các mục trong ngoặc vuông ở `app/terms/page.tsx` và `app/privacy/page.tsx`, rồi đặt `draft: false`.
+
+**Nơi host:** Vercel gói Hobby (miễn phí) chỉ cho dùng cá nhân, phi thương mại; GAIA nhận thanh toán nên cần gói Pro ($20/tháng) hoặc một nơi host khác cho phép dùng thương mại. Các bước với Vercel:
+
+1. Import repo GitHub vào Vercel, chọn thư mục gốc `gaia-studio` (file `.env` không có trên GitHub).
+2. Khai báo các biến môi trường giống `.env`, đặt `NEXT_PUBLIC_SITE_URL` = tên miền thật.
 3. Thêm tên miền thật vào **Redirect URLs** của Supabase (bước 4) và **Webhook URL** của PayOS (bước 6).
 
 ---

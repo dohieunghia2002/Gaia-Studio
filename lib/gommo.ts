@@ -58,6 +58,31 @@ export async function gommoPost<T = Record<string, unknown>>(
   }
 }
 
+// ── Số dư tài khoản Gommo (79ai) của GAIA ──
+// Lưu tạm 20 giây để mỗi lần bấm Tạo không phải hỏi Gommo; mỗi lượt gửi đi trừ tạm vào bản lưu.
+
+const BALANCE_TTL_MS = 20_000;
+let balanceCache: { at: number; value: number } | null = null;
+
+/** Credit còn lại trên tài khoản Gommo, hoặc null khi không hỏi được (khi đó không chặn ai vì lỗi mạng). */
+export async function getProviderBalance(): Promise<number | null> {
+  if (balanceCache && Date.now() - balanceCache.at < BALANCE_TTL_MS) return balanceCache.value;
+  try {
+    const data = await gommoPost<{ balancesInfo?: { credits_ai?: number } }>('/api/apps/go-mmo/ai/me', {});
+    const value = Number(data.balancesInfo?.credits_ai);
+    if (!Number.isFinite(value)) return null;
+    balanceCache = { at: Date.now(), value };
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+/** Trừ tạm vào số dư đang lưu sau khi gửi một lượt, để các lượt gửi dồn dập không cùng thấy số dư cũ. */
+export function noteProviderSpend(gommoCredits: number) {
+  if (balanceCache) balanceCache.value -= gommoCredits;
+}
+
 // ── Kiểu dữ liệu Gommo trả về (chỉ các trường GAIA dùng) ──
 
 export interface GommoImageInfo {

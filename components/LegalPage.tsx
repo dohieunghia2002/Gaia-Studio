@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { Icon, LogoMark } from './Icon';
+import { LEGAL } from '@/lib/legal';
 
-/** Khung cho trang điều khoản/bảo mật. Nội dung pháp lý do GAIA tự soạn (chưa có). */
+/** Khung cho trang điều khoản/bảo mật. Nội dung lấy thông tin người vận hành từ `lib/legal.ts`. */
 export function LegalPage({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="page">
@@ -17,6 +18,10 @@ export function LegalPage({ title, children }: { title: string; children: React.
       </header>
       <main className="prose">
         <h1>{title}</h1>
+        <p className="legal-meta">Cập nhật {LEGAL.updatedAt}</p>
+        {LEGAL.draft && (
+          <p className="legal-draft">Bản nháp. Các mục trong ngoặc vuông chưa được chốt và sẽ được cập nhật trước khi GAIA mở cho người dùng.</p>
+        )}
         {children}
       </main>
     </div>

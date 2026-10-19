@@ -1,8 +1,18 @@
 import 'server-only';
 import { supabaseAdmin } from './supabase/admin';
 import { ApiError, isUuid } from './api.server';
-import { GommoError, gommoPost, toGommoImageRefs, VIDEO_STATUS, type GommoImageInfo, type GommoVideoInfo } from './gommo';
-import { gaiaCredits, getModel } from './models.server';
+import {
+  getProviderBalance,
+  GommoError,
+  gommoPost,
+  noteProviderSpend,
+  toGommoImageRefs,
+  VIDEO_STATUS,
+  type GommoImageInfo,
+  type GommoVideoInfo,
+} from './gommo';
+import { gaiaCredits, getModel, gommoCreditsFor } from './models.server';
+import { envNumber } from './env';
 import { preparePrompt } from './prompt.server';
 import { modeLabels, priceFor, resolveSelection, selectionFields } from './catalog';
 import { getBalance } from './credits.server';
@@ -305,6 +315,22 @@ async function insertGeneration(args: {
   return data as GenRow;
 }
 
+/**
+ * Chốt an toàn (founder chọn 19/10/2026): tài khoản Gommo (79ai) của GAIA không đủ tiền cho lượt này thì dừng ngay,
+ * trước khi trừ credit của người dùng, thay vì để Gommo từ chối rồi mới hoàn. `GAIA_PROVIDER_RESERVE` (credit Gommo,
+ * mặc định 0) giữ lại một khoản dự phòng. Không hỏi được số dư thì không chặn.
+ */
+async function ensureProviderBalance(gaia: number) {
+  const balance = await getProviderBalance();
+  if (balance == null) return;
+  const needed = gommoCreditsFor(gaia);
+  if (balance - needed < envNumber('GAIA_PROVIDER_RESERVE', 0)) {
+    console.error('[provider] số dư Gommo không đủ', { balance, needed });
+    throw new ApiError(503, 'provider_paused', 'GAIA đang tạm dừng nhận yêu cầu tạo mới. Credit của bạn chưa bị trừ. Bạn thử lại sau nhé.');
+  }
+  noteProviderSpend(needed);
+}
+
 export async function createGenerations(userId: string, req: CreateRequest): Promise<GenerationItem[]> {
   const kind: Kind = req.kind === 'video' ? 'video' : 'image';
   const prompt = cleanPrompt(req.prompt);
@@ -320,6 +346,7 @@ export async function createGenerations(userId: string, req: CreateRequest): Pro
   if ((await getBalance(userId)) < credits * quantity) {
     throw new ApiError(402, 'insufficient_credits', 'Không đủ credit. Bạn nạp thêm credit để tiếp tục.');
   }
+  await ensureProviderBalance(credits * quantity);
 
   const rows: GenRow[] = [];
   for (let i = 0; i < quantity; i++) {
@@ -660,6 +687,7 @@ export async function editImage(
   if ((await getBalance(userId)) < credits * quantity) {
     throw new ApiError(402, 'insufficient_credits', 'Không đủ credit. Bạn nạp thêm credit để tiếp tục.');
   }
+  await ensureProviderBalance(credits * quantity);
   const base64Image = await fetchAsDataUrl(source.url!);
   const rows: GenRow[] = [];
   for (let i = 0; i < quantity; i++) {

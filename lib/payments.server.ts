@@ -2,7 +2,8 @@ import 'server-only';
 import QRCode from 'qrcode';
 import { supabaseAdmin } from './supabase/admin';
 import { ApiError } from './api.server';
-import { isPayosConfigured, siteUrl } from './env';
+import { envNumber, isPayosConfigured, siteUrl } from './env';
+import { getProviderBalance } from './gommo';
 import { cancelPaymentLink, createPaymentLink, getPaymentInfo } from './payos.server';
 import { topupCredits, validateTopupAmount } from './topup-rules';
 import { bankName } from './banks';
@@ -61,6 +62,16 @@ export async function createTopup(userId: string, amountVnd: number, origin: str
   if (invalid) throw new ApiError(400, 'bad_amount', invalid);
   if (!isPayosConfigured()) {
     throw new ApiError(503, 'payment_not_configured', 'Thanh toán đang được thiết lập. Bạn quay lại sau nhé.');
+  }
+  // Chốt an toàn: tài khoản Gommo (79ai) sắp cạn thì không nhận tiền, để không ai trả tiền mà không tạo được gì.
+  // Bật bằng GAIA_TOPUP_MIN_PROVIDER_BALANCE (credit Gommo); mặc định 0 = tắt, để thử PayOS trên máy.
+  const minProvider = envNumber('GAIA_TOPUP_MIN_PROVIDER_BALANCE', 0);
+  if (minProvider > 0) {
+    const balance = await getProviderBalance();
+    if (balance != null && balance < minProvider) {
+      console.error('[provider] tạm dừng nạp credit: số dư Gommo thấp', { balance, minProvider });
+      throw new ApiError(503, 'topup_paused', 'GAIA đang tạm dừng nạp credit. Bạn chưa bị trừ tiền. Bạn thử lại sau nhé.');
+    }
   }
   const { base, bonus } = topupCredits(amountVnd);
 

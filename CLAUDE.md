@@ -102,6 +102,15 @@ Server code uses the secret-key client `supabaseAdmin()` (`lib/supabase/admin.ts
   - `resolveSelection` snaps a selection to a combination that is actually sold.
 - `createGenerations` re-checks the selection server-side and **rejects (409) any request whose `expectedCredits` differs from the server price**. The user is never charged an amount the UI did not show.
 
+### Provider balance guard (2026-10-19)
+
+- `getProviderBalance()` (`lib/gommo.ts`) reads the 79ai `credits_ai` balance and caches it for 20 s. `noteProviderSpend` decrements the cached value after each accepted job.
+- `createGenerations` and `editImage` call `ensureProviderBalance` after the user's own balance check and before any credit is charged.
+  - If the balance after the job would fall below `GAIA_PROVIDER_RESERVE` (default 0), the request fails with 503 `provider_paused`: "GAIA đang tạm dừng nhận yêu cầu tạo mới. Credit của bạn chưa bị trừ."
+  - If the balance can't be read, nothing is blocked; Gommo's own rejection plus the auto-refund still apply.
+- `createTopup` refuses with 503 `topup_paused` when `GAIA_TOPUP_MIN_PROVIDER_BALANCE` is above 0 and the balance is below it. The default 0 keeps local PayOS testing possible.
+- Verified on 2026-10-19 with a 2,750 balance: a 90-credit VEO request got 503 and the wallet was unchanged.
+
 ### Generation lifecycle
 
 `lib/generations.server.ts` drives each job:
