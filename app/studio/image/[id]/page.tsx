@@ -5,6 +5,7 @@ import { getCatalog } from '@/lib/models.server';
 import { getBalance } from '@/lib/credits.server';
 import { getDetail } from '@/lib/generations.server';
 import { isUuid } from '@/lib/api.server';
+import { isPrivateGroup } from '@/lib/access';
 import { CreditProvider } from '@/components/CreditContext';
 import { ToastProvider } from '@/components/Toasts';
 import { ImageDetail } from '@/components/detail/ImageDetail';
@@ -26,7 +27,7 @@ export default async function ImagePage({ params }: { params: Promise<{ id: stri
   if (detail.root.kind === 'video') redirect(`/studio/video/${detail.root.id}`);
 
   return (
-    <CreditProvider initial={balance}>
+    <CreditProvider initial={balance} canTopup={!isPrivateGroup()}>
       <ToastProvider>
         <ImageDetail
           initialRoot={detail.root}

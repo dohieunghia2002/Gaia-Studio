@@ -69,7 +69,7 @@ function AccountMenu({ profile }: { profile: Profile }) {
 }
 
 function CreditButton() {
-  const { balance } = useCredit();
+  const { balance, canTopup } = useCredit();
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<LedgerEntry[] | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -126,9 +126,11 @@ function CreditButton() {
             </ul>
           )}
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <Link href="/credit" className="primary" style={{ flex: 1, height: 40, fontSize: 13 }} onClick={close}>
-              Nạp credit
-            </Link>
+            {canTopup && (
+              <Link href="/credit" className="primary" style={{ flex: 1, height: 40, fontSize: 13 }} onClick={close}>
+                Nạp credit
+              </Link>
+            )}
             <Link href="/credit#history" className="ghost" style={{ flex: 1, height: 40, fontSize: 13 }} onClick={close}>
               Xem tất cả
             </Link>

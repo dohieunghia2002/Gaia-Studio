@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import { Icon } from '../Icon';
 import { useDismiss } from '../useDismiss';
+import { useCredit } from '../CreditContext';
 import { FIELD_LABEL, modeLabels, priceFor, resolveSelection, selectionFields } from '@/lib/catalog';
 import { aspectOf } from '@/lib/client/upload';
 import { fmtNumber } from '@/lib/format';
@@ -254,6 +255,7 @@ export function Composer({
   const { model, sel, unit, qty, total } = draftCost(catalog, draft);
   const kind = draft.kind;
   const lacking = total != null && total > balance;
+  const { canTopup } = useCredit();
   const uploading = Boolean(draft.start?.uploading || draft.end?.uploading || draft.refs.some((r) => r.uploading));
   const needsStart = kind === 'video' && Boolean(model?.frames.startRequired) && !draft.start;
   // Có model chỉ nhận Start + End frame ở một số mode (vd. Kling 2.5: Professional).
@@ -475,7 +477,7 @@ export function Composer({
                 {fmtNumber(total!)} credit{qty > 1 ? ` (${qty} × ${fmtNumber(unit)})` : ''}
               </span>
             )}
-            {lacking && (
+            {lacking && canTopup && (
               <Link href="/credit" className="link-btn">
                 Nạp credit
               </Link>

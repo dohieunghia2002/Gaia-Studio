@@ -76,7 +76,7 @@ export function ImageDetail({
 }) {
   const router = useRouter();
   const { push } = useToasts();
-  const { balance, setBalance } = useCredit();
+  const { balance, setBalance, canTopup } = useCredit();
   const [versions, setVersions] = useState(initialVersions);
   const [activeId, setActiveId] = useState(
     () => [...initialVersions].reverse().find((v) => v.status === 'success')?.id ?? initialRoot.id,
@@ -121,7 +121,7 @@ export function ImageDetail({
 
   const fail = (err: unknown) => {
     if (err instanceof ClientError && err.code === 'insufficient_credits') {
-      push({ kind: 'error', title: err.message, action: { label: 'Nạp credit', href: '/credit' } });
+      push({ kind: 'error', title: err.message, action: canTopup ? { label: 'Nạp credit', href: '/credit' } : undefined });
     } else {
       push({ kind: 'error', title: err instanceof Error ? err.message : 'Có lỗi xảy ra' });
     }
@@ -306,7 +306,7 @@ export function ImageDetail({
                     {fmtNumber(editTotal)} credit
                   </span>
                 )}
-                {lackingEdit && (
+                {lackingEdit && canTopup && (
                   <Link href="/credit" className="link-btn">
                     Nạp credit
                   </Link>

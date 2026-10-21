@@ -68,6 +68,30 @@ select gaia_grant((select id from auth.users where email = 'email-cua-ban@gmail.
 
 > Mỗi lần bấm **Tạo** là gọi Gommo thật và **tốn credit thật** trên tài khoản 79ai.
 
+## Chế độ nhóm riêng (đang dùng từ 21/10/2026)
+
+GAIA hiện chỉ cho bạn và vài người bạn dùng, không bán credit. Bật bằng `GAIA_ALLOWED_EMAILS` trong `.env` (máy bạn đã đặt sẵn email của bạn):
+
+- Chỉ email trong danh sách đăng nhập được. Email khác đăng nhập Google xong sẽ bị đăng xuất, kèm thông báo "Email này chưa được mời dùng GAIA".
+- Phần Nạp tiền tắt. Trang Credit hiện "Credit do chủ nhóm cấp". Trang đăng nhập dẫn tới **Quy ước dùng chung** (`/rules`) thay cho Điều khoản và Bảo mật.
+- `GAIA_MARKUP=1`: credit đúng giá gốc 79ai, 1 credit = 100đ, không lãi.
+
+**Thêm một người bạn:**
+
+1. Thêm email của họ vào `GAIA_ALLOWED_EMAILS`, các email cách nhau bằng dấu phẩy. Chạy trên máy thì khởi động lại `npm run dev`; trên Vercel thì sửa biến môi trường rồi **Redeploy**.
+2. Họ đăng nhập GAIA một lần để tạo tài khoản.
+3. Cấp credit cho họ trong Supabase → SQL Editor:
+
+```sql
+select gaia_grant((select id from auth.users where email = 'email-cua-ban-be@gmail.com'), 500, 'Chủ nhóm cấp');
+```
+
+**Gỡ một người:** xoá email khỏi danh sách. Lần tải trang tiếp theo, họ bị đăng xuất và không đăng nhập lại được. Dữ liệu của họ vẫn còn.
+
+**Góp chi phí:** nếu bạn bè muốn góp, họ chuyển thẳng cho bạn, đúng giá gốc, không qua web. Thu tiền trên web (PayOS) hoặc cộng lãi thì thành kinh doanh: phải đăng ký hộ kinh doanh và thông báo website (Nghị định 248/2026), và Vercel Hobby không còn dùng được.
+
+**Khi mở bán công khai:** để trống `GAIA_ALLOWED_EMAILS`, đặt lại `GAIA_MARKUP=1.5`, rồi làm Bước 6 (PayOS) và Bước 7.
+
 ## Bước 6 — Bật nạp tiền PayOS
 
 1. Đăng ký tại https://payos.vn, xác minh tài khoản (cá nhân dùng CCCD).
@@ -89,7 +113,7 @@ Thử thật trên máy: nạp mốc thấp nhất (20.000đ) bằng chính tài
    - `GAIA_TOPUP_MIN_PROVIDER_BALANCE`: số dư 79ai dưới mức này thì tạm dừng nạp credit, để không ai trả tiền mà không tạo được gì. Mặc định 0 (tắt, để thử PayOS trên máy). Khi mở thật nên đặt, ví dụ `100000`.
 3. **Điền trang Điều khoản và Bảo mật:** sửa `lib/legal.ts` (tên người vận hành, email hỗ trợ, độ tuổi), chốt các mục trong ngoặc vuông ở `app/terms/page.tsx` và `app/privacy/page.tsx`, rồi đặt `draft: false`.
 
-**Nơi host:** Vercel gói Hobby (miễn phí) chỉ cho dùng cá nhân, phi thương mại; GAIA nhận thanh toán nên cần gói Pro ($20/tháng) hoặc một nơi host khác cho phép dùng thương mại. Các bước với Vercel:
+**Nơi host:** Vercel gói Hobby (miễn phí) chỉ cho dùng cá nhân, phi thương mại. Vercel tính là thương mại khi web có "requesting or processing payment from visitors" (https://vercel.com/docs/limits/fair-use-guidelines). Ở chế độ nhóm riêng, web không thu tiền nên Hobby dùng được. Khi mở bán qua PayOS thì cần gói Pro ($20/tháng) hoặc một nơi host khác cho phép dùng thương mại. Các bước với Vercel:
 
 1. Import repo GitHub vào Vercel, chọn thư mục gốc `gaia-studio` (file `.env` không có trên GitHub).
 2. Khai báo các biến môi trường giống `.env`, đặt `NEXT_PUBLIC_SITE_URL` = tên miền thật.

@@ -304,7 +304,23 @@ function TopupPanel({ enabled, resume, onPaid }: { enabled: boolean; resume: Top
   );
 }
 
+/** Chế độ nhóm riêng (lib/access.ts): không nạp tiền trên web, chủ nhóm cấp credit. */
+function GrantPanel() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Credit do chủ nhóm cấp</h2>
+      <p className="muted" style={{ margin: 0 }}>
+        GAIA đang dùng riêng cho một nhóm nhỏ và không bán credit. Khi cần thêm credit, bạn nhắn chủ nhóm.
+      </p>
+      <Link href="/rules" className="link-btn" style={{ padding: 0, height: 28 }}>
+        Xem quy ước dùng chung
+      </Link>
+    </div>
+  );
+}
+
 function Ledger({ initial }: { initial: { entries: LedgerEntry[]; hasMore: boolean } }) {
+  const { canTopup } = useCredit();
   const [filter, setFilter] = useState<LedgerFilter>('all');
   const [order, setOrder] = useState<'desc' | 'asc'>('desc');
   const [entries, setEntries] = useState(initial.entries);
@@ -343,7 +359,7 @@ function Ledger({ initial }: { initial: { entries: LedgerEntry[]; hasMore: boole
                   load(f.key, order);
                 }}
               >
-                {f.label}
+                {f.key === 'topup' && !canTopup ? 'Được cấp' : f.label}
               </button>
             ))}
           </nav>
@@ -418,7 +434,7 @@ export function CreditPage({
   resume: TopupView | null;
   paymentsEnabled: boolean;
 }) {
-  const { balance, setBalance } = useCredit();
+  const { balance, setBalance, canTopup } = useCredit();
   const [summary, setSummary] = useState(initialSummary);
   const [ledger, setLedger] = useState(initialLedger);
   const [ledgerVersion, setLedgerVersion] = useState(0);
@@ -440,11 +456,11 @@ export function CreditPage({
       <main style={{ flex: 1, width: '100%', maxWidth: 1200, margin: '0 auto', padding: '32px 24px 64px' }}>
         <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.2, fontWeight: 700 }}>Credit</h1>
         <p className="muted" style={{ margin: '6px 0 0' }}>
-          Nạp credit và xem lại mọi giao dịch của bạn.
+          {canTopup ? 'Nạp credit và xem lại mọi giao dịch của bạn.' : 'Xem số dư và mọi giao dịch credit của bạn.'}
         </p>
         <div style={{ marginTop: 28, display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
-          <section className="panel" aria-label="Nạp credit" style={{ flex: '1 1 380px', minWidth: 0, padding: 24 }}>
-            <TopupPanel enabled={paymentsEnabled} resume={resume} onPaid={refresh} />
+          <section className="panel" aria-label={canTopup ? 'Nạp credit' : 'Cấp credit'} style={{ flex: '1 1 380px', minWidth: 0, padding: 24 }}>
+            {canTopup ? <TopupPanel enabled={paymentsEnabled} resume={resume} onPaid={refresh} /> : <GrantPanel />}
           </section>
           <div style={{ flex: '1.6 1 520px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
             <section className="panel" aria-label="Số dư" style={{ padding: 24 }}>
@@ -461,7 +477,7 @@ export function CreditPage({
                 </span>
               </div>
               <p className="muted" style={{ margin: '12px 0 0', fontSize: 13 }}>
-                Credit có hạn {CREDIT_VALIDITY_DAYS} ngày kể từ ngày nạp.
+                Credit có hạn {CREDIT_VALIDITY_DAYS} ngày kể từ ngày {canTopup ? 'nạp' : 'cấp'}.
                 {summary.nextExpiry && (
                   <>
                     {' '}

@@ -3,6 +3,7 @@ import { getProfileRow, pageSession, preferAuthError, toProfile } from '@/lib/au
 import { getCreditSummary, getLedger } from '@/lib/credits.server';
 import { getTopup } from '@/lib/payments.server';
 import { isPayosConfigured } from '@/lib/env';
+import { isPrivateGroup } from '@/lib/access';
 import { CreditProvider } from '@/components/CreditContext';
 import { ToastProvider } from '@/components/Toasts';
 import { CreditPage } from '@/components/credit/CreditPage';
@@ -29,7 +30,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ o
     resume?.status === 'paid' ? await Promise.all([getCreditSummary(userId), getLedger(userId)]) : [summary, ledger];
 
   return (
-    <CreditProvider initial={finalSummary.balance}>
+    <CreditProvider initial={finalSummary.balance} canTopup={!isPrivateGroup()}>
       <ToastProvider>
         <CreditPage
           profile={profile}

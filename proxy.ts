@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { fetchWithTimeout, isAuthUnavailable } from '@/lib/supabase/network';
 import { AUTH_UNAVAILABLE_HEADER } from '@/lib/auth-unavailable';
+import { isEmailAllowed, NOT_INVITED } from '@/lib/access';
 
 // Next 16: "proxy" thay cho "middleware". Mỗi request trang: làm mới phiên Supabase (ghi cookie mới
 // nếu token hết hạn) và chặn trang cần đăng nhập. API route tự kiểm tra đăng nhập.
@@ -44,6 +45,14 @@ export async function proxy(request: NextRequest) {
     // Phiên không còn thì getUser() xoá cookie phiên qua setAll ở trên.
     const { data } = await supabase.auth.getUser();
     if (!data.user) return response;
+    if (!isEmailAllowed(data.user.email)) {
+      // Nhóm riêng: email không (còn) trong danh sách. Xoá phiên trên máy này rồi ở lại trang đăng nhập, kèm lý do.
+      await supabase.auth.signOut({ scope: 'local' });
+      if (request.nextUrl.searchParams.get('error') === NOT_INVITED) return response;
+      const login = request.nextUrl.clone();
+      login.searchParams.set('error', NOT_INVITED);
+      return redirect(login);
+    }
     // Đã đăng nhập: về đúng trang người dùng định vào (vd. /credit), mặc định /studio.
     return redirect(internalUrl(request.nextUrl.searchParams.get('next'), request.url));
   }

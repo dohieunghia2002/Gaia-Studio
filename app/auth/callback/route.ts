@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createSupabaseServer } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/env';
 import { isAuthUnavailable } from '@/lib/supabase/network';
+import { isEmailAllowed, NOT_INVITED } from '@/lib/access';
 
 /** Google → Supabase → đây: đổi `code` lấy phiên đăng nhập rồi về trang người dùng định vào. */
 export async function GET(request: NextRequest) {
@@ -15,7 +16,12 @@ export async function GET(request: NextRequest) {
   let reason = '1';
   if (code && isSupabaseConfigured()) {
     const supabase = await createSupabaseServer();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && !isEmailAllowed(data.user?.email)) {
+      // Nhóm riêng: email chưa được mời thì không giữ phiên.
+      await supabase.auth.signOut({ scope: 'local' });
+      return NextResponse.redirect(`${origin}/login?error=${NOT_INVITED}`);
+    }
     if (!error) return NextResponse.redirect(`${origin}${next}`);
     console.error('[auth] đổi code lỗi', error.message);
     if (isAuthUnavailable(error)) reason = 'network';

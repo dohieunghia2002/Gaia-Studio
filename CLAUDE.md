@@ -111,6 +111,20 @@ Server code uses the secret-key client `supabaseAdmin()` (`lib/supabase/admin.ts
 - `createTopup` refuses with 503 `topup_paused` when `GAIA_TOPUP_MIN_PROVIDER_BALANCE` is above 0 and the balance is below it. The default 0 keeps local PayOS testing possible.
 - Verified on 2026-10-19 with a 2,750 balance: a 90-credit VEO request got 503 and the wallet was unchanged.
 
+### Private group mode (2026-10-21)
+
+The founder chose to run GAIA for themselves and a few invited friends, with no sales (legal reasons: selling needs a household-business registration and website notification under Decree 248/2026). `lib/access.ts` holds the switch.
+
+- `GAIA_ALLOWED_EMAILS` (comma-separated) non-empty turns the mode on. Empty means public mode: anyone with Google can sign in and top up via PayOS.
+- `isEmailAllowed` is enforced in three places:
+  - `/auth/callback` signs a non-invited user out right after the code exchange and sends them to `/login?error=not_invited`.
+  - `getUser()` returns null for a non-invited email, so pages redirect to /login and APIs return 401. This also covers an email removed from the list while its session is still alive.
+  - `proxy.ts` on `/login` signs that session out (`scope: 'local'`) and adds `?error=not_invited`.
+- Top-up is off: `/api/topups` POST returns 403 `topup_disabled`. `CreditProvider` gets `canTopup={!isPrivateGroup()}`; with it false, every "Nạp credit" link and toast action is hidden, and the Credit page shows "Credit do chủ nhóm cấp" instead of the top-up panel. The 402 `insufficient_credits` message says to ask the group owner.
+- Credits are granted with `gaia_grant`. The local `.env` sets `GAIA_MARKUP=1`, so credits match 79ai cost (1 credit = 100đ).
+- `/rules` ("Quy ước dùng chung") replaces Terms/Privacy on the login page. `/terms` and `/privacy` stay as drafts for a future public launch.
+- Verified on 2026-10-21 against dev :3100 with two temporary users created by magic link and deleted afterwards: an invited user gets 200 on pages and the API and 403 on top-up; a non-invited user gets 401 from the API and a redirect to /login, and is then signed out. The Google callback path itself was not exercised.
+
 ### Generation lifecycle
 
 `lib/generations.server.ts` drives each job:

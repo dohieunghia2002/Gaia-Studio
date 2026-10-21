@@ -9,6 +9,7 @@ import { supabaseAdmin } from './supabase/admin';
 import { isAuthUnavailable } from './supabase/network';
 import { AUTH_UNAVAILABLE_HEADER, AuthUnavailableError } from './auth-unavailable';
 import { ApiError } from './api.server';
+import { isEmailAllowed } from './access';
 import type { Profile } from './types';
 
 /**
@@ -27,6 +28,9 @@ export async function getUser(): Promise<User | null> {
     console.error('[auth] không hỏi được Supabase', error?.message);
     throw new AuthUnavailableError();
   }
+  // Nhóm riêng: email đã bị gỡ khỏi danh sách thì coi như chưa đăng nhập. Trang chuyển sang /login,
+  // ở đó proxy.ts xoá phiên và báo lý do.
+  if (data.user && !isEmailAllowed(data.user.email)) return null;
   return data.user ?? null;
 }
 

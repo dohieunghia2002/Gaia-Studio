@@ -4,6 +4,7 @@ import { getCatalog } from '@/lib/models.server';
 import { getBalance } from '@/lib/credits.server';
 import { getDetail, listLibrary, trashCount } from '@/lib/generations.server';
 import { isUuid } from '@/lib/api.server';
+import { isPrivateGroup } from '@/lib/access';
 import { CreditProvider } from '@/components/CreditContext';
 import { ToastProvider } from '@/components/Toasts';
 import { StudioApp } from '@/components/studio/StudioApp';
@@ -41,7 +42,7 @@ export default async function StudioPage({
   const profile = toProfile(user, profileRow);
 
   return (
-    <CreditProvider initial={balance}>
+    <CreditProvider initial={balance} canTopup={!isPrivateGroup()}>
       <ToastProvider>
         <StudioApp
           profile={profile}

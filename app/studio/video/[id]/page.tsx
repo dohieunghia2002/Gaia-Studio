@@ -6,6 +6,7 @@ import { getBalance } from '@/lib/credits.server';
 import { getDetail } from '@/lib/generations.server';
 import { isUuid } from '@/lib/api.server';
 import { priceFor, resolveSelection, selectionFields } from '@/lib/catalog';
+import { isPrivateGroup } from '@/lib/access';
 import { CreditProvider } from '@/components/CreditContext';
 import { ToastProvider } from '@/components/Toasts';
 import { VideoDetail } from '@/components/detail/VideoDetail';
@@ -37,7 +38,7 @@ export default async function VideoPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <CreditProvider initial={balance}>
+    <CreditProvider initial={balance} canTopup={!isPrivateGroup()}>
       <ToastProvider>
         <VideoDetail initialItem={item} model={model} rerunCredits={rerunCredits} />
       </ToastProvider>

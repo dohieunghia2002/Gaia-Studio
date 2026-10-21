@@ -139,7 +139,7 @@ export function StudioApp({
   reuse: GenerationItem | null;
   initialPrompt: { kind: Kind; prompt: string } | null;
 }) {
-  const { balance, setBalance } = useCredit();
+  const { balance, setBalance, canTopup } = useCredit();
   const { push } = useToasts();
   const [catalog, setCatalog] = useState<Catalog>(initialCatalog);
   const [items, setItems] = useState<LibraryItem[]>(initialItems);
@@ -556,7 +556,7 @@ export function StudioApp({
   const handleError = (err: unknown) => {
     if (err instanceof ClientError) {
       if (err.code === 'insufficient_credits') {
-        push({ kind: 'error', title: err.message, action: { label: 'Nạp credit', href: '/credit' } });
+        push({ kind: 'error', title: err.message, action: canTopup ? { label: 'Nạp credit', href: '/credit' } : undefined });
         return;
       }
       if (err.code === 'price_changed' || err.code === 'params_changed' || err.code === 'model_unavailable') refreshCatalog();

@@ -109,7 +109,7 @@ export function VideoDetail({
 }) {
   const router = useRouter();
   const { push } = useToasts();
-  const { balance, setBalance } = useCredit();
+  const { balance, setBalance, canTopup } = useCredit();
   const [item, setItem] = useState(initialItem);
   const [busy, setBusy] = useState(false);
   const running = isRunning(item.status);
@@ -139,7 +139,7 @@ export function VideoDetail({
       router.push('/studio');
     } catch (err) {
       if (err instanceof ClientError && err.code === 'insufficient_credits') {
-        push({ kind: 'error', title: err.message, action: { label: 'Nạp credit', href: '/credit' } });
+        push({ kind: 'error', title: err.message, action: canTopup ? { label: 'Nạp credit', href: '/credit' } : undefined });
       } else push({ kind: 'error', title: err instanceof Error ? err.message : 'Có lỗi xảy ra' });
       setBusy(false);
     }

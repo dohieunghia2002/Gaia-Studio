@@ -17,6 +17,7 @@ import { preparePrompt } from './prompt.server';
 import { modeLabels, priceFor, resolveSelection, selectionFields } from './catalog';
 import { getBalance } from './credits.server';
 import { TRASH_DAYS } from './trash';
+import { isPrivateGroup } from './access';
 import type {
   CatalogModel,
   GenerationInputs,
@@ -28,6 +29,17 @@ import type {
   MediaRef,
   Selection,
 } from './types';
+
+/** 402 khi không đủ credit. Nhóm riêng không có nạp tiền, nên chỉ cách xin thêm. */
+function insufficientCredits() {
+  return new ApiError(
+    402,
+    'insufficient_credits',
+    isPrivateGroup()
+      ? 'Không đủ credit. Bạn nhắn chủ nhóm để được cấp thêm.'
+      : 'Không đủ credit. Bạn nạp thêm credit để tiếp tục.',
+  );
+}
 
 const MAX_PROMPT = 2000;
 const MAX_QUANTITY = 4;
@@ -308,7 +320,7 @@ async function insertGeneration(args: {
   });
   if (error) {
     if (error.message?.includes('INSUFFICIENT_CREDITS')) {
-      throw new ApiError(402, 'insufficient_credits', 'Không đủ credit. Bạn nạp thêm credit để tiếp tục.');
+      throw insufficientCredits();
     }
     throw error;
   }
@@ -344,7 +356,7 @@ export async function createGenerations(userId: string, req: CreateRequest): Pro
   const quantity = kind === 'image' ? Math.min(Math.max(Math.floor(Number(req.quantity) || 1), 1), MAX_QUANTITY) : 1;
 
   if ((await getBalance(userId)) < credits * quantity) {
-    throw new ApiError(402, 'insufficient_credits', 'Không đủ credit. Bạn nạp thêm credit để tiếp tục.');
+    throw insufficientCredits();
   }
   await ensureProviderBalance(credits * quantity);
 
@@ -685,7 +697,7 @@ export async function editImage(
   }
   const quantity = Math.min(Math.max(Math.floor(Number(req.quantity) || 1), 1), MAX_QUANTITY);
   if ((await getBalance(userId)) < credits * quantity) {
-    throw new ApiError(402, 'insufficient_credits', 'Không đủ credit. Bạn nạp thêm credit để tiếp tục.');
+    throw insufficientCredits();
   }
   await ensureProviderBalance(credits * quantity);
   const base64Image = await fetchAsDataUrl(source.url!);
