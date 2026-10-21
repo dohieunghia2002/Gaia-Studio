@@ -15,6 +15,7 @@ import {
   TOPUP_PRESETS,
   topupCredits,
   validateTopupAmount,
+  VND_PER_CREDIT,
 } from '@/lib/topup-rules';
 import type { CreditSummary, LedgerEntry, LedgerKind, Profile, TopupView } from '@/lib/types';
 
@@ -255,7 +256,9 @@ function TopupPanel({ enabled, resume, onPaid }: { enabled: boolean; resume: Top
       <div className="summary-box">
         <div>
           <span>Tỉ giá</span>
-          <span className="mono">1.000đ = 10 credit</span>
+          <span className="mono">
+            {fmtNumber(1000)}đ = {fmtNumber(1000 / VND_PER_CREDIT)} credit
+          </span>
         </div>
         <div>
           <span>Thưởng</span>

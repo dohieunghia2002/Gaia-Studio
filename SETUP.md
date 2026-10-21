@@ -17,7 +17,7 @@ Project Supabase cũ trong `.env` đã chết (tên miền không còn tồn t�
 ## Bước 2 — Tạo bảng và hàm credit
 
 1. Trong project → **SQL Editor** → **New query**.
-2. Mở file `supabase/migrations/0001_gaia_init.sql`, sao chép **toàn bộ**, dán vào rồi bấm **Run**.
+2. Mở file `supabase/migrations/0001_gaia_init.sql`, sao chép **toàn bộ**, dán vào rồi bấm **Run**. Làm tiếp như vậy với `0002_credit_unit_vnd.sql`.
 3. Thấy "Success" là xong. File này tạo bảng thư viện, ví credit (lô 90 ngày, tiêu lô cũ trước), lịch sử giao dịch, đơn nạp tiền, và chặn người dùng tự cộng credit.
 
 > File SQL này đã chạy thử trên Postgres với 34 kiểm thử: trừ, hoàn, hết hạn, nạp tiền, quyền truy cập. Tất cả đều qua.
@@ -63,7 +63,7 @@ Mở http://localhost:3000 → **Đăng nhập** → chọn tài khoản Google.
 **Tặng credit cho chính mình để thử tạo ảnh/video** (khi chưa có PayOS): vào Supabase → SQL Editor, chạy:
 
 ```sql
-select gaia_grant((select id from auth.users where email = 'email-cua-ban@gmail.com'), 500, 'Credit dùng thử');
+select gaia_grant((select id from auth.users where email = 'email-cua-ban@gmail.com'), 50000, 'Credit dùng thử');
 ```
 
 > Mỗi lần bấm **Tạo** là gọi Gommo thật và **tốn credit thật** trên tài khoản 79ai.
@@ -74,7 +74,7 @@ GAIA hiện chỉ cho bạn và vài người bạn dùng, không bán credit. B
 
 - Chỉ email trong danh sách đăng nhập được. Email khác đăng nhập Google xong sẽ bị đăng xuất, kèm thông báo "Email này chưa được mời dùng GAIA".
 - Phần Nạp tiền tắt. Trang Credit hiện "Credit do chủ nhóm cấp". Trang đăng nhập dẫn tới **Quy ước dùng chung** (`/rules`) thay cho Điều khoản và Bảo mật.
-- `GAIA_MARKUP=1`: credit đúng giá gốc 79ai, 1 credit = 100đ, không lãi.
+- `GAIA_MARKUP=1`: credit đúng giá gốc 79ai, không lãi. 1 credit = 1đ, nên giá một lượt tạo bằng đúng số tiền 79ai bị trừ.
 
 **Thêm một người bạn:**
 
@@ -83,7 +83,7 @@ GAIA hiện chỉ cho bạn và vài người bạn dùng, không bán credit. B
 3. Cấp credit cho họ trong Supabase → SQL Editor:
 
 ```sql
-select gaia_grant((select id from auth.users where email = 'email-cua-ban-be@gmail.com'), 500, 'Chủ nhóm cấp');
+select gaia_grant((select id from auth.users where email = 'email-cua-ban-be@gmail.com'), 50000, 'Chủ nhóm cấp');
 ```
 
 **Gỡ một người:** xoá email khỏi danh sách. Lần tải trang tiếp theo, họ bị đăng xuất và không đăng nhập lại được. Dữ liệu của họ vẫn còn.

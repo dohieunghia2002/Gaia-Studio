@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage } from '@/components/LegalPage';
 import { LEGAL } from '@/lib/legal';
-import { fmtVnd } from '@/lib/format';
-import { CREDIT_VALIDITY_DAYS, MAX_TOPUP_VND, MIN_TOPUP_VND } from '@/lib/topup-rules';
+import { fmtNumber, fmtVnd } from '@/lib/format';
+import { CREDIT_VALIDITY_DAYS, MAX_TOPUP_VND, MIN_TOPUP_VND, VND_PER_CREDIT } from '@/lib/topup-rules';
 import { TRASH_DAYS } from '@/lib/trash';
 
 export const metadata: Metadata = { title: 'Điều khoản sử dụng' };
@@ -26,7 +26,10 @@ export default function TermsPage() {
 
       <h2>2. Credit và nạp tiền</h2>
       <ul>
-        <li>1.000đ = 10 credit. Mỗi lần nạp từ {fmtVnd(MIN_TOPUP_VND)} đến {fmtVnd(MAX_TOPUP_VND)}, là bội số của 1.000đ.</li>
+        <li>
+          {fmtNumber(1000)}đ = {fmtNumber(1000 / VND_PER_CREDIT)} credit. Mỗi lần nạp từ {fmtVnd(MIN_TOPUP_VND)} đến{' '}
+          {fmtVnd(MAX_TOPUP_VND)}, là bội số của 1.000đ.
+        </li>
         <li>Nạp từ 200.000đ được thưởng 5% credit, từ 500.000đ được thưởng 10%.</li>
         <li>Credit có hạn {CREDIT_VALIDITY_DAYS} ngày kể từ ngày nạp. Credit sắp hết hạn được dùng trước. Credit hết hạn không còn dùng được.</li>
         <li>Nạp tiền bằng chuyển khoản ngân hàng hoặc mã QR qua cổng thanh toán PayOS. Credit được cộng khi giao dịch được xác nhận.</li>

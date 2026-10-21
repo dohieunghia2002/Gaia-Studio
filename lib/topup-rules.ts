@@ -1,7 +1,9 @@
-// Quy tắc nạp credit (đã chốt 2026-10-06): 1.000đ = 10 credit, tối thiểu 20.000đ,
-// nạp từ 200.000đ thưởng 5%, từ 500.000đ thưởng 10%, credit có hạn 90 ngày kể từ ngày nạp.
+// Quy tắc nạp credit (đã chốt 2026-10-06): tối thiểu 20.000đ, nạp từ 200.000đ thưởng 5%, từ 500.000đ thưởng 10%,
+// credit có hạn 90 ngày kể từ ngày nạp.
+// Đơn vị: 1 credit = 1đ (1.000đ = 1.000 credit), đổi ngày 21/10/2026 cho dễ hiểu. Trước đó 1 credit = 100đ;
+// supabase/migrations/0002_credit_unit_vnd.sql nhân số credit đã lưu lên 100 lần.
 
-export const VND_PER_CREDIT = 100;
+export const VND_PER_CREDIT = 1;
 export const MIN_TOPUP_VND = 20_000;
 export const MAX_TOPUP_VND = 50_000_000;
 export const TOPUP_STEP_VND = 1_000;

@@ -94,7 +94,8 @@ Server code uses the secret-key client `supabaseAdmin()` (`lib/supabase/admin.ts
 
 - `lib/models.server.ts` fetches `/ai/models`, curates the list, converts prices to GAIA credits and caches the result in memory for 5 minutes.
   - Curation: video models need `startText` and must not be edit, lipsync, motion, upscale or per-second models. Image models must have a ratio other than `auto`.
-  - Conversion: `ceil(gommo × GAIA_COST_PER_GOMMO_CREDIT × GAIA_MARKUP ÷ 100)`.
+  - Conversion: `ceil(gommo × GAIA_COST_PER_GOMMO_CREDIT × GAIA_MARKUP ÷ VND_PER_CREDIT)`.
+  - Since 2026-10-21, 1 credit = 1đ (`VND_PER_CREDIT = 1` in `lib/topup-rules.ts`); it was 100đ before. `supabase/migrations/0002_credit_unit_vnd.sql` multiplies every stored credit amount by 100 under an exclusive lock, and records itself in `gaia_migrations` so a second run is a no-op. It was verified on PGlite (balances, ledger, allocations, payments ×100, credit functions still correct afterwards). Gommo-unit values (`gommo_cost`, `GAIA_PROVIDER_RESERVE`) are unchanged.
   - Allowlist: only models in `VERIFIED_MODELS` are sold. That includes models Gommo adds later, which stay hidden until tested. Each entry also switches on only the verified extras: `refs` (Reference images), `edit` (Sửa ảnh), `start` and `end` (Start/End frame). The catalog exposes these as `maxReferences`, `edit` and `frames`.
   - Founder controls: `VERIFIED_MODELS`, `MODEL_ORDER` and `FEATURED_MODELS`. The first available model in `MODEL_ORDER` is the composer default.
 - `lib/catalog.ts` is shared by client and server.
@@ -121,7 +122,7 @@ The founder chose to run GAIA for themselves and a few invited friends, with no 
   - `getUser()` returns null for a non-invited email, so pages redirect to /login and APIs return 401. This also covers an email removed from the list while its session is still alive.
   - `proxy.ts` on `/login` signs that session out (`scope: 'local'`) and adds `?error=not_invited`.
 - Top-up is off: `/api/topups` POST returns 403 `topup_disabled`. `CreditProvider` gets `canTopup={!isPrivateGroup()}`; with it false, every "Nạp credit" link and toast action is hidden, and the Credit page shows "Credit do chủ nhóm cấp" instead of the top-up panel. The 402 `insufficient_credits` message says to ask the group owner.
-- Credits are granted with `gaia_grant`. The local `.env` sets `GAIA_MARKUP=1`, so credits match 79ai cost (1 credit = 100đ).
+- Credits are granted with `gaia_grant`. The local `.env` sets `GAIA_MARKUP=1`, so a GAIA credit equals a Gommo credit (1đ of 79ai cost).
 - `/rules` ("Quy ước dùng chung") replaces Terms/Privacy on the login page. `/terms` and `/privacy` stay as drafts for a future public launch.
 - Verified on 2026-10-21 against dev :3100 with two temporary users created by magic link and deleted afterwards: an invited user gets 200 on pages and the API and 403 on top-up; a non-invited user gets 401 from the API and a redirect to /login, and is then signed out. The Google callback path itself was not exercised.
 
@@ -193,7 +194,7 @@ Prompt translation sits behind `preparePrompt()` (`lib/prompt.server.ts`). For n
 - `createTopup` inserts the `payments` row first, then creates the payment link, then renders the VietQR string as SVG.
 - `getTopup` polls PayOS while an order is pending, so credits arrive even without a webhook. This is useful locally.
 - `/api/payos/webhook` verifies the signature and applies the top-up.
-- Rules (1.000đ = 10 credit, minimum 20.000đ, +5% bonus from 200k, +10% from 500k) live in `lib/topup-rules.ts`.
+- Rules (1.000đ = 1.000 credit, minimum 20.000đ, +5% bonus from 200k, +10% from 500k) live in `lib/topup-rules.ts`.
 
 ### UI
 

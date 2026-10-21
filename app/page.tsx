@@ -4,6 +4,7 @@ import { Icon, LogoMark } from '@/components/Icon';
 import { HomePrompt } from '@/components/home/HomePrompt';
 import { SampleMedia } from '@/components/SampleMedia';
 import { getUser } from '@/lib/auth.server';
+import { isPrivateGroup } from '@/lib/access';
 import { FEATURED_MODELS, getCatalog } from '@/lib/models.server';
 import { hasSample, promptHref, ratioValue, SUGGESTIONS } from '@/lib/suggestions';
 import { CREDIT_VALIDITY_DAYS, MIN_TOPUP_VND, VND_PER_CREDIT } from '@/lib/topup-rules';
@@ -31,6 +32,8 @@ export default async function Home() {
   const others = models.length - lead.length;
   const samples = SUGGESTIONS.filter(hasSample);
   const examples = EXAMPLE_PROMPTS.map((i) => SUGGESTIONS[i]).filter(Boolean);
+  // Nhóm riêng không bán credit: không nhắc tới nạp tiền.
+  const privateGroup = isPrivateGroup();
 
   return (
     <div className="home">
@@ -114,11 +117,15 @@ export default async function Home() {
             <dl className="facts">
               <div>
                 <dt>{fmtNumber(1000)}đ = {fmtNumber(1000 / VND_PER_CREDIT)} credit</dt>
-                <dd>Nạp tối thiểu {fmtVnd(MIN_TOPUP_VND)}, quét mã QR bằng app ngân hàng.</dd>
+                <dd>
+                  {privateGroup
+                    ? 'GAIA đang dùng riêng cho một nhóm nhỏ. Credit do chủ nhóm cấp, không bán trên web.'
+                    : `Nạp tối thiểu ${fmtVnd(MIN_TOPUP_VND)}, quét mã QR bằng app ngân hàng.`}
+                </dd>
               </div>
               <div>
                 <dt>Dùng trong {CREDIT_VALIDITY_DAYS} ngày</dt>
-                <dd>Tính từ ngày nạp. Credit sắp hết hạn được dùng trước.</dd>
+                <dd>Tính từ ngày {privateGroup ? 'cấp' : 'nạp'}. Credit sắp hết hạn được dùng trước.</dd>
               </div>
               <div>
                 <dt>Lỗi thì hoàn credit</dt>

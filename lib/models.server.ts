@@ -2,10 +2,12 @@ import 'server-only';
 import { gommoPost } from './gommo';
 import type { CatalogModel, Kind, Option, PriceRow } from './types';
 import { formatOptionValue, ratioLabel } from './catalog';
+import { VND_PER_CREDIT } from './topup-rules';
 
 // ── Giá GAIA ──
-// credit GAIA = ceil(credit Gommo × giá vốn mỗi credit Gommo (đ) × hệ số lời ÷ 100đ)
-// Mặc định: ~1đ/credit Gommo qua 79ai, lời 50% → VEO 3.1 Lite 720p (800) = 12 credit.
+// credit GAIA = ceil(credit Gommo × giá vốn mỗi credit Gommo (đ) × hệ số lời ÷ VND_PER_CREDIT)
+// Mặc định: ~1đ/credit Gommo qua 79ai, 1 credit GAIA = 1đ, lời 50% → VEO 3.1 Lite 720p (800) = 1.200 credit.
+// Nhóm riêng đặt GAIA_MARKUP=1 → credit GAIA bằng đúng credit Gommo.
 
 function costPerGommoCredit(): number {
   const v = Number(process.env.GAIA_COST_PER_GOMMO_CREDIT ?? 1);
@@ -19,13 +21,13 @@ function markup(): number {
 
 export function gaiaCredits(gommoCredits: number): number {
   if (!Number.isFinite(gommoCredits) || gommoCredits <= 0) return 0;
-  return Math.ceil((gommoCredits * costPerGommoCredit() * markup()) / 100);
+  return Math.ceil((gommoCredits * costPerGommoCredit() * markup()) / VND_PER_CREDIT);
 }
 
 /** Chiều ngược của gaiaCredits: credit Gommo tối đa một mức giá GAIA có thể tốn (làm tròn lên). */
 export function gommoCreditsFor(gaia: number): number {
   if (!Number.isFinite(gaia) || gaia <= 0) return 0;
-  return Math.ceil((gaia * 100) / (costPerGommoCredit() * markup()));
+  return Math.ceil((gaia * VND_PER_CREDIT) / (costPerGommoCredit() * markup()));
 }
 
 // ── Danh mục ──
