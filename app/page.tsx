@@ -170,12 +170,20 @@ export default async function Home() {
         <div className="home-wrap faint" style={{ paddingTop: 28, paddingBottom: 28, fontSize: 13, display: 'flex', flexWrap: 'wrap', gap: '8px 24px', justifyContent: 'space-between' }}>
           <span>© 2026 GAIA AI</span>
           <span style={{ display: 'flex', gap: 20 }}>
-            <Link href="/terms" className="faint">
-              Điều khoản sử dụng
-            </Link>
-            <Link href="/privacy" className="faint">
-              Chính sách bảo mật
-            </Link>
+            {privateGroup ? (
+              <Link href="/rules" className="faint">
+                Quy ước dùng chung
+              </Link>
+            ) : (
+              <>
+                <Link href="/terms" className="faint">
+                  Điều khoản sử dụng
+                </Link>
+                <Link href="/privacy" className="faint">
+                  Chính sách bảo mật
+                </Link>
+              </>
+            )}
           </span>
         </div>
       </footer>
