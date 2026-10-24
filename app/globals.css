@@ -60,7 +60,19 @@ img, video { display: block; }
 .lib-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 8px 32px 0; border-bottom: 1px solid #1c1c19; }
 .lib-main { flex: 1; padding: 0 32px 48px; }
 .group-title { margin: 24px 0 12px; font-size: 13px; font-weight: 500; color: #a8a399; }
-.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+/* Tiêu đề ngày + nút trang (mỗi ngày 8 mục một trang). min-height giữ mọi tiêu đề cao bằng nhau dù có nút trang hay không. */
+.group-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; min-height: 32px; margin: 24px 0 12px; }
+.group-head .group-title { margin: 0; }
+.group-count { font-weight: 400; color: #8c877d; }
+.pager { display: flex; align-items: center; gap: 2px; }
+.pager-btn { min-width: 32px; height: 32px; padding: 0 6px; border: 0; border-radius: 8px; background: transparent; color: #a8a399; font-family: var(--font-mono); font-size: 13px; display: inline-flex; align-items: center; justify-content: center; transition: background-color .12s, color .12s; }
+.pager-btn:hover:not(:disabled) { background: #1f1f1c; color: #edebe6; }
+.pager-btn[aria-current='page'] { background: #2a2a26; color: #edebe6; font-weight: 500; }
+.pager-btn:disabled:not([aria-current='page']) { opacity: .35; cursor: default; }
+.pager-gap { min-width: 20px; text-align: center; color: #8c877d; font-size: 13px; }
+/* Tối đa 4 cột: 2 hàng luôn là 8 mục, đúng một trang. Màn hình hẹp tự xuống 3, 2, 1 cột. */
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(max(280px, calc((100% - 48px) / 4)), 1fr)); gap: 16px; }
+.lib-grid.busy { opacity: .5; pointer-events: none; transition: opacity .15s; }
 .card { display: flex; flex-direction: column; position: relative; border-radius: 12px; overflow: hidden; background: #181816; border: 1px solid #262622; transition: border-color .15s; }
 .card:hover, .card:focus-within { border-color: #3a3a34; }
 .card > a { display: flex; flex-direction: column; flex: 1; }

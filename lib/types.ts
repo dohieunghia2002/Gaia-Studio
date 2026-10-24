@@ -85,6 +85,15 @@ export interface GenerationItem {
   deletedAt: string | null;
 }
 
+/** Một ngày trong thư viện: tổng số mục của ngày đó (theo bộ lọc) và các mục của trang đang xem. */
+export interface LibraryDay {
+  /** YYYY-MM-DD theo giờ Việt Nam, giống `dayKey()` trong lib/format.ts. */
+  day: string;
+  total: number;
+  page: number;
+  items: LibraryItem[];
+}
+
 /** Một ô trong thư viện: bản gốc + tóm tắt các phiên bản sửa (chỉ ảnh mới có). */
 export interface LibraryItem extends GenerationItem {
   versionCount: number;

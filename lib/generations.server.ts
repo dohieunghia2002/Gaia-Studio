@@ -18,6 +18,8 @@ import { modeLabels, priceFor, resolveSelection, selectionFields } from './catal
 import { getBalance } from './credits.server';
 import { TRASH_DAYS } from './trash';
 import { isPrivateGroup } from './access';
+import { dayKey } from './format';
+import { isDay, LIBRARY_DAYS_PER_LOAD, LIBRARY_PAGE_SIZE, pageCount } from './library';
 import type {
   CatalogModel,
   GenerationInputs,
@@ -25,6 +27,7 @@ import type {
   GenOp,
   GenStatus,
   Kind,
+  LibraryDay,
   LibraryItem,
   MediaRef,
   Selection,
@@ -152,6 +155,105 @@ export async function listLibrary(
   const items = withVersionSummary(page);
   const last = page[page.length - 1];
   return { items, nextCursor: rows.length > limit ? (opts.trash ? last.deleted_at : last.created_at) : null };
+}
+
+// ── Thư viện theo ngày ──
+// Cột `day` (ngày tạo theo giờ VN) và index (user_id, day, created_at) có từ supabase/migrations/0003_library_days.sql.
+
+const LIB_SELECT = `${COLS}, versions:generations!root_id(${COLS})`;
+
+/**
+ * `LIBRARY_DAYS_PER_LOAD` ngày gần nhất (trước `before` nếu có), mỗi ngày kèm tổng số mục và trang đầu.
+ * Hai hàm SQL chạy song song nên chỉ tốn một lượt hỏi Supabase.
+ */
+export async function listLibraryDays(
+  userId: string,
+  opts: { kind?: Kind; before?: string } = {},
+): Promise<{ days: LibraryDay[]; nextBefore: string | null }> {
+  if (opts.before && !isDay(opts.before)) throw new ApiError(400, 'bad_request', 'Ngày không hợp lệ.');
+  const args = { p_user: userId, p_kind: opts.kind ?? null, p_before: opts.before ?? null };
+  const [counts, firsts] = await Promise.all([
+    // Lấy dư một ngày để biết còn ngày cũ hơn không.
+    db().rpc('gaia_library_days', { ...args, p_limit: LIBRARY_DAYS_PER_LOAD + 1 }),
+    db()
+      .rpc('gaia_library_first_pages', { ...args, p_days: LIBRARY_DAYS_PER_LOAD, p_per_day: LIBRARY_PAGE_SIZE })
+      .select(LIB_SELECT)
+      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true, referencedTable: 'versions' }),
+  ]);
+  if (counts.error) throw counts.error;
+  if (firsts.error) throw firsts.error;
+  const byDay = new Map<string, LibraryItem[]>();
+  for (const item of withVersionSummary((firsts.data ?? []) as unknown as RootWithVersions[])) {
+    const key = dayKey(item.createdAt);
+    byDay.set(key, [...(byDay.get(key) ?? []), item]);
+  }
+  const rows = (counts.data ?? []) as { day: string; total: number }[];
+  const days = rows.slice(0, LIBRARY_DAYS_PER_LOAD).map((r) => ({ day: r.day, total: r.total, page: 1, items: byDay.get(r.day) ?? [] }));
+  return { days, nextBefore: rows.length > LIBRARY_DAYS_PER_LOAD ? days[days.length - 1].day : null };
+}
+
+/** Trang `page` của một ngày. Trang vượt quá số trang hiện có (vd. vừa xoá bớt) thì trả trang cuối. */
+export async function listLibraryDay(userId: string, opts: { kind?: Kind; day: string; page: number }): Promise<LibraryDay> {
+  if (!isDay(opts.day)) throw new ApiError(400, 'bad_request', 'Ngày không hợp lệ.');
+  const query = (page: number) => {
+    const from = (page - 1) * LIBRARY_PAGE_SIZE;
+    let q = db()
+      .from('generations')
+      .select(LIB_SELECT, { count: 'exact' })
+      .eq('user_id', userId)
+      .is('root_id', null)
+      .is('deleted_at', null)
+      .eq('day', opts.day)
+      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true, referencedTable: 'versions' })
+      .range(from, from + LIBRARY_PAGE_SIZE - 1);
+    if (opts.kind) q = q.eq('kind', opts.kind);
+    return q;
+  };
+  let page = Math.min(Math.max(Math.floor(opts.page) || 1, 1), 10_000);
+  let res = await query(page);
+  // PostgREST báo 416 (PGRST103) khi trang bắt đầu sau mục cuối cùng.
+  if (res.error?.code === 'PGRST103' || (!res.error && !res.data?.length && page > 1)) {
+    const total = res.count ?? (await countDay(userId, opts.day, opts.kind));
+    page = pageCount(total);
+    res = await query(page);
+  }
+  if (res.error) throw res.error;
+  return {
+    day: opts.day,
+    total: res.count ?? 0,
+    page,
+    items: withVersionSummary((res.data ?? []) as unknown as RootWithVersions[]),
+  };
+}
+
+async function countDay(userId: string, day: string, kind?: Kind): Promise<number> {
+  let q = db()
+    .from('generations')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .is('root_id', null)
+    .is('deleted_at', null)
+    .eq('day', day);
+  if (kind) q = q.eq('kind', kind);
+  const { count, error } = await q;
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * Số job đang chạy của người dùng, kể cả job nằm ở trang không hiện. Client dựa vào đây để tiếp tục hỏi trạng thái:
+ * chưa có cron ở server, job chỉ được cập nhật khi client gọi /api/generations/sync.
+ */
+export async function runningCount(userId: string): Promise<number> {
+  const { count, error } = await db()
+    .from('generations')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('status', RUNNING);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 /** Số mục trong Thùng rác (hiện trên tab). */

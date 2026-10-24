@@ -17,7 +17,7 @@ Project Supabase cũ trong `.env` đã chết (tên miền không còn tồn t�
 ## Bước 2 — Tạo bảng và hàm credit
 
 1. Trong project → **SQL Editor** → **New query**.
-2. Mở file `supabase/migrations/0001_gaia_init.sql`, sao chép **toàn bộ**, dán vào rồi bấm **Run**. Làm tiếp như vậy với `0002_credit_unit_vnd.sql`.
+2. Mở file `supabase/migrations/0001_gaia_init.sql`, sao chép **toàn bộ**, dán vào rồi bấm **Run**. Làm tiếp như vậy, lần lượt với `0002_credit_unit_vnd.sql` và `0003_library_days.sql`.
 3. Thấy "Success" là xong. File này tạo bảng thư viện, ví credit (lô 90 ngày, tiêu lô cũ trước), lịch sử giao dịch, đơn nạp tiền, và chặn người dùng tự cộng credit.
 
 > File SQL này đã chạy thử trên Postgres với 34 kiểm thử: trừ, hoàn, hết hạn, nạp tiền, quyền truy cập. Tất cả đều qua.

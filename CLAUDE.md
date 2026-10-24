@@ -162,6 +162,17 @@ Gommo's response shapes:
 
 Images are versioned. Edits (`op='edit'`, `editImage` + `base64Image` data URL, 1–4 per request) are `generations` rows with `root_id`/`source_id`. The library lists roots only (`root_id is null`), with version count, total credits and the latest successful version as the thumbnail. A layers badge on the card marks images with more than one version.
 
+**Library pages by day (2026-10-24).** The library is grouped by day (Vietnam time), 8 items per page per day (2 rows × 4 cards; `.lib-grid` is capped at 4 columns). The founder chose numbered pages next to each day title (`components/studio/DayPager.tsx`; ≤ 6 pages show all, otherwise first, last, current ± 1 and "…").
+
+- `supabase/migrations/0003_library_days.sql` adds the generated column `generations.day` (`(created_at at time zone 'Asia/Ho_Chi_Minh')::date`), the partial index `(user_id, day desc, created_at desc)` on live roots, and two service-role-only SQL functions. No page number is stored, since it would change on every create/delete. Verified on PGlite (VN midnight boundary, counts, kind filter, `p_before`, rerun-safe).
+- `GET /api/generations` → `listLibraryDays`: `gaia_library_days` (day + total, one extra row to know if older days exist) and `gaia_library_first_pages` (first 8 per day, returned as `generations` rows so versions embed in the same call) run in parallel. One load covers `LIBRARY_DAYS_PER_LOAD` (7) days; "Xem các ngày trước" passes `before=<oldest loaded day>`.
+- `GET /api/generations?day=YYYY-MM-DD&page=N` → `listLibraryDay`: a plain range query with `count: 'exact'`. A page past the end (after deletes) falls back to the last page.
+- Client (`StudioApp`): `items` stays a flat list of what is on screen (sync merges, selection and Shift-ranges keep working on it), plus `dayMeta` (total and page per day) and `nextBefore`. `loadDay` swaps one day's items in place (`replaceDay`), dropping stale responses per day.
+  - After trash, undo or rerun, `refreshDays` reloads the affected days' current pages, so a page refills to 8 and totals match the server.
+  - A new generation goes to today's page 1. If today is on another page, it jumps back to page 1.
+- Running jobs can sit on a page that isn't shown, so polling also runs while `serverRunning` > 0 (from `runningCount()` on load and from each sync response). The "xong" toasts fire for every job a sync reports as finished, visible or not.
+- The Trash stays a flat list sorted by `deleted_at` with "Xem thêm".
+
 **Trash (Thùng rác).**
 
 - "Chuyển vào thùng rác" soft-deletes the root and its versions with one `deleted_at` stamp. The undo toast restores the rows that carry that stamp.

@@ -7,16 +7,29 @@ import { useCredit } from '../CreditContext';
 import { useToasts } from '../Toasts';
 import { Composer, currentModel, draftCost, emptyDraft, type Catalog, type Draft, type Upload } from './Composer';
 import { detailHref, LibraryCard, TrashCard } from './LibraryCard';
+import { DayPager } from './DayPager';
 import { SampleMedia } from '../SampleMedia';
 import { api, ClientError } from '@/lib/client/api';
 import { aspectOf, assertImageFile, fetchImage, prepareImage, uploadDataUrl, uploadImage } from '@/lib/client/upload';
 import { priceFor, resolveSelection, selectionFields } from '@/lib/catalog';
 import { dayKey, dayLabel, fmtClock, fmtNumber } from '@/lib/format';
 import { TRASH_DAYS } from '@/lib/trash';
+import { LIBRARY_PAGE_SIZE, pageCount } from '@/lib/library';
 import { hasSample, ratioValue, SUGGESTION_PAGE, SUGGESTIONS } from '@/lib/suggestions';
-import type { GenerationItem, Kind, LibraryItem, Profile } from '@/lib/types';
+import type { GenerationItem, Kind, LibraryDay, LibraryItem, Profile } from '@/lib/types';
 
 type Filter = 'all' | Kind | 'trash';
+/** Thư viện theo ngày: tổng số mục của ngày (theo bộ lọc) và trang đang xem. Khoá là dayKey (YYYY-MM-DD). */
+type DayMeta = Record<string, { total: number; page: number }>;
+
+const metaOf = (days: LibraryDay[]): DayMeta => Object.fromEntries(days.map((d) => [d.day, { total: d.total, page: d.page }]));
+
+/** Thay các mục của `day` trong danh sách phẳng bằng `fresh`, giữ thứ tự ngày (mới trước). */
+function replaceDay(list: LibraryItem[], day: string, fresh: LibraryItem[]): LibraryItem[] {
+  const newer = list.filter((i) => dayKey(i.createdAt) > day);
+  const older = list.filter((i) => dayKey(i.createdAt) < day);
+  return [...newer, ...fresh, ...older];
+}
 
 const isRunning = (s: GenerationItem['status']) => s === 'pending' || s === 'processing';
 
@@ -124,17 +137,19 @@ function Welcome({ onPick }: { onPick: (kind: Kind, prompt: string) => void }) {
 
 export function StudioApp({
   profile,
-  initialItems,
-  initialCursor,
+  initialDays,
+  initialNextBefore,
   initialTrashCount,
+  initialRunning,
   initialCatalog,
   reuse,
   initialPrompt,
 }: {
   profile: Profile;
-  initialItems: LibraryItem[];
-  initialCursor: string | null;
+  initialDays: LibraryDay[];
+  initialNextBefore: string | null;
   initialTrashCount: number;
+  initialRunning: number;
   initialCatalog: Catalog;
   reuse: GenerationItem | null;
   initialPrompt: { kind: Kind; prompt: string } | null;
@@ -142,15 +157,28 @@ export function StudioApp({
   const { balance, setBalance, canTopup } = useCredit();
   const { push } = useToasts();
   const [catalog, setCatalog] = useState<Catalog>(initialCatalog);
-  const [items, setItems] = useState<LibraryItem[]>(initialItems);
-  const [cursor, setCursor] = useState<string | null>(initialCursor);
+  // Mục đang hiện, phẳng và mới trước. Thư viện: trang đang xem của từng ngày đã tải. Thùng rác: các mục đã tải.
+  const [items, setItems] = useState<LibraryItem[]>(() => initialDays.flatMap((d) => d.items));
+  const [dayMeta, setDayMeta] = useState<DayMeta>(() => metaOf(initialDays));
+  // Ngày cũ nhất đã tải, khi còn ngày cũ hơn ("Xem các ngày trước"); null là đã tải hết.
+  const [nextBefore, setNextBefore] = useState<string | null>(initialNextBefore);
+  const [busyDays, setBusyDays] = useState<Set<string>>(() => new Set());
+  const dayReq = useRef<Record<string, number>>({});
+  // Con trỏ "Xem thêm" của Thùng rác.
+  const [cursor, setCursor] = useState<string | null>(null);
+  // Job đang chạy theo server, kể cả job ở trang không hiện: còn job thì vẫn hỏi trạng thái.
+  const [serverRunning, setServerRunning] = useState(initialRunning);
   const [filter, setFilter] = useState<Filter>('all');
   // Tab mà `items` đang thuộc về. Vừa bấm sang tab khác thì hai giá trị lệch nhau cho tới khi tải xong:
   // lúc đó hiện vòng xoay, không vẽ mục của tab cũ (vd. mục thư viện thành thẻ Thùng rác có nút Khôi phục).
   const [itemsFor, setItemsFor] = useState<Filter>('all');
+  const itemsForRef = useRef(itemsFor);
+  useEffect(() => {
+    itemsForRef.current = itemsFor;
+  }, [itemsFor]);
   const listReq = useRef(0);
   const [loadingList, setLoadingList] = useState(false);
-  const [hasAny, setHasAny] = useState(initialItems.length > 0);
+  const [hasAny, setHasAny] = useState(initialDays.length > 0);
   const [trashCount, setTrashCount] = useState(initialTrashCount);
   const [confirmEmpty, setConfirmEmpty] = useState(false);
   // Chọn nhiều: `selecting` bật khi bấm "Chọn" hoặc tick một thẻ; `lastPicked` là mốc cho Shift+click chọn cả dãy.
@@ -173,9 +201,16 @@ export function StudioApp({
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
+  const dayMetaRef = useRef(dayMeta);
+  const nextBeforeRef = useRef(nextBefore);
+  useEffect(() => {
+    dayMetaRef.current = dayMeta;
+    nextBeforeRef.current = nextBefore;
+  }, [dayMeta, nextBefore]);
 
   const running = items.filter((i) => isRunning(i.status));
   const runningCount = running.length;
+  const polling = runningCount > 0 || serverRunning > 0;
 
   // Đồng hồ cho thẻ đang chạy (chỉ chạy sau khi mount để server/client render giống nhau).
   useEffect(() => {
@@ -195,7 +230,7 @@ export function StudioApp({
 
   // Hỏi trạng thái job đang chạy; báo khi xong (chỉ khi GAIA đang mở).
   useEffect(() => {
-    if (!runningCount) return;
+    if (!polling) return;
     let stopped = false;
     let tick = 0;
     const sync = async () => {
@@ -205,18 +240,21 @@ export function StudioApp({
         const res = await api<{ items: GenerationItem[]; balance: number }>('/api/generations/sync', { method: 'POST' });
         if (stopped) return;
         setBalance(res.balance);
+        setServerRunning(res.items.filter((g) => isRunning(g.status)).length);
         const byId = new Map(res.items.map((g) => [g.id, g]));
-        for (const old of itemsRef.current) {
-          const fresh = byId.get(old.id);
-          if (!fresh || !isRunning(old.status) || isRunning(fresh.status)) continue;
-          const label = old.kind === 'video' ? 'Video' : 'Ảnh';
+        // Server chỉ trả các job đang chạy lúc hỏi, nên job không còn chạy là vừa xong. Báo cả job ở trang không hiện.
+        const shown = new Map(itemsRef.current.map((i) => [i.id, i]));
+        for (const fresh of res.items) {
+          const old = shown.get(fresh.id);
+          if (isRunning(fresh.status) || (old && !isRunning(old.status))) continue;
+          const label = fresh.kind === 'video' ? 'Video' : 'Ảnh';
           if (fresh.status === 'success') {
-            push({ kind: 'done', title: `${label} đã tạo xong`, sub: old.prompt, action: { label: 'Xem', href: detailHref(old) } });
+            push({ kind: 'done', title: `${label} đã tạo xong`, sub: fresh.prompt, action: { label: 'Xem', href: detailHref(fresh) } });
           } else {
             push({
               kind: 'error',
               title: `Không tạo được ${label.toLowerCase()}`,
-              sub: fresh.refundedCredits ? `Đã hoàn ${fmtNumber(fresh.refundedCredits)} credit` : old.prompt,
+              sub: fresh.refundedCredits ? `Đã hoàn ${fmtNumber(fresh.refundedCredits)} credit` : fresh.prompt,
             });
           }
         }
@@ -258,10 +296,11 @@ export function StudioApp({
       stopped = true;
       clearInterval(t);
     };
-  }, [runningCount, push, setBalance]);
+  }, [polling, push, setBalance]);
 
+  /** Tải lại tab `f` từ đầu, hoặc tải thêm khi có `before` (thư viện: ngày cũ nhất đã tải; Thùng rác: con trỏ). */
   const loadList = useCallback(
-    async (f: Filter, before?: string) => {
+    async (f: Filter, before?: string | null) => {
       const req = ++listReq.current;
       setLoadingList(true);
       try {
@@ -269,13 +308,26 @@ export function StudioApp({
         if (f === 'trash') qs.set('trash', '1');
         else if (f !== 'all') qs.set('kind', f);
         if (before) qs.set('before', before);
-        const res = await api<{ items: LibraryItem[]; nextCursor: string | null; trashCount: number }>(`/api/generations?${qs}`);
-        // Đã chuyển tab (hoặc tải lại) trong lúc chờ: bỏ kết quả cũ, không để nó ghi đè tab hiện tại.
-        if (req !== listReq.current) return;
-        setItems((prev) => (before ? [...prev, ...res.items] : res.items));
+        if (f === 'trash') {
+          const res = await api<{ items: LibraryItem[]; nextCursor: string | null; trashCount: number }>(`/api/generations?${qs}`);
+          // Đã chuyển tab (hoặc tải lại) trong lúc chờ: bỏ kết quả cũ, không để nó ghi đè tab hiện tại.
+          if (req !== listReq.current) return;
+          setItems((prev) => (before ? [...prev, ...res.items] : res.items));
+          setCursor(res.nextCursor);
+          setTrashCount(res.trashCount);
+        } else {
+          const res = await api<{ days: LibraryDay[]; nextBefore: string | null; trashCount: number; runningCount: number }>(
+            `/api/generations?${qs}`,
+          );
+          if (req !== listReq.current) return;
+          const fresh = res.days.flatMap((d) => d.items);
+          setItems((prev) => (before ? [...prev, ...fresh] : fresh));
+          setDayMeta((prev) => (before ? { ...prev, ...metaOf(res.days) } : metaOf(res.days)));
+          setNextBefore(res.nextBefore);
+          setTrashCount(res.trashCount);
+          setServerRunning(res.runningCount);
+        }
         setItemsFor(f);
-        setCursor(res.nextCursor);
-        setTrashCount(res.trashCount);
       } catch (err) {
         if (req === listReq.current) push({ kind: 'error', title: err instanceof Error ? err.message : 'Không tải được thư viện' });
       } finally {
@@ -284,6 +336,55 @@ export function StudioApp({
     },
     [push],
   );
+
+  /** Tải trang `page` của một ngày trong thư viện và thay các mục đang hiện của ngày đó. */
+  const loadDay = useCallback(
+    async (day: string, page: number) => {
+      const tab = itemsForRef.current;
+      // Ngày cũ hơn phần đã tải thì để "Xem các ngày trước" lo, không chèn ngày lẻ vào giữa.
+      if (tab === 'trash' || (nextBeforeRef.current && day < nextBeforeRef.current)) return;
+      const req = (dayReq.current[day] ?? 0) + 1;
+      dayReq.current[day] = req;
+      setBusyDays((prev) => new Set(prev).add(day));
+      try {
+        const qs = new URLSearchParams({ day, page: String(page) });
+        if (tab !== 'all') qs.set('kind', tab);
+        const res = await api<LibraryDay>(`/api/generations?${qs}`);
+        // Đã bấm trang khác của ngày này, hoặc đã chuyển tab, trong lúc chờ: bỏ kết quả cũ.
+        if (dayReq.current[day] !== req || itemsForRef.current !== tab) return;
+        setItems((prev) => replaceDay(prev, day, res.items));
+        setDayMeta((prev) => {
+          const next = { ...prev };
+          if (res.total > 0) next[day] = { total: res.total, page: res.page };
+          else delete next[day];
+          return next;
+        });
+      } catch (err) {
+        if (dayReq.current[day] === req) push({ kind: 'error', title: err instanceof Error ? err.message : 'Không tải được trang này' });
+      } finally {
+        if (dayReq.current[day] === req) {
+          setBusyDays((prev) => {
+            const next = new Set(prev);
+            next.delete(day);
+            return next;
+          });
+        }
+      }
+    },
+    [push],
+  );
+
+  /** Tải lại trang đang xem của các ngày vừa thêm/bớt mục, để trang luôn đủ 8 mục và số mục khớp với server. */
+  const refreshDays = useCallback(
+    (days: Iterable<string>) => {
+      for (const day of new Set(days)) loadDay(day, dayMetaRef.current[day]?.page ?? 1);
+    },
+    [loadDay],
+  );
+
+  /** Đổi số mục của một ngày ngay trên giao diện, trước khi server trả lời. */
+  const bumpTotal = (day: string, delta: number) =>
+    setDayMeta((prev) => (prev[day] ? { ...prev, [day]: { ...prev[day], total: Math.max(0, prev[day].total + delta) } } : prev));
 
   const exitSelect = useCallback(() => {
     setSelecting(false);
@@ -347,11 +448,14 @@ export function StudioApp({
   };
 
   const removeItem = async (item: LibraryItem) => {
-    const index = itemsRef.current.findIndex((i) => i.id === item.id);
+    const day = dayKey(item.createdAt);
     setItems((prev) => prev.filter((i) => i.id !== item.id));
+    bumpTotal(day, -1);
     try {
       const res = await api<{ rootId: string; deletedAt: string }>(`/api/generations/${item.id}`, { method: 'DELETE' });
       setTrashCount((n) => n + 1);
+      // Kéo mục của trang sau lên lấp chỗ trống.
+      refreshDays([day]);
       push({
         title: 'Đã chuyển vào thùng rác',
         sub: `Tự xoá vĩnh viễn sau ${TRASH_DAYS} ngày`,
@@ -361,12 +465,7 @@ export function StudioApp({
             try {
               await api(`/api/generations/${res.rootId}/restore`, { method: 'POST', json: { deletedAt: res.deletedAt } });
               setTrashCount((n) => Math.max(0, n - 1));
-              setItems((prev) => {
-                if (prev.some((i) => i.id === item.id)) return prev;
-                const next = [...prev];
-                next.splice(Math.min(index, next.length), 0, item);
-                return next;
-              });
+              refreshDays([day]);
             } catch (err) {
               push({ kind: 'error', title: err instanceof Error ? err.message : 'Không hoàn tác được' });
             }
@@ -374,11 +473,7 @@ export function StudioApp({
         },
       });
     } catch (err) {
-      setItems((prev) => {
-        const next = [...prev];
-        next.splice(Math.min(index, next.length), 0, item);
-        return next;
-      });
+      refreshDays([day]);
       push({ kind: 'error', title: err instanceof Error ? err.message : 'Không xoá được' });
     }
   };
@@ -421,10 +516,6 @@ export function StudioApp({
   // ── Chọn nhiều ──
   // Thư viện: mục đang tạo không chọn được (giống thẻ của nó không có nút xoá). Thùng rác: chọn được mọi mục.
   const canSelect = useCallback((it: LibraryItem) => filter === 'trash' || !isRunning(it.status), [filter]);
-  const itemsForRef = useRef(itemsFor);
-  useEffect(() => {
-    itemsForRef.current = itemsFor;
-  }, [itemsFor]);
 
   const toggleSelect = useCallback(
     (item: LibraryItem, range: boolean) => {
@@ -450,26 +541,22 @@ export function StudioApp({
 
   const trashPicked = async () => {
     const tab = itemsForRef.current;
-    const removed = itemsRef.current.map((it, index) => ({ it, index })).filter(({ it }) => selected.has(it.id) && canSelect(it));
+    const removed = itemsRef.current.filter((it) => selected.has(it.id) && canSelect(it));
     if (!removed.length) return;
-    const ids = removed.map(({ it }) => it.id);
-    // Đặt lại đúng vị trí cũ; nếu đã sang tab khác thì tải lại tab đang xem thay vì chèn thẻ thư viện vào đó.
+    const ids = removed.map((it) => it.id);
+    const days = removed.map((it) => dayKey(it.createdAt));
+    // Tải lại trang đang xem của các ngày bị ảnh hưởng; nếu đã sang tab khác thì tải lại tab đang xem.
     const putBack = () => {
-      if (itemsForRef.current !== tab) {
-        loadList(itemsForRef.current);
-        return;
-      }
-      setItems((prev) => {
-        const next = [...prev];
-        for (const { it, index } of removed) if (!next.some((i) => i.id === it.id)) next.splice(Math.min(index, next.length), 0, it);
-        return next;
-      });
+      if (itemsForRef.current !== tab) loadList(itemsForRef.current);
+      else refreshDays(days);
     };
     exitSelect();
     setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+    for (const day of days) bumpTotal(day, -1);
     try {
       const res = await api<{ rootIds: string[]; deletedAt: string }>('/api/generations/bulk', { method: 'POST', json: { action: 'trash', ids } });
       setTrashCount((n) => n + res.rootIds.length);
+      refreshDays(days);
       push({
         title: `Đã chuyển ${fmtNumber(ids.length)} mục vào thùng rác`,
         sub: `Tự xoá vĩnh viễn sau ${TRASH_DAYS} ngày`,
@@ -568,13 +655,26 @@ export function StudioApp({
 
   const addCreated = (created: GenerationItem[]) => {
     const kind = created[0]?.kind;
+    if (!kind) return;
     setHasAny(true);
-    if (filter !== 'all' && kind && filter !== kind) {
+    if (filter !== 'all' && filter !== kind) {
       setFilter('all');
       loadList('all');
       return;
     }
-    setItems((prev) => [...created.map(toLibraryItem), ...prev]);
+    // Mục mới vào trang 1 của hôm nay. Đang xem trang khác của hôm nay thì quay về trang 1.
+    const day = dayKey(created[0].createdAt);
+    if ((dayMetaRef.current[day]?.page ?? 1) > 1) {
+      bumpTotal(day, created.length);
+      loadDay(day, 1);
+    } else {
+      const fresh = created.map(toLibraryItem);
+      setItems((prev) => {
+        const same = prev.filter((i) => dayKey(i.createdAt) === day);
+        return replaceDay(prev, day, [...fresh, ...same].slice(0, LIBRARY_PAGE_SIZE));
+      });
+      setDayMeta((prev) => ({ ...prev, [day]: { total: (prev[day]?.total ?? 0) + created.length, page: 1 } }));
+    }
     const failed = created.filter((c) => c.status === 'error');
     if (failed.length) {
       push({
@@ -594,8 +694,12 @@ export function StudioApp({
         json: { expectedCredits: credits },
       });
       setBalance(res.balance);
+      // Bản lỗi cũ được chuyển vào thùng rác; bản mới nằm ở hôm nay.
+      const day = dayKey(item.createdAt);
       setItems((prev) => prev.filter((i) => i.id !== item.id));
+      bumpTotal(day, -1);
       addCreated(res.items);
+      if (res.items[0] && dayKey(res.items[0].createdAt) !== day) refreshDays([day]);
     } catch (err) {
       handleError(err);
     }
@@ -718,6 +822,19 @@ export function StudioApp({
     files.slice(0, slots.length).forEach((f, i) => onPickFile(slots[i], f));
   };
 
+  const goPage = (day: string, page: number) => {
+    // Mục của trang cũ sắp khuất: bỏ chọn, để "Đã chọn N" chỉ đếm mục đang thấy.
+    if (selecting) {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const it of itemsRef.current) if (dayKey(it.createdAt) === day) next.delete(it.id);
+        return next;
+      });
+      lastPicked.current = null;
+    }
+    loadDay(day, page);
+  };
+
   const pickSuggestion = (kind: Kind, prompt: string) => {
     setDraft((d) => ({ ...d, kind, prompt }));
     focusPrompt();
@@ -741,6 +858,9 @@ export function StudioApp({
   const selectable = stale ? [] : items.filter(canSelect);
   const picked = items.filter((i) => selected.has(i.id));
   const allPicked = selectable.length > 0 && picked.length === selectable.length;
+  // Còn mục chưa hiện (trang khác của một ngày, ngày cũ hơn, hoặc phần sau của Thùng rác).
+  const hasHidden = inTrash ? Boolean(cursor) : Boolean(nextBefore) || Object.values(dayMeta).some((m) => m.total > LIBRARY_PAGE_SIZE);
+  const moreBefore = inTrash ? cursor : nextBefore;
   const purgeCount = picked.filter((i) => !isRunning(i.status)).length;
   const selectFor = (it: LibraryItem) =>
     canSelect(it) ? { active: selecting, selected: selected.has(it.id), onToggle: toggleSelect } : undefined;
@@ -768,7 +888,7 @@ export function StudioApp({
                   disabled={!selectable.length}
                   onClick={() => setSelected(allPicked ? new Set() : new Set(selectable.map((i) => i.id)))}
                 >
-                  {allPicked ? 'Bỏ chọn tất cả' : cursor ? 'Chọn tất cả đang hiện' : 'Chọn tất cả'}
+                  {allPicked ? 'Bỏ chọn tất cả' : hasHidden ? 'Chọn tất cả đang hiện' : 'Chọn tất cả'}
                 </button>
               </div>
               <div className="row trash-tools">
@@ -820,10 +940,10 @@ export function StudioApp({
               ))}
             </nav>
             <div className="row" style={{ gap: 12 }}>
-              {!inTrash && runningCount > 0 && (
+              {!inTrash && Math.max(runningCount, serverRunning) > 0 && (
                 <div className="running">
                   <span className="pulse-dot" />
-                  {runningCount} đang chạy
+                  {Math.max(runningCount, serverRunning)} đang chạy
                 </div>
               )}
               {selectable.length > 0 && !confirmEmpty && (
@@ -888,29 +1008,42 @@ export function StudioApp({
                 ))}
               </div>
             )}
-            {!inTrash && !stale && groups.map((g) => (
-              <section key={g.key} aria-label={g.label}>
-                <h2 className="group-title">{g.label}</h2>
-                <div className="lib-grid">
-                  {g.items.map((it) => (
-                    <LibraryCard
-                      key={it.id}
-                      item={it}
-                      now={now}
-                      retryCredits={it.status === 'error' ? retryCreditsFor(it) : null}
-                      onReuse={reusePrompt}
-                      onCopy={copyPrompt}
-                      onDelete={removeItem}
-                      onRetry={retry}
-                      select={selectFor(it)}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-            {!stale && cursor && (
-              <button type="button" className="more-btn" disabled={loadingList} onClick={() => loadList(filter, cursor)}>
-                {loadingList ? 'Đang tải…' : 'Xem thêm'}
+            {!inTrash && !stale && groups.map((g) => {
+              const meta = dayMeta[g.key];
+              const total = meta?.total ?? g.items.length;
+              const busy = busyDays.has(g.key);
+              return (
+                <section key={g.key} aria-label={g.label}>
+                  <div className="group-head">
+                    <h2 className="group-title">
+                      {g.label}
+                      <span className="group-count"> · {fmtNumber(total)} mục</span>
+                    </h2>
+                    {pageCount(total) > 1 && (
+                      <DayPager label={g.label} page={meta?.page ?? 1} pages={pageCount(total)} busy={busy} onPage={(p) => goPage(g.key, p)} />
+                    )}
+                  </div>
+                  <div className={`lib-grid${busy ? ' busy' : ''}`} aria-busy={busy}>
+                    {g.items.map((it) => (
+                      <LibraryCard
+                        key={it.id}
+                        item={it}
+                        now={now}
+                        retryCredits={it.status === 'error' ? retryCreditsFor(it) : null}
+                        onReuse={reusePrompt}
+                        onCopy={copyPrompt}
+                        onDelete={removeItem}
+                        onRetry={retry}
+                        select={selectFor(it)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+            {!stale && moreBefore && (
+              <button type="button" className="more-btn" disabled={loadingList} onClick={() => loadList(filter, moreBefore)}>
+                {loadingList ? 'Đang tải…' : inTrash ? 'Xem thêm' : 'Xem các ngày trước'}
               </button>
             )}
           </main>

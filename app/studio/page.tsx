@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getProfileRow, pageSession, preferAuthError, toProfile } from '@/lib/auth.server';
 import { getCatalog } from '@/lib/models.server';
 import { getBalance } from '@/lib/credits.server';
-import { getDetail, listLibrary, trashCount } from '@/lib/generations.server';
+import { getDetail, listLibraryDays, runningCount, trashCount } from '@/lib/generations.server';
 import { isUuid } from '@/lib/api.server';
 import { isPrivateGroup } from '@/lib/access';
 import { CreditProvider } from '@/components/CreditContext';
@@ -26,12 +26,13 @@ export default async function StudioPage({
   );
 
   // Xác thực và tải dữ liệu cùng lúc (xem pageSession).
-  const [user, profileRow, balance, library, trash, catalog, reuse] = await Promise.all([
+  const [user, profileRow, balance, library, trash, running, catalog, reuse] = await Promise.all([
     verified,
     getProfileRow(userId),
     getBalance(userId),
-    listLibrary(userId),
+    listLibraryDays(userId),
     trashCount(userId),
+    runningCount(userId),
     getCatalog().catch(() => ({ image: [], video: [] })),
     reuseId && isUuid(reuseId)
       ? getDetail(userId, reuseId)
@@ -46,9 +47,10 @@ export default async function StudioPage({
       <ToastProvider>
         <StudioApp
           profile={profile}
-          initialItems={library.items}
-          initialCursor={library.nextCursor}
+          initialDays={library.days}
+          initialNextBefore={library.nextBefore}
           initialTrashCount={trash}
+          initialRunning={running}
           initialCatalog={catalog}
           reuse={reuse}
           initialPrompt={reuse ? null : initialPrompt}
