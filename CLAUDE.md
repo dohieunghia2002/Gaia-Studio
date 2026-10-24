@@ -126,6 +126,22 @@ The founder chose to run GAIA for themselves and a few invited friends, with no 
 - `/rules` ("Quy ước dùng chung") replaces Terms/Privacy on the login page. `/terms` and `/privacy` stay as drafts for a future public launch.
 - Verified on 2026-10-21 against dev :3100 with two temporary users created by magic link and deleted afterwards: an invited user gets 200 on pages and the API and 403 on top-up; a non-invited user gets 401 from the API and a redirect to /login, and is then signed out. The Google callback path itself was not exercised.
 
+### Deploy target: Vercel Hobby (2026-10-24)
+
+GAIA is free to host on Vercel Hobby in private group mode because nothing on the site takes payment. The deploy steps are in SETUP.md, Bước 7. Limits were checked against Vercel docs on 2026-10-24:
+
+- **4.5 MB request/response body.** `prepareImage` (`lib/client/upload.ts`) always re-encodes to JPEG at q0.92, stepping quality down until the data URL is under 4 MB. Transparent pixels get a white background. Images already at the right ratio, small enough and ≤ 3 MB are sent as-is.
+  - Before this change, PNG sources stayed PNG. Gommo outputs are PNG (1.3–2 MB at 1K), so a 2K/4K image reused as a frame would have been rejected with a 413.
+  - Verified on the prod build: a 9 MB 4096px PNG was sent as 0.78 MB JPEG, a 12 MB noise PNG as 2.63 MB, and a small 16:9 PNG kept as PNG.
+  - The video download route streams `upstream.body`. Vercel says streaming responses are not subject to the 4.5 MB limit, but this is not yet tried on Vercel.
+- **Region.** `vercel.json` sets `regions: ["sin1"]` so functions run next to Supabase (ap-southeast-1). Vercel's default is iad1, and Hobby allows one region.
+- **Daily cron.** `vercel.json` runs `/api/cron/daily` at `0 20 * * *` (UTC). Hobby allows at most daily, ±59 min. The route:
+  - checks `Authorization: Bearer ${CRON_SECRET}`, which Vercel sends automatically, and returns 401 without it;
+  - runs `syncAllRunning()`, which syncs every user's running jobs (limit 200), so stuck jobs time out and refund even when nobody has Studio open;
+  - by doing that DB read, keeps the Supabase Free project from pausing after 7 days of low activity.
+  - Verified: 401 with no secret or a wrong one; with the secret, a 10-minute-old unsent job became `error`.
+- **Duration.** Fluid compute allows 300 s per request on Hobby, which is enough: Gommo calls are submit-then-poll.
+
 ### Generation lifecycle
 
 `lib/generations.server.ts` drives each job:

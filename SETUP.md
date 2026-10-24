@@ -103,21 +103,32 @@ Khi chạy trên máy (chưa có webhook), trang Credit tự hỏi PayOS mỗi 3
 
 Thử thật trên máy: nạp mốc thấp nhất (20.000đ) bằng chính tài khoản ngân hàng của bạn. Tiền về đúng tài khoản nhận của bạn, nên gần như không tốn gì.
 
-## Bước 7 — Đưa lên mạng (khi sẵn sàng)
+## Bước 7 — Đưa lên mạng (Vercel, chế độ nhóm riêng)
 
-**Trước khi mở cho người dùng:**
+`vercel.json` đã cài sẵn hai thứ:
+- Máy chủ chạy ở Singapore (`sin1`), gần Supabase. Mặc định của Vercel là Mỹ, mỗi trang sẽ chậm hơn hẳn.
+- Một cron mỗi ngày gọi `/api/cron/daily`: báo lỗi và hoàn credit cho job bị treo khi không ai mở GAIA, đồng thời giữ Supabase gói Free không bị tạm dừng (Supabase tạm dừng project Free nếu 7 ngày ít hoạt động).
 
-1. **Nạp tiền vào 79ai.** Tiền người dùng nạp vào GAIA không tự chuyển sang 79ai; bạn tự lấy doanh thu nạp vào đó.
-2. **Chốt an toàn số dư 79ai** (đặt trong `.env` của nơi host, đơn vị là credit Gommo ≈ đồng):
-   - `GAIA_PROVIDER_RESERVE`: GAIA từ chối lượt tạo nếu sau lượt đó số dư 79ai còn dưới mức này (mặc định 0). Người dùng nhận thông báo "GAIA đang tạm dừng nhận yêu cầu tạo mới" và không bị trừ credit.
-   - `GAIA_TOPUP_MIN_PROVIDER_BALANCE`: số dư 79ai dưới mức này thì tạm dừng nạp credit, để không ai trả tiền mà không tạo được gì. Mặc định 0 (tắt, để thử PayOS trên máy). Khi mở thật nên đặt, ví dụ `100000`.
-3. **Điền trang Điều khoản và Bảo mật:** sửa `lib/legal.ts` (tên người vận hành, email hỗ trợ, độ tuổi), chốt các mục trong ngoặc vuông ở `app/terms/page.tsx` và `app/privacy/page.tsx`, rồi đặt `draft: false`.
+Vercel gói Hobby (miễn phí) dùng được vì web không thu tiền. Giới hạn cần biết: mỗi request tối đa 4,5 MB (ảnh tải lên đã được nén JPEG dưới 4 MB), mỗi request chạy tối đa 300 giây, cron tối đa 1 lần/ngày.
 
-**Nơi host:** Vercel gói Hobby (miễn phí) chỉ cho dùng cá nhân, phi thương mại. Vercel tính là thương mại khi web có "requesting or processing payment from visitors" (https://vercel.com/docs/limits/fair-use-guidelines). Ở chế độ nhóm riêng, web không thu tiền nên Hobby dùng được. Khi mở bán qua PayOS thì cần gói Pro ($20/tháng) hoặc một nơi host khác cho phép dùng thương mại. Các bước với Vercel:
+1. **Nạp 79ai.** Số dư 79ai là giới hạn thật: hết tiền thì bấm Tạo sẽ báo "GAIA đang tạm dừng nhận yêu cầu tạo mới" (credit GAIA không bị trừ). `GAIA_PROVIDER_RESERVE` (mặc định 0) giữ lại một khoản trong 79ai nếu cần.
+2. **Google cho phép bạn bè đăng nhập:** Google Cloud Console → **Google Auth Platform → Audience** (OAuth consent screen). Nếu **Publishing status** là **Testing** thì chỉ email trong danh sách **Test users** đăng nhập được (tối đa 100): thêm email bạn bè vào đó, hoặc bấm **Publish app**.
+3. **Vercel** (https://vercel.com, gói Hobby): **Add New → Project** → import repo GitHub → **Root Directory** chọn `gaia-studio` → **Environment Variables**:
+   - Chép từ `.env`: `GOMMO_ACCESS_TOKEN`, `GOMMO_DOMAIN`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `GAIA_ALLOWED_EMAILS`, `GAIA_MARKUP` (=1), `GAIA_COST_PER_GOMMO_CREDIT` (=1), `PROMPT_TRANSLATOR` (=gommo).
+   - `CRON_SECRET`: một chuỗi ngẫu nhiên từ 16 ký tự trở lên. Vercel tự gửi kèm khi gọi cron; thiếu biến này thì cron bị từ chối.
+   - Không cần các biến `PAYOS_*` và `NEXT_PUBLIC_SITE_URL` (chỉ dùng khi bật nạp tiền).
+   - Bấm **Deploy**. Vercel cấp một địa chỉ dạng `https://<tên>.vercel.app`, dùng luôn được, không cần mua tên miền.
+4. **Supabase** → **Authentication → URL Configuration**: **Site URL** = địa chỉ Vercel; **Redirect URLs** thêm `https://<tên>.vercel.app/**`.
+5. **Thử trên địa chỉ thật:** đăng nhập bằng email của bạn, tạo một ảnh rẻ, tải về một video, rồi thử đăng nhập bằng một email chưa mời (phải bị chặn). Ở Vercel → **Settings → Cron Jobs** có nút chạy thử cron và xem log.
+6. **Mời bạn bè:** xem mục "Chế độ nhóm riêng" ở trên. Trên Vercel, sửa `GAIA_ALLOWED_EMAILS` xong phải **Redeploy** mới có hiệu lực.
 
-1. Import repo GitHub vào Vercel, chọn thư mục gốc `gaia-studio` (file `.env` không có trên GitHub).
-2. Khai báo các biến môi trường giống `.env`, đặt `NEXT_PUBLIC_SITE_URL` = tên miền thật.
-3. Thêm tên miền thật vào **Redirect URLs** của Supabase (bước 4) và **Webhook URL** của PayOS (bước 6).
+**Khi mở bán công khai (sau này):**
+
+1. Đăng ký hộ kinh doanh và thông báo website theo Nghị định 248/2026 trước khi bật nạp tiền.
+2. Đổi sang Vercel Pro ($20/tháng) hoặc nơi host khác cho phép thu tiền: Vercel tính là thương mại khi web có "requesting or processing payment from visitors" (https://vercel.com/docs/limits/fair-use-guidelines).
+3. Để trống `GAIA_ALLOWED_EMAILS`, đặt `GAIA_MARKUP=1.5`, khai báo `PAYOS_*` và `NEXT_PUBLIC_SITE_URL`, thêm **Webhook URL** của PayOS (bước 6).
+4. `GAIA_TOPUP_MIN_PROVIDER_BALANCE`: số dư 79ai dưới mức này thì tạm dừng nạp credit, để không ai trả tiền mà không tạo được gì. Mặc định 0 (tắt); khi mở thật nên đặt, ví dụ `100000`. Tiền người dùng nạp vào GAIA không tự chuyển sang 79ai; bạn tự lấy doanh thu nạp vào đó.
+5. Điền trang Điều khoản và Bảo mật: sửa `lib/legal.ts` (tên người vận hành, email hỗ trợ, độ tuổi), chốt các mục trong ngoặc vuông ở `app/terms/page.tsx` và `app/privacy/page.tsx`, rồi đặt `draft: false`.
 
 ---
 

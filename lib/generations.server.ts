@@ -763,6 +763,25 @@ export async function syncRunning(userId: string): Promise<GenerationItem[]> {
   return synced.map(toItem);
 }
 
+/**
+ * Cron mỗi ngày (app/api/cron/daily): cập nhật job đang chạy của mọi người dùng, kể cả khi không ai mở GAIA,
+ * để job treo hết hạn chờ thì được báo lỗi và hoàn credit. syncOne chỉ đổi trạng thái khi job còn đang chạy
+ * và hoàn credit không hoàn quá số đã trừ, nên chạy trùng hay chạy cùng lúc với client vẫn an toàn.
+ * Lần đọc bảng này cũng giữ Supabase gói Free không bị tạm dừng vì 7 ngày ít hoạt động.
+ */
+export async function syncAllRunning(): Promise<{ checked: number; finished: number }> {
+  const { data, error } = await db()
+    .from('generations')
+    .select(COLS)
+    .in('status', RUNNING)
+    .order('created_at', { ascending: true })
+    .limit(200);
+  if (error) throw error;
+  const rows = (data ?? []) as GenRow[];
+  const synced = await mapLimit(rows, 6, syncOne);
+  return { checked: rows.length, finished: synced.filter((r) => !RUNNING.includes(r.status)).length };
+}
+
 // ───────────────────────── Sửa ảnh ─────────────────────────
 
 async function successfulImage(userId: string, id: string): Promise<GenRow> {

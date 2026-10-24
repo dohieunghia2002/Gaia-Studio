@@ -5,6 +5,9 @@ import type { MediaRef } from '../types';
 
 const MAX_SIDE = 2048;
 const ACCEPT = ['image/png', 'image/jpeg', 'image/webp'];
+// Vercel nhận tối đa 4,5 MB mỗi request (https://vercel.com/docs/functions/limitations), mà base64 nặng hơn file
+// khoảng 33%. Giữ data URL dưới 4 MB để còn chỗ cho phần JSON còn lại.
+const MAX_DATA_URL = 4_000_000;
 // Lệch tỉ lệ dưới 1% thì coi như đã đúng, không cắt.
 const RATIO_TOLERANCE = 0.01;
 
@@ -39,7 +42,7 @@ export interface PreparedImage {
 
 /**
  * Chuẩn bị ảnh trước khi tải lên, trong một lần vẽ: cắt phần giữa cho đúng tỉ lệ `aspect` (nếu có)
- * rồi thu nhỏ còn cạnh dài tối đa 2048px.
+ * rồi thu nhỏ còn cạnh dài tối đa 2048px, xuất JPEG dưới 4 MB. Ảnh đã đúng tỉ lệ, đủ nhỏ và dưới 3 MB thì gửi nguyên bản.
  */
 export async function prepareImage(blob: Blob, aspect: number | null = null): Promise<PreparedImage> {
   const bitmap = await createImageBitmap(blob);
@@ -61,10 +64,21 @@ export async function prepareImage(blob: Blob, aspect: number | null = null): Pr
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(sw * scale);
   canvas.height = Math.round(sh * scale);
-  canvas.getContext('2d')!.drawImage(bitmap, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  const ctx = canvas.getContext('2d')!;
+  // Luôn xuất JPEG: PNG vẽ lại từ canvas rất nặng (ảnh 2048px dễ quá 8 MB). Nền trắng cho phần trong suốt của PNG,
+  // nếu không JPEG sẽ tô đen.
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
   bitmap.close();
-  const type = blob.type === 'image/png' ? 'image/png' : 'image/jpeg';
-  return { dataUrl: canvas.toDataURL(type, 0.92), cropped, changed: true };
+  let quality = 0.92;
+  let dataUrl = canvas.toDataURL('image/jpeg', quality);
+  while (dataUrl.length > MAX_DATA_URL && quality > 0.5) {
+    quality -= 0.1;
+    dataUrl = canvas.toDataURL('image/jpeg', quality);
+  }
+  if (dataUrl.length > MAX_DATA_URL) throw new ClientError('Ảnh quá lớn. Bạn chọn ảnh khác nhé.', 400);
+  return { dataUrl, cropped, changed: true };
 }
 
 export function uploadDataUrl(dataUrl: string, fileName: string): Promise<MediaRef> {
